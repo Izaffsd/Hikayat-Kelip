@@ -627,8 +627,8 @@
       }
     },
     "characters/kelip": {
-      "url": "/assets/characters/kelip.7a9cf145ec.glb",
-      "bytes": 35092,
+      "url": "/assets/characters/kelip.5360b0cdc9.glb",
+      "bytes": 35140,
       "type": "glb"
     },
     "characters/tokbelang": {
@@ -637,13 +637,13 @@
       "type": "glb"
     },
     "characters/wisp": {
-      "url": "/assets/characters/wisp.43fdadedc4.glb",
-      "bytes": 22596,
+      "url": "/assets/characters/wisp.f67d7f3c23.glb",
+      "bytes": 22600,
       "type": "glb"
     },
     "kits/kampung_kit": {
-      "url": "/assets/kits/kampung_kit.798f7579c6.glb",
-      "bytes": 736972,
+      "url": "/assets/kits/kampung_kit.d85867f600.glb",
+      "bytes": 737012,
       "type": "glb"
     }
   }

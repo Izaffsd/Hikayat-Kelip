@@ -6,20 +6,16 @@ Resume rule: when Izaf says "continue from PROGRESS.md", start at **Resume point
 Setup done except the items that need Izaf (2026-10-16). The project lives at `D:\dev\hikayat-kelip` (D-001).
 - Push: Izaf said "no need to push yet". Keep committing locally; ask before the first push (make the repo private
   first, then `gh auth login --web --git-protocol https --scopes workflow`). Vercel previews start after that push.
-- **NEXT, on Izaf's instruction (2026-10-17): Phase 2 is paused; the Live tools are set up and wait for the
-  restart.** `.mcp.json` registers `blender` (`uv --directory D:\dev\tools\blender_mcp\mcp run blender-mcp`, per the
-  wiki Setup page) and `chrome-devtools` (`cmd /c npx -y chrome-devtools-mcp@latest` + D: profile flags, added with
-  `claude mcp add`). Both passed an MCP handshake started from that exact config, and blender reached the add-on on
-  port 9876. `claude mcp list` said "Pending approval" because this folder had never been trusted in Claude Code;
-  `.claude/settings.local.json` lists both in `enabledMcpjsonServers`. After Izaf restarts into `D:\dev\hikayat-kelip`:
-  1. Run `claude mcp list` (CLI path in CLAUDE.md) and confirm both show connected. If either is still pending,
-     Izaf approves it in `/mcp`.
-  2. Go over every Phase 2 asset in Izaf's live Blender: Kampung kit including the flood pieces, Tok Belang, Kelip,
-     the wisp, and the three animation packs on a rig. For each one, load the headless output into a new scene
-     (`HK_Preview`; never touch Izaf's own scene, which is unsaved), take a screenshot through the MCP, list the
-     fixes, fix them in `tools/blender/**`, rebuild headless with `npm run assets -- --only <job>`, then look again.
-     Live Blender is for previews only: no deleting files, no network, no folders outside the project.
-  3. Then run the Phase 1 DevTools checks below and finish Phase 2.
+- **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
+  session `blender` and `chrome-devtools` are connected (the standalone `claude mcp list` still says "pending" because
+  the CLI keeps its own approvals). Live previews use `tools/blender/live/hk_preview.py`: everything goes into an
+  `HK_Preview` scene, every created datablock is recorded and `finish()` removes exactly those, so Izaf's own scene is
+  never touched.
+- **Phase 2 live review done (2026-10-17).** Every asset was previewed in Izaf's Blender, fixed in the bpy scripts and
+  rebuilt headless: Kampung kit (`6b4192e`: thatch UVs follow the slope plus a new attap texture, twill weave, taller
+  window, berembang crowns, grain along beams, stall roof, draped net, three kain colours), Tok Belang v4 (`1c3e298`,
+  D-026), Kelip and the wisp (`e2e08ab`). Animation packs: poses checked on the rig; shipped vs raw clips differ by at most
+  0.106° (gltfpack `-ar 14`), durations identical.
 - Phase 0 done. Phase 1 built and verified locally (see log below); two phase-end checks wait on Izaf:
   the Chrome DevTools MCP checks need the VS Code restart, and the Vercel preview needs the first push.
 - **Phase 2 in progress (2026-10-17).** Done and committed: GLB pipeline (`tools/optimize-glb.mjs`,
@@ -31,9 +27,8 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   itch.io page) into `D:\dev\raw\quaternius\ubc\` through itch.io's free "No thanks, just take me to the downloads"
   flow in the installed Chrome. The auto-mode permission check then blocked extracting it as a "real-world
   transaction", so it stays unopened until Izaf confirms. If only two bodies are included, Teen proportions come from
-  shape keys on the Regular base (the Source tier with all 8 costs $19.99, which is Izaf's call); (2) kit polish: smaller,
-  denser berembang leaves, less shingle-like thatch, check the stall roof; (3) props for the slice (tongkat, wau, hikayat
-  book, Pelita Air); (4) Phase 2 log entry and checks, then Phase 3. Custom silat clips (langkah, tangkis, kuncian),
+  shape keys on the Regular base (the Source tier with all 8 costs $19.99, which is Izaf's call); (2) props for the slice
+  (tongkat, wau, hikayat book, Pelita Air); (3) Phase 2 log entry and checks, then Phase 3. Custom silat clips (langkah, tangkis, kuncian),
   glide and ledge-hang poses are made in Phase 3 against the combat data.
 - **Phase 1 perf checks (Playwright CDP, both backends, all 6 passed in 21.7 min):** 4× CPU throttle ~100 FPS avg /
   99 FPS p5 (display-limited); trace: 1 long task (~138 ms, at start-up) during 5 s of play; 10-minute soak: JS heap
