@@ -98,7 +98,12 @@ Izaf's PC already runs Blender 5.2.2 LTS with the official Blender Lab MCP add-o
 | L3 | Register Blender in Claude Code | Project `.mcp.json`: server `blender`, type stdio, command `uv`, args `--directory C:\dev\tools\blender_mcp\mcp run blender-mcp` (absolute paths, `--directory` before `run`) | After a restart, `claude mcp list` shows blender connected while Blender is open |
 | L4 | Chrome DevTools MCP (console, performance traces, memory, CPU throttling, device emulation) | `claude mcp add chrome-devtools --scope project -- npx chrome-devtools-mcp@latest` | `claude mcp list` shows chrome-devtools connected |
 
-On this PC (2026-10-17): the clone is at `D:\dev\tools\blender_mcp`, not `C:\dev\tools\blender_mcp`, because C: is nearly full (DECISIONS D-008), and L3 uses that path. L4 is registered as `cmd /c npx -y chrome-devtools-mcp@latest` plus `--userDataDir` on D:, `--chromeArg=--enable-unsafe-webgpu`, `--no-usage-statistics` and `--workspace=D:\dev\hikayat-kelip`, because native Windows needs the `cmd /c` wrapper for npx (D-006). Both servers pass an MCP handshake from the `.mcp.json` command, and the blender server reaches the running add-on on port 9876. `claude mcp list` shows them as pending approval until the folder is opened and trusted in Claude Code.
+On this PC (2026-10-17): the clone is at `D:\dev\tools\blender_mcp`, not `C:\dev\tools\blender_mcp`, because C: is nearly full (DECISIONS D-008), and L3 uses that path. Both servers start from absolute paths (D-025), because VS Code can be launched with an environment from before the tools were installed:
+- blender runs `C:\Users\User\.local\bin\uv.exe` instead of `uv`.
+- chrome-devtools is installed once in `D:\dev\tools\chrome-devtools-mcp` and started with `C:\Program Files\nodejs\node.exe`, not through `npx`. Update it with `npm install --prefix D:\dev\tools\chrome-devtools-mcp chrome-devtools-mcp@latest`.
+- chrome-devtools also gets `--userDataDir` on D:, `--chromeArg=--enable-unsafe-webgpu`, `--no-usage-statistics` and `--workspace=D:\dev\hikayat-kelip`.
+
+Both pass an MCP handshake from the `.mcp.json` command with that old environment, and blender reaches the running add-on on port 9876.
 
 **Live tool rules**
 

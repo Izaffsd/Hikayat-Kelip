@@ -66,6 +66,8 @@ browser on PC and phones in landscape. Three.js WebGPU + Rapier + Vite, deployed
 - Claude CLI (bundled with the VS Code extension):
   `%USERPROFILE%\.vscode\extensions\anthropic.claude-code-*\resources\native-binary\claude.exe`.
 - Blender MCP server source: `D:\dev\tools\blender_mcp` (outside the repo). MCP config: `.mcp.json`.
+- chrome-devtools-mcp: installed in `D:\dev\tools\chrome-devtools-mcp`, started by absolute `node.exe` (D-025).
+- VS Code may run with an old PATH: shell commands refresh PATH from the registry first; `.mcp.json` uses absolute paths.
 
 ## Commands
 - `npm run dev` — Vite dev server. `npm run build` — production build. `npm run preview` — serve the build.
