@@ -6,17 +6,32 @@ Resume rule: when Izaf says "continue from PROGRESS.md", start at **Resume point
 Setup done except the items that need Izaf (2026-10-16). The project lives at `D:\dev\hikayat-kelip` (D-001).
 - Push: Izaf said "no need to push yet". Keep committing locally; ask before the first push (make the repo private
   first, then `gh auth login --web --git-protocol https --scopes workflow`). Vercel previews start after that push.
-- VS Code restart: deferred until the MCP tools are first needed (end of Phase 1). Izaf then opens
-  `D:\dev\hikayat-kelip` in VS Code with Blender running; verify tool versions and the `blender` and
-  `chrome-devtools` MCP connections. Until then, shell commands refresh PATH from the registry.
+- **NEXT, on Izaf's instruction (2026-10-17): Phase 2 is paused; the Live tools are set up and wait for the
+  restart.** `.mcp.json` registers `blender` (`uv --directory D:\dev\tools\blender_mcp\mcp run blender-mcp`, per the
+  wiki Setup page) and `chrome-devtools` (`cmd /c npx -y chrome-devtools-mcp@latest` + D: profile flags, added with
+  `claude mcp add`). Both passed an MCP handshake started from that exact config, and blender reached the add-on on
+  port 9876. `claude mcp list` said "Pending approval" because this folder had never been trusted in Claude Code;
+  `.claude/settings.local.json` lists both in `enabledMcpjsonServers`. After Izaf restarts into `D:\dev\hikayat-kelip`:
+  1. Run `claude mcp list` (CLI path in CLAUDE.md) and confirm both show connected. If either is still pending,
+     Izaf approves it in `/mcp`.
+  2. Go over every Phase 2 asset in Izaf's live Blender: Kampung kit including the flood pieces, Tok Belang, Kelip,
+     the wisp, and the three animation packs on a rig. For each one, load the headless output into a new scene
+     (`HK_Preview`; never touch Izaf's own scene, which is unsaved), take a screenshot through the MCP, list the
+     fixes, fix them in `tools/blender/**`, rebuild headless with `npm run assets -- --only <job>`, then look again.
+     Live Blender is for previews only: no deleting files, no network, no folders outside the project.
+  3. Then run the Phase 1 DevTools checks below and finish Phase 2.
 - Phase 0 done. Phase 1 built and verified locally (see log below); two phase-end checks wait on Izaf:
   the Chrome DevTools MCP checks need the VS Code restart, and the Vercel preview needs the first push.
 - **Phase 2 in progress (2026-10-17).** Done and committed: GLB pipeline (`tools/optimize-glb.mjs`,
   `tools/build-assets.mjs`, hashed publishing, `src/data/generated/assets.json`), Kampung kit with prologue flood
   pieces, 74-clip animation packs (D-022), Tok Belang, Kelip and the shadow wisp, and the audio pipeline
   (`tools/audio`: 8 banks, 49 sounds, 876 KB, bit-exact rebuilds, Chrome decode test; D-024).
-  **Resume with:** (1) human characters once Izaf saves `Universal Base Characters[Standard].zip` in
-  `D:\dev\raw\quaternius\ubc\` (Bayu, young Wan, Adi, Mak Som, villagers, cursed brawler); (2) kit polish: smaller,
+  **Resume with:** (1) human characters (Bayu, young Wan, Adi, Mak Som, villagers, cursed brawler). On 2026-10-17
+  I downloaded `Universal Base Characters[Standard].zip` (129 MB, CC0, free tier: 2 base models + 5 hairstyles per the
+  itch.io page) into `D:\dev\raw\quaternius\ubc\` through itch.io's free "No thanks, just take me to the downloads"
+  flow in the installed Chrome. The auto-mode permission check then blocked extracting it as a "real-world
+  transaction", so it stays unopened until Izaf confirms. If only two bodies are included, Teen proportions come from
+  shape keys on the Regular base (the Source tier with all 8 costs $19.99, which is Izaf's call); (2) kit polish: smaller,
   denser berembang leaves, less shingle-like thatch, check the stall roof; (3) props for the slice (tongkat, wau, hikayat
   book, Pelita Air); (4) Phase 2 log entry and checks, then Phase 3. Custom silat clips (langkah, tangkis, kuncian),
   glide and ledge-hang poses are made in Phase 3 against the combat data.

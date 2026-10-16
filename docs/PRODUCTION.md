@@ -98,6 +98,8 @@ Izaf's PC already runs Blender 5.2.2 LTS with the official Blender Lab MCP add-o
 | L3 | Register Blender in Claude Code | Project `.mcp.json`: server `blender`, type stdio, command `uv`, args `--directory C:\dev\tools\blender_mcp\mcp run blender-mcp` (absolute paths, `--directory` before `run`) | After a restart, `claude mcp list` shows blender connected while Blender is open |
 | L4 | Chrome DevTools MCP (console, performance traces, memory, CPU throttling, device emulation) | `claude mcp add chrome-devtools --scope project -- npx chrome-devtools-mcp@latest` | `claude mcp list` shows chrome-devtools connected |
 
+On this PC (2026-10-17): the clone is at `D:\dev\tools\blender_mcp`, not `C:\dev\tools\blender_mcp`, because C: is nearly full (DECISIONS D-008), and L3 uses that path. L4 is registered as `cmd /c npx -y chrome-devtools-mcp@latest` plus `--userDataDir` on D:, `--chromeArg=--enable-unsafe-webgpu`, `--no-usage-statistics` and `--workspace=D:\dev\hikayat-kelip`, because native Windows needs the `cmd /c` wrapper for npx (D-006). Both servers pass an MCP handshake from the `.mcp.json` command, and the blender server reaches the running add-on on port 9876. `claude mcp list` shows them as pending approval until the folder is opened and trusted in Claude Code.
+
 **Live tool rules**
 
 - Live Blender is for previewing, inspecting and viewport screenshots. The source of truth stays the bpy scripts in `/tools/blender`: every asset that ships must rebuild headless with `npm run assets`. Never ship anything that exists only in a live scene.

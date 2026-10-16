@@ -21,7 +21,8 @@
         "--chromeArg=--enable-unsafe-webgpu",
         "--no-usage-statistics",
         "--workspace=D:\\dev\\hikayat-kelip"
-      ]
+      ],
+      "env": {}
     }
   }
 }
