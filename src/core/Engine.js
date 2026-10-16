@@ -366,6 +366,46 @@ export class Engine {
           vy: engine.traversal.velocity.y,
         }),
         errors: () => log.entries.filter((e) => e.level !== 'info').map((e) => `${e.level}: ${e.message}`),
+        /**
+         * Loads manifest entries with the real AssetLoader (KTX2 + Meshopt on this renderer), summarises what came
+         * back, then releases everything. Test hook only (`?test=1`).
+         * @param {string[]} keys manifest keys, e.g. `kits/kampung_kit`
+         */
+        loadAssets: async (keys) => {
+          const { AssetLoader } = await import('./AssetLoader.js');
+          const manifest = data('generated/assets').assets;
+          const loader = new AssetLoader({
+            renderer: engine.renderer.three,
+            basisPath: `/vendor/three-${__THREE_VERSION__}/basis/`,
+          });
+          const entries = keys.map((key) => manifest[key]);
+          const loaded = await loader.loadAll(entries);
+          const summary = {};
+          keys.forEach((key, index) => {
+            const gltf = loaded.get(entries[index].url);
+            const textures = new Set();
+            let meshes = 0;
+            let triangles = 0;
+            gltf.scene.traverse((object) => {
+              if (!object.isMesh) return;
+              meshes++;
+              const geometry = object.geometry;
+              triangles += (geometry.index ? geometry.index.count : geometry.attributes.position.count) / 3;
+              for (const material of [object.material].flat()) {
+                for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
+              }
+            });
+            summary[key] = {
+              meshes,
+              triangles: Math.round(triangles),
+              textures: textures.size,
+              compressed: [...textures].filter((t) => t.isCompressedTexture).length,
+              clips: gltf.animations.length,
+            };
+          });
+          loader.dispose();
+          return summary;
+        },
       }),
     });
   }

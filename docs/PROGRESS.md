@@ -50,7 +50,7 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - Open for Izaf: proposal C-1 (CULTURE.md §5): call Tok Belang *harimau penjaga* instead of *harimau keramat*.
 - Not done: Vercel preview (no push yet, D-011).
 
-### Phase 1 — Foundation (built 2026-10-16; DevTools MCP checks and Vercel preview pending)
+### Phase 1 — Foundation (built 2026-10-16; DevTools MCP checks done 2026-10-17; Vercel preview pending)
 - **Built:** Vite 8 + ESLint 10 flat config + Prettier; folder layout with READMEs for systems not built yet;
   `vercel.json` (wasm/glb/ktx2/ogg types, immutable caching for hashed assets, security headers); `.env.example`;
   GitHub Actions CI (lint, format check, unit tests, build on pull requests).
@@ -79,8 +79,34 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   (unit-tested); press feedback 90 ms via transform/opacity; keyboard, gamepad and touch start the title; contrast
   parchment/ink ≈ 16:1; reduced motion stops drift and loaders; icons one set, `aria-hidden`, labelled buttons in BM/EN;
   tokens only (touch.css fixed); safe areas respected. Debug overlay is a developer tool (exempt from styling rules).
+- **DevTools MCP checks (2026-10-17, chrome-devtools-mcp 1.11.0, production build via `npm run preview`, WebGPU):**
+  console: no errors or warnings (only the Console Ninja VS Code extension's own log); 4× CPU throttle while sprinting
+  and jumping: 92.6 FPS avg, p95 11.0 ms, max 11.4 ms, no frame over 33 ms (display-limited); performance trace of 4.7 s
+  of play: main thread 12 % busy, p99 task 0.9 ms, frame gap p95 10.4 ms, the only task over 50 ms is the profiler's
+  own start-up (`CpuProfiler::StartProfiling`); trace in `test-results/phase2-sandbox-trace.json.gz`. 10-minute
+  memory soak with scripted play (sprint, turns, jumps every 1.2 s): JS heap post-GC low 18.1 MB in the first two
+  minutes and 14.6 MB in the last two (peaks 23.8 → 20.3 MB), geometry/texture counts constant (6 / 23), FPS ≥ 91.4,
+  no logged errors — no leak.
 - **Known limitations:** the sandbox stands in for the prologue until Phase 3; Low-preset anti-aliasing to be judged
   on the iPhone; no audio content yet (graph and unlock only).
+
+### Phase 2 — Asset and audio pipeline (in progress; human characters wait on Izaf's OK for the base-character pack)
+- **Pipeline:** `npm run assets` runs Blender jobs headless (`tools/assets.config.json`), optimises with gltf-transform
+  (dedup, prune, weld, resample, KTX2 ETC1S/UASTC, Meshopt) or gltfpack (animation), content-hashes into
+  `public/assets/<group>/`, writes `src/data/generated/assets.json`, and builds the sound banks (`tools/audio`). All jobs
+  are byte-stable across rebuilds (verified twice per job after fixing a `hash()` seed). Shared kit code in
+  `tools/blender/lib/kit.py`; live preview helpers in `tools/blender/live/hk_preview.py`.
+- **Built:** Kampung kit (30 pieces incl. prologue flood pieces, 40 colliders, 6.4 k tris); Tok Belang v4 (10.5 k / 3.8 k
+  LOD1, 26-bone quadruped rig, baked coat); Kelip and the shadow wisp (`_SWAY` attribute for TSL motion); 74 animation
+  clips in three shared packs on the universal rig (max compression error 0.106°); slice props (tongkat, wau bulan,
+  hikayat, torn page, Pelita Air, peti, lore scroll); 8 sound banks / 49 sounds / 876 KB (Kenney CC0 + original synthesis).
+- **Reviewed live** in Izaf's Blender over the MCP and fixed (thatch orientation, weave, trees, grain, stall, net, Tok
+  Belang anatomy and face, Kelip, wisp, wau triangulation).
+- **Verified:** lint, format, 74 unit tests (manifest hashes and sizes, clip names and rig bones, tiger skeleton and
+  budget, `_SWAY`, kit colliders, prop hooks, Ogg headers and loop lengths, CC0-only audio, synthesis determinism);
+  Chrome decodes every sound bank with exact loop lengths.
+- **Not done:** human characters (Bayu, young Wan, Adi, Mak Som, villagers, cursed brawler) — the CC0 Universal Base
+  Characters pack is downloaded but unopened until Izaf confirms; Vercel preview (no push yet).
 
 ## Setup checklist status
 
@@ -95,8 +121,8 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 | S7 | Git identity + defaults (init.defaultBranch main, core.longpaths true) | Done |
 | S8 | gh auth login, git init, first commit, push to Izaffsd/Hikayat-Kelip (made private) | Local commits done; push deferred by Izaf |
 | S9 | ui-ux-pro-max skill (project scope, `.claude/skills/ui-ux-pro-max`, MIT) | Done |
-| S10 | Live tools: uv, blender_mcp clone + venv, `.mcp.json` (blender, chrome-devtools) | Done; connection check after restart |
-| S11 | VS Code restart, verify versions and MCP connections | Pending (needs Izaf) |
+| S10 | Live tools: uv, blender_mcp clone + venv, `.mcp.json` (blender, chrome-devtools) | Done; both connected 2026-10-17 (absolute paths, D-025) |
+| S11 | VS Code restart, verify versions and MCP connections | Done 2026-10-17 |
 | S12 | Vercel import of the repo (framework preset Vite) | Pending (needs Izaf, after first push) |
 | S13 | Installed versions recorded here | Done (below) |
 
@@ -114,7 +140,7 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 | KTX-Software | 4.4.2 | Khronos GitHub installer, SHA-256 + Authenticode checked |
 | uv | 0.13.1 | winget `astral-sh.uv` |
 | Blender MCP server | blender-mcp 1.0.2 at commit dbbf836 (2026-09-29), Python 3.13.16 venv | `D:\dev\tools\blender_mcp` |
-| chrome-devtools-mcp | latest via npx (1.11.0 today) | `.mcp.json` |
+| chrome-devtools-mcp | 1.11.0 | `npm install --prefix D:\dev\tools\chrome-devtools-mcp` (D-025) |
 | ui-ux-pro-max skill | skills CLI 1.7.2, lock hash 7ac62d93 | `.claude/skills/ui-ux-pro-max` |
 
 Project npm packages (exact pins in `package.json`): three 0.186.1, @dimforge/rapier3d-compat 0.21.0, vite 8.3.4,
