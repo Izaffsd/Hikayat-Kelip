@@ -9,7 +9,19 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - VS Code restart: deferred until the MCP tools are first needed (end of Phase 1). Izaf then opens
   `D:\dev\hikayat-kelip` in VS Code with Blender running; verify tool versions and the `blender` and
   `chrome-devtools` MCP connections. Until then, shell commands refresh PATH from the registry.
-- Next: Phase 0 (TECHNICAL.md, ASSETS.md, CULTURE.md), then Phase 1.
+- Phase 0 done (see log below). Next: Phase 1 — Foundation.
+
+## Phase log
+
+### Phase 0 — Read and plan (done 2026-10-16)
+- Built: `docs/TECHNICAL.md` (architecture, data formats, streaming, renderer, controller, combat, camera, AI,
+  competitive validation), `docs/ASSETS.md` (every asset, source, method, budget, priority), `docs/CULTURE.md`
+  (references, sensitivity rules, originality, review checklist); decisions D-013 … D-017.
+- Verified: Blender 5.2.2 runs headless; ui-ux-pro-max skill installed; three r186 APIs used in the plan checked in
+  `node_modules` (WebGPURenderer `forceWebGL`, `RenderPipeline`, TSL display nodes, compute on the WebGL2 backend via
+  transform feedback, `renderer.info.render.drawCalls`).
+- Open for Izaf: proposal C-1 (CULTURE.md §5): call Tok Belang *harimau penjaga* instead of *harimau keramat*.
+- Not done: Vercel preview (no push yet, D-011).
 
 ## Setup checklist status
 
