@@ -19,37 +19,38 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import bpy  # noqa: E402
-from mathutils import Vector  # noqa: E402
+from mathutils import Euler, Vector  # noqa: E402
 
 from lib import hk  # noqa: E402
 
 # Joints: name -> (position, visible radius). x right, y back (tail side), z up.
+# Tiger posture: the shoulder blades are the highest point; the head is carried below them on a thick neck.
 J = {
-    "hips": ((0.0, 0.70, 1.06), 0.30),
-    "spine1": ((0.0, 0.32, 1.10), 0.32),
-    "spine2": ((0.0, -0.08, 1.14), 0.35),
-    "chest": ((0.0, -0.46, 1.14), 0.38),
-    "neck": ((0.0, -0.80, 1.30), 0.27),
-    "head": ((0.0, -1.06, 1.44), 0.26),
-    "muzzle": ((0.0, -1.36, 1.34), 0.17),
-    "tail1": ((0.0, 0.98, 1.06), 0.09),
-    "tail2": ((0.0, 1.28, 0.96), 0.085),
-    "tail3": ((0.0, 1.58, 0.84), 0.08),
-    "tail4": ((0.0, 1.86, 0.76), 0.072),
-    "tail5": ((0.0, 2.12, 0.76), 0.065),
-    "tail6": ((0.0, 2.36, 0.86), 0.06),
+    "hips": ((0.0, 0.62, 1.20), 0.29),
+    "spine1": ((0.0, 0.25, 1.18), 0.30),
+    "spine2": ((0.0, -0.12, 1.21), 0.33),
+    "chest": ((0.0, -0.48, 1.21), 0.37),
+    "neck": ((0.0, -0.80, 1.24), 0.27),
+    "head": ((0.0, -1.04, 1.28), 0.23),
+    "muzzle": ((0.0, -1.27, 1.17), 0.1),
+    "tail1": ((0.0, 0.95, 1.16), 0.10),
+    "tail2": ((0.0, 1.25, 0.95), 0.09),
+    "tail3": ((0.0, 1.52, 0.78), 0.085),
+    "tail4": ((0.0, 1.79, 0.62), 0.08),
+    "tail5": ((0.0, 2.05, 0.55), 0.075),
+    "tail6": ((0.0, 2.31, 0.63), 0.07),
 }
 for side, sx in (("l", -1), ("r", 1)):
     J.update(
         {
-            f"shoulder_{side}": ((sx * 0.22, -0.50, 0.98), 0.19),
-            f"elbow_{side}": ((sx * 0.23, -0.44, 0.60), 0.13),
-            f"wrist_{side}": ((sx * 0.22, -0.50, 0.16), 0.09),
-            f"paw_{side}": ((sx * 0.22, -0.63, 0.075), 0.11),
-            f"hip_{side}": ((sx * 0.22, 0.66, 0.98), 0.21),
-            f"knee_{side}": ((sx * 0.23, 0.40, 0.58), 0.13),
-            f"hock_{side}": ((sx * 0.22, 0.80, 0.28), 0.075),
-            f"hindpaw_{side}": ((sx * 0.22, 0.66, 0.075), 0.10),
+            f"shoulder_{side}": ((sx * 0.24, -0.50, 1.06), 0.21),
+            f"elbow_{side}": ((sx * 0.25, -0.40, 0.66), 0.15),
+            f"wrist_{side}": ((sx * 0.24, -0.50, 0.17), 0.11),
+            f"paw_{side}": ((sx * 0.24, -0.64, 0.08), 0.14),
+            f"hip_{side}": ((sx * 0.22, 0.62, 1.08), 0.24),
+            f"knee_{side}": ((sx * 0.24, 0.36, 0.66), 0.15),
+            f"hock_{side}": ((sx * 0.23, 0.78, 0.30), 0.085),
+            f"hindpaw_{side}": ((sx * 0.23, 0.66, 0.08), 0.12),
         }
     )
 
@@ -67,21 +68,37 @@ for s in ("l", "r"):
         (f"hock_{s}", f"hindpaw_{s}"),
     ]
 
-# Extra head/face masses: (centre, half-sizes x/y/z).
+# Extra masses: (centre, half-sizes x/y/z[, rotation XYZ in degrees]). Mirrored parts are listed for x > 0 and
+# duplicated for the left side by SYMMETRIC.
 HEAD_PARTS = [
-    ((0.0, -1.04, 1.46), (0.27, 0.25, 0.23)),  # skull
-    ((0.0, -1.33, 1.33), (0.17, 0.15, 0.12)),  # muzzle
-    ((0.0, -1.47, 1.37), (0.08, 0.05, 0.055)),  # nose bridge tip
-    ((0.0, -1.27, 1.21), (0.13, 0.13, 0.07)),  # chin / jaw
-    ((-0.2, -1.04, 1.30), (0.15, 0.12, 0.14)),  # cheek ruff L
-    ((0.2, -1.04, 1.30), (0.15, 0.12, 0.14)),  # cheek ruff R
-    ((-0.19, -0.98, 1.70), (0.08, 0.045, 0.09)),  # ear L
-    ((0.19, -0.98, 1.70), (0.08, 0.045, 0.09)),  # ear R
-    ((0.0, -0.5, 1.02), (0.3, 0.3, 0.34)),  # chest depth (keel)
-    ((0.0, 0.35, 1.0), (0.26, 0.3, 0.24)),  # belly
+    ((0.0, -1.02, 1.34), (0.24, 0.23, 0.19)),  # skull: broad, flat-topped
+    ((0.0, -1.19, 1.42), (0.19, 0.07, 0.06)),  # brow ridge over the eyes
+    ((0.0, -1.29, 1.18), (0.13, 0.11, 0.095)),  # muzzle, broad and short
+    ((0.0, -1.33, 1.27), (0.06, 0.10, 0.05)),  # nose bridge
+    ((0.0, -1.42, 1.22), (0.045, 0.03, 0.032)),  # nose tip
+    ((0.0, -1.29, 1.05), (0.09, 0.09, 0.05)),  # chin / lower jaw
+    ((0.0, -0.52, 1.06), (0.30, 0.30, 0.28)),  # chest depth (keel)
+    ((0.0, 0.22, 1.1), (0.25, 0.32, 0.16)),  # belly, tucked up toward the hips
 ]
-EYES = [(-0.115, -1.255, 1.5), (0.115, -1.255, 1.5)]
-NOSE = (0.0, -1.5, 1.37)
+SYMMETRIC = [
+    ((0.065, -1.37, 1.14), (0.068, 0.058, 0.055)),  # whisker pad
+    ((0.22, -1.06, 1.18), (0.14, 0.14, 0.15)),  # cheek ruff
+    ((0.25, -0.98, 1.06), (0.11, 0.12, 0.12), (0, -20, 0)),  # lower ruff flaring out
+    ((0.19, -0.95, 1.54), (0.085, 0.04, 0.09), (0, 18, 0)),  # rounded ear, top tilted outward
+    ((0.17, -0.50, 1.43), (0.12, 0.20, 0.16)),  # shoulder blade (withers)
+    ((0.25, -0.44, 0.50), (0.12, 0.13, 0.20)),  # forearm muscle
+    ((0.20, 0.55, 0.95), (0.17, 0.28, 0.30)),  # haunch
+]
+for centre, size, *rotation in list(SYMMETRIC):
+    mirrored_rotation = [(r[0], -r[1], -r[2]) for r in rotation]
+    HEAD_PARTS.append(((centre[0], centre[1], centre[2]), size, *rotation))
+    HEAD_PARTS.append(((-centre[0], centre[1], centre[2]), size, *mirrored_rotation))
+# Front-view anchors (x, z) for face features; ray casts put them on the real surface (place_face_features).
+EYE_XZ = [(-0.11, 1.35), (0.11, 1.35)]
+NOSE_XZ = (0.0, 1.22)
+EYES = [(-0.11, -1.26, 1.31), (0.11, -1.26, 1.31)]
+NOSE = (0.0, -1.5, 1.18)
+STROKES: list[tuple] = []  # (points on the surface, width, rgba), filled by place_face_features
 # Metaball surface sits inside the element radius; this factor maps visible radius -> element radius.
 MB_SCALE = 1.45
 
@@ -115,11 +132,13 @@ def sculpt_body(coll) -> bpy.types.Object:
             el.co = pos
             el.radius = radius * MB_SCALE
         el.stiffness = 2.0
-    for centre, size in HEAD_PARTS:
+    for centre, size, *rotation in HEAD_PARTS:
         el = mb.elements.new(type="ELLIPSOID")
         el.co = centre
         el.radius = 1.0
         el.size_x, el.size_y, el.size_z = (s * MB_SCALE for s in size)
+        if rotation:
+            el.rotation = Euler([math.radians(a) for a in rotation[0]]).to_quaternion()
         el.stiffness = 2.0
     bpy.context.view_layer.objects.active = obj
     bpy.ops.object.select_all(action="DESELECT")
@@ -191,7 +210,7 @@ def build_armature(coll) -> bpy.types.Object:
         bone.roll = 0.0
     for side, sx in (("l", -1), ("r", 1)):
         ear = edit.new(f"ear_{side}")
-        ear.head, ear.tail = Vector((sx * 0.17, -0.98, 1.6)), Vector((sx * 0.2, -0.98, 1.8))
+        ear.head, ear.tail = Vector((sx * 0.17, -0.95, 1.42)), Vector((sx * 0.21, -0.95, 1.6))
     for name, (_head, _tail, parent) in BONES.items():
         edit[name].parent = edit[parent]
     for side in ("l", "r"):
@@ -221,8 +240,42 @@ def bind_unweighted(body, rig) -> int:
     return fixed
 
 
+COAT = (0.95, 0.94, 0.9, 1.0)
+DORSAL = (0.84, 0.83, 0.81, 1.0)
+STRIPE = (0.1, 0.09, 0.1, 1.0)
+SCAR = (0.82, 0.66, 0.64, 1.0)
+EYE_RIM = (0.06, 0.06, 0.08, 1.0)
+IRIS = (0.52, 0.74, 0.88, 1.0)  # ice blue, as real white tigers have (DECISIONS D-026)
+NOSE_PINK = (0.74, 0.5, 0.5, 1.0)
+
+# Face strokes in front view (x, z), ray-cast onto the surface along +Y: (points, width, colour).
+FRONT_STROKES = []
+for sx in (-1, 1):
+    FRONT_STROKES += [
+        ([(sx * 0.045, 1.41), (sx * 0.11, 1.44), (sx * 0.175, 1.41)], 0.012, STRIPE),  # brow arch
+        ([(0.0, 1.13), (sx * 0.045, 1.115), (sx * 0.09, 1.13)], 0.008, STRIPE),  # mouth corner
+        ([(sx * 0.07, 1.33), (sx * 0.055, 1.29), (sx * 0.05, 1.25)], 0.008, STRIPE),  # tear line
+    ]
+FRONT_STROKES += [
+    ([(-0.05, z), (0.0, z + 0.012), (0.05, z)], 0.01, STRIPE) for z in (1.46, 1.49, 1.52)  # forehead bars
+]
+FRONT_STROKES += [([(0.0, 1.18), (0.0, 1.13)], 0.008, STRIPE)]  # philtrum
+FRONT_STROKES += [  # three old claw scars across the left brow and cheek ("silent and scarred")
+    ([(-0.03 - k * 0.04, 1.51), (-0.10 - k * 0.04, 1.40), (-0.15 - k * 0.04, 1.27)], 0.009, SCAR) for k in range(3)
+]
+# Side strokes in side view (y, z), ray-cast from each flank toward the centre line.
+SIDE_STROKES = [
+    ([(-1.22, 1.28), (-1.12, 1.24), (-1.0, 1.25)], 0.012, STRIPE),  # cheek stripes
+    ([(-1.2, 1.2), (-1.1, 1.16), (-0.98, 1.16)], 0.012, STRIPE),
+    ([(-1.16, 1.12), (-1.06, 1.08), (-0.95, 1.09)], 0.011, STRIPE),
+]
+SHOULDER_SCAR = ([(-0.70, 1.39), (-0.55, 1.24), (-0.40, 1.07)], 0.011, SCAR)  # right flank only
+
+
 def fur_material() -> bpy.types.Material:
-    """Procedural tiger fur in object space: stripes, belly fade, leg rings, tail tip, ear backs, eyes, nose, scars."""
+    """Procedural white-tiger coat in object space, baked to the atlas: tapered, slanted, broken and forked body
+    stripes; white chest and belly; stripes only on the outer side of the legs; tail rings and a dark tip; dark ear
+    backs with white spots; ray-cast face strokes (brows, cheeks, forehead, mouth), scars, almond eyes and nose."""
     mat = bpy.data.materials.new("tokbelang_fur_proc")
     mat.use_nodes = True
     nt = mat.node_tree
@@ -236,182 +289,176 @@ def fur_material() -> bpy.types.Material:
     pos = coord.outputs["Object"]
     sep = nodes.new("ShaderNodeSeparateXYZ")
     links.new(pos, sep.inputs["Vector"])
+    X, Y, Z = sep.outputs["X"], sep.outputs["Y"], sep.outputs["Z"]
 
-    def math_node(op, a=None, b=None, va=None, vb=None):
+    def m(op, a=None, b=None, va=None, vb=None, c=None, vc=None):
         node = nodes.new("ShaderNodeMath")
         node.operation = op
-        if a is not None:
-            links.new(a, node.inputs[0])
-        elif va is not None:
-            node.inputs[0].default_value = va
-        if b is not None:
-            links.new(b, node.inputs[1])
-        elif vb is not None:
-            node.inputs[1].default_value = vb
+        for index, (link, value) in enumerate(((a, va), (b, vb), (c, vc))):
+            if link is not None:
+                links.new(link, node.inputs[index])
+            elif value is not None:
+                node.inputs[index].default_value = value
         return node.outputs["Value"]
 
-    noise = nodes.new("ShaderNodeTexNoise")
-    noise.inputs["Scale"].default_value = 4.0
-    noise.inputs["Detail"].default_value = 4.0
-    links.new(pos, noise.inputs["Vector"])
-    fine = nodes.new("ShaderNodeTexNoise")
-    fine.inputs["Scale"].default_value = 18.0
-    links.new(pos, fine.inputs["Vector"])
+    def noise(scale, detail=2.0):
+        node = nodes.new("ShaderNodeTexNoise")
+        node.inputs["Scale"].default_value = scale
+        node.inputs["Detail"].default_value = detail
+        links.new(pos, node.inputs["Vector"])
+        return node.outputs["Fac"]
 
-    # Body stripes: bands across the spine (along y), warped by noise; thickness varies with fine noise.
-    warp = nodes.new("ShaderNodeMath")
-    warp.operation = "MULTIPLY_ADD"
-    links.new(noise.outputs["Fac"], warp.inputs[0])
-    warp.inputs[1].default_value = 4.2
-    links.new(math_node("MULTIPLY", sep.outputs["Y"], vb=21.0), warp.inputs[2])
-    band = math_node("SINE", warp.outputs["Value"])
-    thickness = math_node("MULTIPLY_ADD", fine.outputs["Fac"], None, vb=0.3)
-    thick_node = thickness.node
-    thick_node.inputs[2].default_value = 0.55
-    body_dark = math_node("GREATER_THAN", band, thickness)
-    # Break stripes into irregular segments with gaps, as on a real coat.
-    gaps = nodes.new("ShaderNodeTexNoise")
-    gaps.inputs["Scale"].default_value = 7.0
-    links.new(pos, gaps.inputs["Vector"])
-    body_dark = math_node("MULTIPLY", body_dark, math_node("GREATER_THAN", gaps.outputs["Fac"], vb=0.36))
+    def mix(colour_in, factor, rgba):
+        node = nodes.new("ShaderNodeMix")
+        node.data_type = "RGBA"
+        links.new(factor, node.inputs["Factor"])
+        if isinstance(colour_in, tuple):
+            node.inputs["A"].default_value = colour_in
+        else:
+            links.new(colour_in, node.inputs["A"])
+        node.inputs["B"].default_value = rgba
+        return node.outputs["Result"]
 
-    # Stripes fade toward the belly: keep only above z ≈ 0.92 on the torso.
-    belly_keep = math_node("GREATER_THAN", sep.outputs["Z"], vb=0.92)
-    body_dark = math_node("MULTIPLY", body_dark, belly_keep)
-    # The face (in front of the ears) keeps a white muzzle: body stripes stop at y = −0.98.
-    body_dark = math_node("MULTIPLY", body_dark, math_node("GREATER_THAN", sep.outputs["Y"], vb=-0.98))
-
-    # Leg rings below the body (|x| > 0.12 and z < 0.75).
-    leg_zone = math_node(
-        "MULTIPLY",
-        math_node("GREATER_THAN", math_node("ABSOLUTE", sep.outputs["X"]), vb=0.12),
-        math_node("LESS_THAN", sep.outputs["Z"], vb=0.75),
-    )
-    leg_warp = nodes.new("ShaderNodeMath")
-    leg_warp.operation = "MULTIPLY_ADD"
-    links.new(noise.outputs["Fac"], leg_warp.inputs[0])
-    leg_warp.inputs[1].default_value = 2.5
-    links.new(math_node("MULTIPLY", sep.outputs["Z"], vb=23.0), leg_warp.inputs[2])
-    leg_dark = math_node("MULTIPLY", math_node("GREATER_THAN", math_node("SINE", leg_warp.outputs["Value"]), vb=0.62), leg_zone)
-    leg_dark = math_node("MULTIPLY", leg_dark, math_node("GREATER_THAN", sep.outputs["Z"], vb=0.2))
-
-    # Tail rings and dark tip (tail is y > 1.0).
-    tail_zone = math_node("GREATER_THAN", sep.outputs["Y"], vb=1.0)
-    tail_tip = math_node("GREATER_THAN", sep.outputs["Y"], vb=2.2)
-
-    dark = math_node("MAXIMUM", math_node("MULTIPLY", body_dark, math_node("SUBTRACT", None, leg_zone, va=1.0)), leg_dark)
-    dark = math_node("MAXIMUM", dark, tail_tip)
-    dark = math_node("MAXIMUM", dark, math_node("MULTIPLY", body_dark, tail_zone))
-
-    # Ear backs dark (z > 1.66, y > −1.0).
-    ear_back = math_node("MULTIPLY", math_node("GREATER_THAN", sep.outputs["Z"], vb=1.66), math_node("GREATER_THAN", sep.outputs["Y"], vb=-1.0))
-    dark = math_node("MAXIMUM", dark, ear_back)
-
-    # Face markings: thin vertical lines on the forehead, swept stripes on the cheeks.
-    forehead_zone = math_node(
-        "MULTIPLY",
-        math_node("MULTIPLY", math_node("GREATER_THAN", sep.outputs["Z"], vb=1.55), math_node("LESS_THAN", sep.outputs["Y"], vb=-0.98)),
-        math_node("LESS_THAN", math_node("ABSOLUTE", sep.outputs["X"]), vb=0.16),
-    )
-    fore_warp = nodes.new("ShaderNodeMath")
-    fore_warp.operation = "MULTIPLY_ADD"
-    links.new(noise.outputs["Fac"], fore_warp.inputs[0])
-    fore_warp.inputs[1].default_value = 1.5
-    links.new(math_node("MULTIPLY", sep.outputs["X"], vb=60.0), fore_warp.inputs[2])
-    forehead = math_node("MULTIPLY", math_node("GREATER_THAN", math_node("SINE", fore_warp.outputs["Value"]), vb=0.7), forehead_zone)
-    cheek_zone = math_node(
-        "MULTIPLY",
-        math_node("MULTIPLY", math_node("GREATER_THAN", math_node("ABSOLUTE", sep.outputs["X"]), vb=0.17), math_node("LESS_THAN", sep.outputs["Y"], vb=-0.9)),
-        math_node("GREATER_THAN", sep.outputs["Z"], vb=1.18),
-    )
-    cheek_warp = nodes.new("ShaderNodeMath")
-    cheek_warp.operation = "MULTIPLY_ADD"
-    links.new(sep.outputs["Y"], cheek_warp.inputs[0])
-    cheek_warp.inputs[1].default_value = 18.0
-    links.new(math_node("MULTIPLY", sep.outputs["Z"], vb=34.0), cheek_warp.inputs[2])
-    cheeks = math_node("MULTIPLY", math_node("GREATER_THAN", math_node("SINE", cheek_warp.outputs["Value"]), vb=0.72), cheek_zone)
-    dark = math_node("MAXIMUM", dark, math_node("MAXIMUM", forehead, cheeks))
-
-    base = nodes.new("ShaderNodeMix")
-    base.data_type = "RGBA"
-    links.new(dark, base.inputs["Factor"])
-    base.inputs["A"].default_value = (0.94, 0.93, 0.9, 1.0)
-    base.inputs["B"].default_value = (0.12, 0.13, 0.17, 1.0)
-    colour = base.outputs["Result"]
-
-    def spot(colour_in, centre, radius, rgba):
-        delta = nodes.new("ShaderNodeVectorMath")
-        delta.operation = "DISTANCE"
-        links.new(pos, delta.inputs[0])
-        delta.inputs[1].default_value = centre
-        inside = math_node("LESS_THAN", delta.outputs["Value"], vb=radius)
-        mix = nodes.new("ShaderNodeMix")
-        mix.data_type = "RGBA"
-        links.new(inside, mix.inputs["Factor"])
-        links.new(colour_in, mix.inputs["A"])
-        mix.inputs["B"].default_value = rgba
-        return mix.outputs["Result"]
-
-    for eye in EYES:
-        colour = spot(colour, eye, 0.058, (0.08, 0.08, 0.1, 1.0))  # dark eye rim
-        colour = spot(colour, eye, 0.045, (0.91, 0.58, 0.18, 1.0))  # amber iris
-        colour = spot(colour, eye, 0.016, (0.04, 0.04, 0.05, 1.0))  # pupil
-    colour = spot(colour, NOSE, 0.055, (0.55, 0.38, 0.38, 1.0))
-
-    # Scars: three pale slashes over the left eye, one across the right shoulder.
-    for start, end in (
-        ((-0.06, -1.24, 1.66), (-0.16, -1.33, 1.42)),
-        ((-0.11, -1.2, 1.67), (-0.21, -1.29, 1.43)),
-        ((-0.16, -1.16, 1.66), (-0.25, -1.24, 1.44)),
-        ((0.3, -0.75, 1.32), (0.36, -0.35, 0.98)),
-    ):
-        a, b = Vector(start), Vector(end)
-        ab = b - a
+    def ellipse(centre, radii):
+        """1 inside the ellipsoid around `centre` with half-axes `radii`."""
         rel = nodes.new("ShaderNodeVectorMath")
         rel.operation = "SUBTRACT"
         links.new(pos, rel.inputs[0])
-        rel.inputs[1].default_value = a
-        proj = nodes.new("ShaderNodeVectorMath")
-        proj.operation = "DOT_PRODUCT"
-        links.new(rel.outputs["Vector"], proj.inputs[0])
-        proj.inputs[1].default_value = ab.normalized()
-        clamp = nodes.new("ShaderNodeClamp")
-        clamp.inputs["Max"].default_value = ab.length
-        links.new(proj.outputs["Value"], clamp.inputs["Value"])
-        nearest = nodes.new("ShaderNodeVectorMath")
-        nearest.operation = "SCALE"
-        nearest.inputs[0].default_value = ab.normalized()
-        links.new(clamp.outputs["Result"], nearest.inputs["Scale"])
-        diff = nodes.new("ShaderNodeVectorMath")
-        diff.operation = "DISTANCE"
-        links.new(rel.outputs["Vector"], diff.inputs[0])
-        links.new(nearest.outputs["Vector"], diff.inputs[1])
-        scar = math_node("LESS_THAN", diff.outputs["Value"], vb=0.011)
-        mix = nodes.new("ShaderNodeMix")
-        mix.data_type = "RGBA"
-        links.new(scar, mix.inputs["Factor"])
-        links.new(colour, mix.inputs["A"])
-        mix.inputs["B"].default_value = (0.8, 0.64, 0.62, 1.0)
-        colour = mix.outputs["Result"]
+        rel.inputs[1].default_value = centre
+        scaled = nodes.new("ShaderNodeVectorMath")
+        scaled.operation = "MULTIPLY"
+        links.new(rel.outputs["Vector"], scaled.inputs[0])
+        scaled.inputs[1].default_value = tuple(1.0 / r for r in radii)
+        length = nodes.new("ShaderNodeVectorMath")
+        length.operation = "LENGTH"
+        links.new(scaled.outputs["Vector"], length.inputs[0])
+        return m("LESS_THAN", length.outputs["Value"], vb=1.0)
+
+    def stroke(points, width):
+        """1 within `width` of the polyline through `points` (3D, on the surface)."""
+        best = None
+        for a, b in zip(points, points[1:]):
+            a, b = Vector(a), Vector(b)
+            ab = b - a
+            if ab.length < 1e-5:
+                continue
+            rel = nodes.new("ShaderNodeVectorMath")
+            rel.operation = "SUBTRACT"
+            links.new(pos, rel.inputs[0])
+            rel.inputs[1].default_value = a
+            dot = nodes.new("ShaderNodeVectorMath")
+            dot.operation = "DOT_PRODUCT"
+            links.new(rel.outputs["Vector"], dot.inputs[0])
+            dot.inputs[1].default_value = ab.normalized()
+            clamp = nodes.new("ShaderNodeClamp")
+            clamp.inputs["Max"].default_value = ab.length
+            links.new(dot.outputs["Value"], clamp.inputs["Value"])
+            nearest = nodes.new("ShaderNodeVectorMath")
+            nearest.operation = "SCALE"
+            nearest.inputs[0].default_value = ab.normalized()
+            links.new(clamp.outputs["Result"], nearest.inputs["Scale"])
+            dist = nodes.new("ShaderNodeVectorMath")
+            dist.operation = "DISTANCE"
+            links.new(rel.outputs["Vector"], dist.inputs[0])
+            links.new(nearest.outputs["Vector"], dist.inputs[1])
+            d = dist.outputs["Value"]
+            best = d if best is None else m("MINIMUM", best, d)
+        return m("LESS_THAN", best, vb=width) if best is not None else None
+
+    warp = noise(3.2, 4.0)
+    fine = noise(16.0)
+    gaps = noise(6.0)
+    # Body stripes: lines of constant 18y + 7z slant back toward the belly; thicker over the spine, thinner low on
+    # the flanks; broken into segments by noise, with thin forked companions near the back.
+    phase = m("MULTIPLY_ADD", warp, vb=3.5, c=m("MULTIPLY_ADD", Y, vb=18.0, c=m("MULTIPLY", Z, vb=7.0)))
+    height = m("MULTIPLY", m("SUBTRACT", Z, vb=0.90), vb=1.0 / 0.65)
+    height = m("MINIMUM", m("MAXIMUM", height, vb=0.0), vb=1.0)
+    threshold = m("MULTIPLY_ADD", height, va=None, vb=-0.42, c=None, vc=0.92)
+    band = m("SINE", phase)
+    body = m("GREATER_THAN", band, threshold)
+    body = m("MULTIPLY", body, m("GREATER_THAN", gaps, vb=0.33))
+    fork = m("GREATER_THAN", m("SINE", m("MULTIPLY_ADD", fine, vb=1.8, c=m("ADD", phase, vb=1.7))), vb=0.965)
+    fork = m("MULTIPLY", fork, m("GREATER_THAN", Z, vb=1.27))
+    body = m("MAXIMUM", body, fork)
+    body = m("MULTIPLY", body, m("GREATER_THAN", Z, vb=0.92))  # white belly
+    body = m("MULTIPLY", body, m("GREATER_THAN", Y, vb=-0.95))  # face has its own markings
+    chest_front = m("MULTIPLY", m("LESS_THAN", Y, vb=-0.72), m("LESS_THAN", Z, vb=1.14))
+    body = m("MULTIPLY", body, m("SUBTRACT", va=1.0, b=chest_front))  # white chest and throat
+    leg = m("MULTIPLY", m("GREATER_THAN", m("ABSOLUTE", X), vb=0.12), m("LESS_THAN", Z, vb=0.80))
+    body = m("MULTIPLY", body, m("SUBTRACT", va=1.0, b=leg))
+    # Legs: a few stripes on the outer half only (|x| beyond the leg's centre line), none on the paws.
+    rings = m("GREATER_THAN", m("SINE", m("MULTIPLY_ADD", warp, vb=2.5, c=m("MULTIPLY", Z, vb=20.0))), vb=0.72)
+    outer = m("GREATER_THAN", m("ABSOLUTE", X), vb=0.25)
+    legs = m("MULTIPLY", m("MULTIPLY", rings, leg), m("MULTIPLY", outer, m("GREATER_THAN", Z, vb=0.24)))
+    # Tail rings and a dark tip.
+    tail = m("GREATER_THAN", Y, vb=0.98)
+    tail_rings = m("MULTIPLY", tail, m("GREATER_THAN", m("SINE", m("MULTIPLY_ADD", warp, vb=1.5, c=m("MULTIPLY", Y, vb=14.0))), vb=0.35))
+    tail_tip = m("GREATER_THAN", Y, vb=2.18)
+    dark = m("MAXIMUM", m("MAXIMUM", body, legs), m("MAXIMUM", tail_rings, tail_tip))
+    # Ear backs dark, each with a white spot.
+    ear_back = m("MULTIPLY", m("GREATER_THAN", Z, vb=1.47), m("GREATER_THAN", Y, vb=-0.965))
+    ear_back = m("MULTIPLY", ear_back, m("GREATER_THAN", m("ABSOLUTE", X), vb=0.1))
+    dark = m("MAXIMUM", dark, ear_back)
+
+    colour = mix(COAT, m("MULTIPLY", m("GREATER_THAN", Z, vb=1.39), vb=0.3), DORSAL)  # soft dorsal shading
+    colour = mix(colour, dark, STRIPE)
+    for sx in (-1, 1):
+        colour = mix(colour, ellipse((sx * 0.2, -0.925, 1.56), (0.035, 0.03, 0.035)), COAT)
+    for points, width, rgba in STROKES:
+        mask = stroke(points, width)
+        if mask is not None:
+            colour = mix(colour, mask, rgba)
+    for eye in EYES:
+        colour = mix(colour, ellipse(eye, (0.06, 0.04, 0.034)), EYE_RIM)
+        colour = mix(colour, ellipse(eye, (0.045, 0.034, 0.026)), IRIS)
+        colour = mix(colour, ellipse(eye, (0.014, 0.034, 0.016)), (0.03, 0.03, 0.04, 1.0))
+    # Broad inverted-triangle nose: a wide upper lobe over a narrower lower one, outlined dark.
+    nose = Vector(NOSE)
+    upper, lower = nose + Vector((0, -0.004, 0.012)), nose + Vector((0, -0.006, -0.014))
+    outline = m("MAXIMUM", ellipse(tuple(upper), (0.07, 0.05, 0.034)), ellipse(tuple(lower), (0.036, 0.05, 0.03)))
+    fill = m("MAXIMUM", ellipse(tuple(upper), (0.06, 0.05, 0.026)), ellipse(tuple(lower), (0.028, 0.05, 0.023)))
+    colour = mix(colour, outline, STRIPE)
+    colour = mix(colour, fill, NOSE_PINK)
     links.new(colour, emit.inputs["Color"])
     return mat
 
 
+def _surface(body, origin, direction):
+    ok, location, _normal, _index = body.ray_cast(Vector(origin), Vector(direction))
+    return tuple(location) if ok else None
+
+
 def place_face_features(body) -> None:
-    """Finds the real face surface by casting rays from the front, so eyes and nose are painted on the skin."""
+    """Ray-casts eyes, nose and every face/flank stroke onto the real surface so markings follow the sculpt."""
     global EYES, NOSE
     eyes = []
-    for sx in (-1, 1):
-        ok, location, _normal, _index = body.ray_cast(Vector((sx * 0.115, -3.0, 1.52)), Vector((0, 1, 0)))
-        if not ok:
+    for x, z in EYE_XZ:
+        hit = _surface(body, (x, -3.0, z), (0, 1, 0))
+        if hit is None:
             raise RuntimeError("Eye ray missed the head")
-        eyes.append(tuple(location + Vector((0, 0.01, 0))))
-    ok, location, _normal, _index = body.ray_cast(Vector((0.0, -3.0, 1.38)), Vector((0, 1, 0)))
-    if not ok:
+        eyes.append(tuple(Vector(hit) + Vector((0, 0.01, 0))))
+    nose = _surface(body, (NOSE_XZ[0], -3.0, NOSE_XZ[1]), (0, 1, 0))
+    if nose is None:
         raise RuntimeError("Nose ray missed the muzzle")
-    EYES = eyes
-    NOSE = tuple(location)
-    print(f"HK_FACE eyes={[tuple(round(c, 3) for c in e) for e in EYES]} nose={tuple(round(c, 3) for c in NOSE)}")
+    EYES, NOSE = eyes, nose
+    STROKES.clear()
+    missed = 0
+    for points, width, rgba in FRONT_STROKES:
+        hits = [_surface(body, (x, -3.0, z), (0, 1, 0)) for x, z in points]
+        missed += hits.count(None)
+        hits = [h for h in hits if h]
+        if len(hits) >= 2:
+            STROKES.append((hits, width, rgba))
+    for sx in (-1, 1):
+        flank = SIDE_STROKES + ([SHOULDER_SCAR] if sx > 0 else [])
+        for points, width, rgba in flank:
+            hits = [_surface(body, (sx * 3.0, y, z), (-sx, 0, 0)) for y, z in points]
+            missed += hits.count(None)
+            hits = [h for h in hits if h]
+            if len(hits) >= 2:
+                STROKES.append((hits, width, rgba))
+    print(f"HK_FACE eyes={[tuple(round(c, 3) for c in e) for e in EYES]} nose={tuple(round(c, 3) for c in NOSE)} "
+          f"strokes={len(STROKES)} missed_points={missed}")
 
 
 def bake_fur(body, size: int = 1024) -> None:
