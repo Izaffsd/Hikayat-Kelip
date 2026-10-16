@@ -7,6 +7,11 @@
       "outputs": [{ "file": "kampung_kit.glb", "group": "kits", "textureSize": 512 }]
     },
     {
+      "id": "tokbelang",
+      "script": "tools/blender/characters/tokbelang.py",
+      "outputs": [{ "file": "tokbelang.glb", "group": "characters", "textureSize": 1024 }]
+    },
+    {
       "id": "anim_packs",
       "script": "tools/blender/anim/build_clips.py",
       "outputs": [

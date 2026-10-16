@@ -59,6 +59,37 @@ describe('published assets', () => {
     }
   });
 
+  it('Tok Belang loads as a skinned mesh with the procedural-animation skeleton', async () => {
+    const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
+      'meshopt.decoder': NodeMeshoptDecoder,
+    });
+    await NodeMeshoptDecoder.ready;
+    const document = await io.readBinary(new Uint8Array(file('characters/tokbelang')));
+    const root = document.getRoot();
+    const skin = root.listSkins()[0];
+    expect(skin).toBeDefined();
+    const joints = skin.listJoints().map((joint) => joint.getName());
+    for (const bone of [
+      'hips',
+      'chest',
+      'head',
+      'tail5',
+      'upperarm_l',
+      'paw_r',
+      'thigh_l',
+      'hindpaw_r',
+      'ear_l',
+    ]) {
+      expect(joints).toContain(bone);
+    }
+    const triangles = root
+      .listMeshes()
+      .filter((mesh) => mesh.getName() === 'tokbelang')
+      .flatMap((mesh) => mesh.listPrimitives())
+      .reduce((sum, prim) => sum + prim.getIndices().getCount() / 3, 0);
+    expect(triangles).toBeLessThanOrEqual(12000);
+  });
+
   it('the Kampung kit keeps one node per piece plus collider empties', async () => {
     await NodeMeshoptDecoder.ready;
     const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
