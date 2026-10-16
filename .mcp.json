@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "blender": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["--directory", "D:\\dev\\tools\\blender_mcp\\mcp", "run", "blender-mcp"],
+      "env": {
+        "UV_CACHE_DIR": "D:\\dev\\.cache\\uv",
+        "UV_PYTHON_INSTALL_DIR": "D:\\dev\\.cache\\uv-python"
+      }
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--userDataDir=D:\\dev\\.cache\\chrome-devtools-mcp",
+        "--chromeArg=--enable-unsafe-webgpu",
+        "--no-usage-statistics",
+        "--workspace=D:\\dev\\hikayat-kelip"
+      ]
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm *)",
+      "PowerShell(npx *)",
+      "PowerShell(node *)",
+      "PowerShell(git *)",
+      "PowerShell(gh *)",
+      "PowerShell(ffmpeg *)",
+      "PowerShell(ffprobe *)",
+      "PowerShell(ktx *)",
+      "PowerShell(uv *)",
+      "PowerShell(vercel *)",
+      "PowerShell(blender *)",
+      "PowerShell(& \"C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe\" *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(node *)",
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(ffmpeg *)",
+      "Bash(ffprobe *)",
+      "Bash(ktx *)",
+      "Bash(uv *)",
+      "Bash(vercel *)",
+      "Bash(blender *)",
+      "Bash(\"/c/Program Files/Blender Foundation/Blender 5.2/blender.exe\" *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)"
+    ]
+  }
+}

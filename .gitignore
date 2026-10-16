@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.vercel/
+
+# Secrets: never commit. .env.example is the only env file in git.
+.env
+.env.*
+!.env.example
+
+# Blender working files and raw art (only scripts and optimized outputs are committed)
+/art/
+*.blend
+*.blend1
+*.blend@
+
+# Raw audio libraries and sample packs (only rendered OGG mixes ship)
+/raw/
+/tools/audio/raw/
+/tools/audio/cache/
+
+# Intermediate asset build output (optimized results land in public/assets)
+/build-cache/
+
+# Test output
+/test-results/
+/playwright-report/
+/blob-report/
+/screenshots/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS and editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/*
+!.vscode/extensions.json
+
+# Claude Code personal overrides
+.claude/settings.local.json
