@@ -30,8 +30,11 @@ HALF_SPAN = 2.0
 RIDGE = EAVE + HALF_SPAN * math.tan(PITCH)
 
 MATERIALS: dict[str, bpy.types.Material] = {}
-UV_SCALE = {"planks": 1.0, "beam": 1.0, "thatch": 1.6, "weave": 1.0, "bark": 1.5, "clay": 0.6, "cloth": 1.0}
-NO_AO = {"leaves", "frond", "flame", "glow", "net", "cloth"}
+UV_SCALE = {"planks": 1.0, "beam": 1.0, "thatch": 1.6, "weave": 1.0, "bark": 1.5, "clay": 0.6, "cloth": 1.0, "net": 0.5}
+NO_AO = {"leaves", "frond", "flame", "glow", "net", "cloth", "cloth_b", "cloth_c"}
+SLOPE_MAPPED = {"thatch"}  # textures with a slope direction get slope-aligned UVs
+GRAIN = {"beam": "u", "bark": "v"}  # grain/fibre direction in the texture, mapped along each element's long axis
+GRAIN_BOXES = {"beam"}  # box elements that carry grain (plank infill keeps world-aligned planks)
 
 
 def build_materials() -> None:
@@ -41,13 +44,19 @@ def build_materials() -> None:
         "kampung_beam", hk.image_from_array("kampung_beam", textures.wood_planks(seed=12, planks=2, base="#5a3f2b", aged=0.5))
     )
     MATERIALS["thatch"] = hk.textured_material("kampung_thatch", hk.image_from_array("kampung_thatch", textures.thatch(seed=21)))
-    MATERIALS["weave"] = hk.textured_material("kampung_weave", hk.image_from_array("kampung_weave", textures.weave(seed=31)))
+    MATERIALS["weave"] = hk.textured_material(
+        "kampung_weave", hk.image_from_array("kampung_weave", textures.weave(seed=31, strips=16, twill=True))
+    )
     MATERIALS["bark"] = hk.textured_material("kampung_bark", hk.image_from_array("kampung_bark", textures.bark(seed=41)))
     MATERIALS["clay"] = hk.textured_material(
         "kampung_clay", hk.image_from_array("kampung_clay", textures.wood_planks(seed=71, planks=1, base="#9a5a3a", aged=0.2))
     )
+    # Berembang leaves: small, olive, in round clumps (no square card silhouettes).
+    leaf_pixels = textures.leaf_cluster(
+        seed=51, count=420, leaf=(0.026, 0.05), disc=0.44, greens=("#4d7a3a", "#5f8a44", "#3c6532", "#7a9a52")
+    )
     leaves = hk.textured_material(
-        "kampung_leaves", hk.image_from_array("kampung_leaves", textures.leaf_cluster(seed=51), alpha=True), alpha_clip=True
+        "kampung_leaves", hk.image_from_array("kampung_leaves", leaf_pixels, alpha=True), alpha_clip=True
     )
     frond = hk.textured_material(
         "kampung_frond", hk.image_from_array("kampung_frond", textures.palm_frond(seed=61), alpha=True), alpha_clip=True
@@ -58,30 +67,92 @@ def build_materials() -> None:
     MATERIALS["frond"] = frond
     MATERIALS["flame"] = hk.emissive_material("kampung_flame", (1.0, 0.62, 0.25), 6.0)
     MATERIALS["glow"] = hk.emissive_material("kampung_kelip_glow", (0.85, 0.94, 0.42), 4.0)
-    cloth = hk.textured_material("kampung_cloth", hk.image_from_array("kampung_cloth", textures.weave(seed=81, strips=6, base="#2e4a8a")))
-    cloth.use_backface_culling = False
-    MATERIALS["cloth"] = cloth
+    # Everyday checked kain in three colours (woven checks, no specific motif).
+    for key, seed, colour in (("cloth", 81, "#2e4a8a"), ("cloth_b", 82, "#8a2e3a"), ("cloth_c", 83, "#b58a2e")):
+        cloth = hk.textured_material(
+            f"kampung_{key}", hk.image_from_array(f"kampung_{key}", textures.weave(seed=seed, strips=6, base=colour))
+        )
+        cloth.use_backface_culling = False
+        MATERIALS[key] = cloth
+    net = hk.textured_material(
+        "kampung_net", hk.image_from_array("kampung_net", textures.net(seed=33), alpha=True), alpha_clip=True
+    )
+    net.use_backface_culling = False
+    MATERIALS["net"] = net
 
 
 class Piece:
-    """Accumulates geometry for one kit piece in a bmesh, with per-face materials."""
+    """Accumulates geometry for one kit piece in a bmesh, with per-face materials. Beams, poles and branches remember
+    their long axis so `finish` can run the wood grain or bark fibres along them (GRAIN)."""
 
     def __init__(self, name: str):
         self.name = name
         self.bm = bmesh.new()
         self.mats: list[str] = []
         self.colliders: list[tuple] = []
+        self.elements: list[tuple] = []  # (axis, origin, is_cylinder)
+        self.bm.faces.layers.int.new("grain")  # before any geometry: adding a layer later invalidates face refs
 
     def mi(self, material: str) -> int:
         if material not in self.mats:
             self.mats.append(material)
         return self.mats.index(material)
 
+    def _tag(self, faces, axis, origin, cylinder):
+        if axis.length < 1e-6:
+            return
+        layer = self.bm.faces.layers.int.get("grain")
+        if layer is None:
+            return
+        self.elements.append((axis.normalized(), Vector(origin), cylinder))
+        for face in faces:
+            face[layer] = len(self.elements)
+
     def box(self, material, center, size, rotation=None):
-        return hk.add_box(self.bm, center, size, rotation, self.mi(material))
+        faces = hk.add_box(self.bm, center, size, rotation, self.mi(material))
+        if material in GRAIN_BOXES:
+            longest = max(range(3), key=lambda i: size[i])
+            axis = Vector([1.0 if i == longest else 0.0 for i in range(3)])
+            if rotation is not None:
+                axis = Euler(rotation).to_matrix() @ axis
+            self._tag(faces, axis, center, False)
+        return faces
 
     def cyl(self, material, start, end, radius, segments=8, radius_end=None, cap=True):
-        return hk.add_cylinder(self.bm, start, end, radius, segments, radius_end, self.mi(material), cap)
+        faces = hk.add_cylinder(self.bm, start, end, radius, segments, radius_end, self.mi(material), cap)
+        if material in GRAIN:
+            self._tag(faces, Vector(end) - Vector(start), start, True)
+        return faces
+
+    def _grain_uv(self, face, material, uv, scale) -> bool:
+        """Maps a tagged face with U (or V, per GRAIN) along its element's axis; False when not applicable."""
+        layer = self.bm.faces.layers.int.get("grain")
+        if layer is None or not face[layer] or material not in GRAIN:
+            return False
+        axis, origin, cylinder = self.elements[face[layer] - 1]
+        side = face.normal.cross(axis)
+        if side.length < 0.3:  # end caps
+            return False
+        coords = []
+        if cylinder:
+            ref = Vector((0, 0, 1)) if abs(axis.z) < 0.9 else Vector((1, 0, 0))
+            a = axis.cross(ref).normalized()
+            b = axis.cross(a)
+            angles = []
+            for loop in face.loops:
+                r = loop.vert.co - origin
+                along = r.dot(axis)
+                radial = r - axis * along
+                angles.append((along, math.atan2(radial.dot(b), radial.dot(a)), radial.length))
+            if max(t[1] for t in angles) - min(t[1] for t in angles) > math.pi:
+                angles = [(s, t + math.tau if t < 0 else t, r) for s, t, r in angles]
+            coords = [(s, t * max(r, 0.02)) for s, t, r in angles]
+        else:
+            side.normalize()
+            coords = [(loop.vert.co.dot(axis), loop.vert.co.dot(side)) for loop in face.loops]
+        for loop, (along, across) in zip(face.loops, coords):
+            loop[uv].uv = (along / scale, across / scale) if GRAIN[material] == "u" else (across / scale, along / scale)
+        return True
 
     def collider(self, center, half, rotation=None):
         self.colliders.append((center, half, rotation))
@@ -91,9 +162,21 @@ class Piece:
             hk.jitter(self.bm, jitter, seed)
         uv = self.bm.loops.layers.uv.new("UVMap")
         for face in self.bm.faces:
-            scale = UV_SCALE.get(self.mats[face.material_index], 1.0)
+            material = self.mats[face.material_index]
+            scale = UV_SCALE.get(material, 1.0)
             n = face.normal
             ax, ay, az = abs(n.x), abs(n.y), abs(n.z)
+            if self._grain_uv(face, material, uv, scale):
+                continue
+            if material in SLOPE_MAPPED and 0.05 < az < 0.995:
+                # U along the slope's contour (parallel to the eave), V up the slope: thatch rows follow the eave.
+                down = Vector((0, 0, -1)) - n * (-n.z)
+                down.normalize()
+                along = n.cross(down)
+                for loop in face.loops:
+                    co = loop.vert.co
+                    loop[uv].uv = (co.dot(along) / scale, -co.dot(down) / scale)
+                continue
             for loop in face.loops:
                 co = loop.vert.co
                 if az >= ax and az >= ay:
@@ -294,51 +377,87 @@ def bollard(coll):
 # ------------------------------------------------------------------------------------------------- nature
 
 
-def berembang(coll, name, seed, height, spread, cards):
-    """Mangrove apple tree: bending trunk, upward branches, crossed leaf cards (child object, alpha-cut)."""
+def _card(piece, uv, mat, center, size, normal, spin):
+    """One square alpha card centred on `center`, facing `normal`, turned `spin` radians about it."""
+    n = normal.normalized()
+    ref = Vector((0, 0, 1)) if abs(n.z) < 0.9 else Vector((1, 0, 0))
+    a = n.cross(ref).normalized()
+    b = n.cross(a).normalized()
+    ca, sa = math.cos(spin), math.sin(spin)
+    a, b = a * ca + b * sa, b * ca - a * sa
+    h = size / 2
+    corners = (center - a * h - b * h, center + a * h - b * h, center + a * h + b * h, center - a * h + b * h)
+    face = piece.bm.faces.new([piece.bm.verts.new(tuple(c)) for c in corners])
+    face.material_index = mat
+    for loop, (u, v) in zip(face.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
+        loop[uv].uv = (u, v)
+
+
+def berembang(coll, name, seed, height, spread, branches):
+    """Mangrove apple (berembang, Sonneratia): leaning trunk with buttress roots, curved branches whose tips droop,
+    and a broad, irregular crown of small-leaf clumps (child object; alpha cards at random tilts, never crossed
+    at right angles, so the crown has no boxy silhouette)."""
     rng = random.Random(seed)
     trunk = Piece(name)
     leaves = Piece(name + "__leaves")
-    lean = Vector((rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4), 0))
-    points = [Vector((0, 0, -0.3))]
-    for i in range(1, 6):
-        t = i / 5
-        points.append(Vector((lean.x * t * t, lean.y * t * t, height * 0.62 * t)))
-    for i in range(len(points) - 1):
-        r0 = 0.32 * (1 - i / 6)
-        trunk.cyl("bark", tuple(points[i]), tuple(points[i + 1]), r0, segments=9, radius_end=0.32 * (1 - (i + 1) / 6))
+    lean = Vector((rng.uniform(-0.5, 0.5), rng.uniform(-0.5, 0.5), 0))
+    trunk_h = height * 0.55
+
+    def trunk_at(t):
+        return Vector((lean.x * t * t, lean.y * t * t, -0.3 + (trunk_h + 0.3) * t))
+
+    for i in range(5):
+        trunk.cyl("bark", tuple(trunk_at(i / 5)), tuple(trunk_at((i + 1) / 5)), 0.34 * (1 - i / 6.5), segments=9,
+                  radius_end=0.34 * (1 - (i + 1) / 6.5))
     # Flared buttress at the base.
     for k in range(5):
         a = k / 5 * math.tau + rng.uniform(-0.2, 0.2)
         foot = Vector((math.cos(a) * 0.9, math.sin(a) * 0.9, -0.3))
         trunk.cyl("bark", tuple(foot), (math.cos(a) * 0.15, math.sin(a) * 0.15, 0.9), 0.07, segments=5, radius_end=0.12)
-    top = points[-1]
-    tips = []
-    for b in range(6):
-        a = b / 6 * math.tau + rng.uniform(-0.3, 0.3)
-        start = top + Vector((0, 0, -rng.uniform(0.0, 1.2)))
-        end = start + Vector((math.cos(a) * spread * rng.uniform(0.6, 1.0), math.sin(a) * spread * rng.uniform(0.6, 1.0), height * rng.uniform(0.22, 0.38)))
-        trunk.cyl("bark", tuple(start), tuple(end), 0.11, segments=6, radius_end=0.04)
-        tips.append(end)
-    tips.append(top + Vector((0, 0, height * 0.35)))
-    trunk.collider((0, 0, height * 0.3), (0.3, 0.3, height * 0.3))
-    # Leaf cards: two crossed quads per cluster, sized 1.4–2.2 m.
+    anchors = []
+    for b in range(branches):
+        a = b / branches * math.tau + rng.uniform(-0.25, 0.25)
+        start = trunk_at(rng.uniform(0.6, 0.97))
+        out = Vector((math.cos(a), math.sin(a), 0))
+        reach = spread * rng.uniform(0.75, 1.1)
+        rise = height * rng.uniform(0.24, 0.38)
+        ctrl = start + out * reach * 0.45 + Vector((0, 0, rise))
+        end = start + out * reach + Vector((0, 0, rise * 0.5))
+
+        def along(t, start=start, ctrl=ctrl, end=end):
+            return start * (1 - t) ** 2 + ctrl * (2 * t * (1 - t)) + end * (t * t)
+
+        segments = 4
+        for s in range(segments):
+            t0, t1 = s / segments, (s + 1) / segments
+            trunk.cyl("bark", tuple(along(t0)), tuple(along(t1)), 0.13 * (1 - 0.7 * t0), segments=6,
+                      radius_end=0.13 * (1 - 0.7 * t1))
+            if s >= 1:
+                anchors.append(along(t1))
+        for _ in range(2):
+            base = along(rng.uniform(0.5, 0.85))
+            side = Vector((-out.y, out.x, 0)) * rng.choice((-1, 1))
+            tip = base + side * rng.uniform(0.6, 1.1) + out * rng.uniform(0.2, 0.5) - Vector((0, 0, rng.uniform(0.2, 0.6)))
+            trunk.cyl("bark", tuple(base), tuple(tip), 0.04, segments=4, radius_end=0.015)
+            anchors.append(tip)
+        anchors.append(end - Vector((0, 0, rng.uniform(0.3, 0.6))))  # drooping crown edge
+    crown_top = trunk_at(1.0) + Vector((rng.uniform(-0.3, 0.3), rng.uniform(-0.3, 0.3), height * 0.16))
+    trunk.cyl("bark", tuple(trunk_at(1.0)), tuple(crown_top), 0.16, segments=6, radius_end=0.06)
+    anchors.append(crown_top)
+    trunk.collider((lean.x / 2, lean.y / 2, trunk_h / 2), (0.3, 0.3, trunk_h / 2 + 0.3))
+    # One clump of three randomly tilted cards per anchor, facing mostly outward from the crown's centre.
     uv = leaves.bm.loops.layers.uv.new("UVMap")
     mat = leaves.mi("leaves")
-    for n in range(cards):
-        anchor = tips[n % len(tips)] + Vector((rng.uniform(-0.8, 0.8), rng.uniform(-0.8, 0.8), rng.uniform(-0.4, 0.6)))
-        size = rng.uniform(1.4, 2.2)
-        yaw = rng.uniform(0, math.pi)
-        for k in range(2):
-            ang = yaw + k * math.pi / 2
-            dx = Vector((math.cos(ang), math.sin(ang), 0)) * size / 2
-            dz = Vector((0, 0, size / 2))
-            corners = [anchor - dx - dz, anchor + dx - dz, anchor + dx + dz, anchor - dx + dz]
-            verts = [leaves.bm.verts.new(tuple(c)) for c in corners]
-            face = leaves.bm.faces.new(verts)
-            face.material_index = mat
-            for loop, (u, v) in zip(face.loops, ((0, 0), (1, 0), (1, 1), (0, 1))):
-                loop[uv].uv = (u, v)
+    centre = trunk_at(1.0) + Vector((0, 0, height * 0.18))
+    for anchor in anchors:
+        c = anchor + Vector((rng.uniform(-0.35, 0.35), rng.uniform(-0.35, 0.35), rng.uniform(-0.25, 0.3)))
+        outward = c - centre
+        outward.z *= 0.6
+        outward = outward.normalized() if outward.length > 1e-3 else Vector((0, 0, 1))
+        size = rng.uniform(1.1, 1.7)
+        for _ in range(3):
+            jitter = Vector((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.4, 1.0)))
+            _card(leaves, uv, mat, c, size * rng.uniform(0.8, 1.05), outward * 0.7 + jitter * 0.6, rng.uniform(0, math.pi))
     obj = trunk.finish(coll, jitter=0.02, seed=seed, hk_tags="tree", hk_lod="tree")
     leaves_obj = hk.object_from_bmesh(name + "__leaves", leaves.bm, coll)
     leaves_obj.data.materials.append(MATERIALS["leaves"])
@@ -472,12 +591,29 @@ def tempayan(coll):
 
 
 def net_rack(coll):
+    """A-frame drying rack with a fishing net (jala) folded over the top pole, sagging between the frames."""
     p = Piece("net_rack")
     for x in (-1.3, 1.3):
         for s in (-1, 1):
             p.cyl("beam", (x, s * 0.5, 0), (x, 0, 1.9), 0.04, segments=5)
     p.cyl("beam", (-1.5, 0, 1.85), (1.5, 0, 1.85), 0.04, segments=5)
-    p.box("cloth", (0, 0.02, 1.35), (2.4, 0.01, 1.0))
+    mat = p.mi("net")
+    cols, rows = 12, 6
+    for side in (-1, 1):
+        grid = []
+        for j in range(rows + 1):
+            t = j / rows  # 0 at the pole, 1 at the hem
+            row = []
+            for i in range(cols + 1):
+                s = i / cols
+                drop = (0.95 + (0.12 if side > 0 else 0.0)) * t + math.sin(math.pi * s) * 0.12 * t
+                y = side * (0.05 + 0.12 * math.sin(math.pi * t * 0.8))
+                row.append(p.bm.verts.new((-1.2 + 2.4 * s, y, 1.87 - drop)))
+            grid.append(row)
+        for j in range(rows):
+            for i in range(cols):
+                face = p.bm.faces.new((grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]))
+                face.material_index = mat
     p.collider((0, 0, 0.95), (1.4, 0.4, 0.95))
     return p.finish(coll, jitter=0.01, seed=15, hk_tags="prop")
 
@@ -489,9 +625,9 @@ def washing_line(coll):
     pts = [Vector((-2.0 + 4.0 * t, 0, 1.92 - math.sin(math.pi * t) * 0.18)) for t in (i / 6 for i in range(7))]
     for a, b in zip(pts, pts[1:]):
         p.cyl("beam", tuple(a), tuple(b), 0.008, segments=4)
-    for x, w, h in ((-1.1, 0.7, 0.9), (0.0, 0.9, 1.0), (1.05, 0.6, 0.7)):
+    for x, w, h, cloth in ((-1.1, 0.7, 0.9, "cloth"), (0.0, 0.9, 1.0, "cloth_b"), (1.05, 0.6, 0.7, "cloth_c")):
         top = 1.92 - math.sin(math.pi * (x + 2) / 4) * 0.18
-        p.box("cloth", (x, 0, top - h / 2), (w, 0.01, h))
+        p.box(cloth, (x, 0, top - h / 2), (w, 0.01, h))
     p.collider((-2.0, 0, 1.0), (0.05, 0.05, 1.0))
     p.collider((2.0, 0, 1.0), (0.05, 0.05, 1.0))
     return p.finish(coll, jitter=0.004, seed=17, hk_tags="prop")
@@ -520,12 +656,16 @@ def stall_gerai(coll):
             p.box("beam", (x, y, h / 2), (0.1, 0.1, h))
     p.box("planks", (0, -0.75, 0.95), (2.4, 0.5, 0.06))
     p.box("weave", (0, -0.95, 0.47), (2.4, 0.04, 0.92))
-    p.box("thatch", (0, 0, 2.2), (2.8, 2.0, 0.1), Euler((math.radians(9), 0, 0)))
+    # Lean-to attap roof resting on the post tops: 2.3 m at the front, 2.0 m at the back.
+    slope = -math.atan2(0.3, 1.5)
+    p.box("thatch", (0, 0, 2.15 + 0.04 / math.cos(slope)), (2.8, 2.0, 0.08), Euler((slope, 0, 0)))
+    p.box("beam", (0, -0.75, 2.27), (2.5, 0.1, 0.06))
+    p.box("beam", (0, 0.75, 1.97), (2.5, 0.1, 0.06))
     p.box("planks", (0, 0.72, 1.3), (2.2, 0.3, 0.04))
     for x in (-0.7, -0.2, 0.35, 0.8):
         p.cyl("clay", (x, 0.72, 1.32), (x, 0.72, 1.52), 0.07, segments=8, radius_end=0.05)
     p.collider((0, -0.75, 0.5), (1.2, 0.3, 0.5))
-    p.collider((0, 0, 2.2), (1.4, 1.0, 0.06), (math.radians(9), 0, 0))
+    p.collider((0, 0, 2.19), (1.4, 1.0, 0.06), (slope, 0, 0))
     return p.finish(coll, jitter=0.008, seed=21, hk_tags="stall")
 
 
@@ -638,7 +778,7 @@ BUILDERS = [
     floor_3x3,
     lambda c: wall(c, "wall_planks", "planks"),
     lambda c: wall(c, "wall_weave", "weave"),
-    lambda c: wall(c, "wall_window", "weave", (-0.5, 0.5, 0.9, 1.8)),
+    lambda c: wall(c, "wall_window", "weave", (-0.55, 0.55, 0.5, 1.85)),
     lambda c: wall(c, "wall_door", "planks", (-0.45, 0.45, 0.0, 1.95)),
     roof_gable_3,
     gable_end,
@@ -647,8 +787,8 @@ BUILDERS = [
     jetty_3,
     boardwalk_3,
     bollard,
-    lambda c: berembang(c, "berembang_a", 301, 7.5, 2.4, 16),
-    lambda c: berembang(c, "berembang_b", 302, 6.0, 2.0, 12),
+    lambda c: berembang(c, "berembang_a", 301, 7.5, 2.6, 8),
+    lambda c: berembang(c, "berembang_b", 302, 6.0, 2.2, 7),
     pneumatophores,
     nipah_clump,
     sampan,

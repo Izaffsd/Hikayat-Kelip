@@ -97,44 +97,87 @@ def wood_planks(size: int = 512, seed: int = 11, planks: int = 5, base: str = "#
     return _rgba(_painterly(rgb, seed))
 
 
-def thatch(size: int = 512, seed: int = 21, rows: int = 7, base: str = "#a58a5c") -> np.ndarray:
-    """Overlapping rows of dried nipah blades (atap), darker where each row is overlapped."""
+def _row_blades(size: int, rng: np.random.Generator, count: int, max_tip: float):
+    """One attap row across U: per column, the blade id, its tone and how far its pointed tip hangs below the row."""
+    edges = np.sort(rng.random(count))
+    u = (np.arange(size) + 0.5) / size
+    index = np.searchsorted(edges, u) % count
+    start = edges[index - 1]
+    end = np.where(index == 0, edges[0] + 1.0, edges[index])
+    start = np.where(index == 0, edges[-1], start)
+    span = (end - start) % 1.0
+    pos = ((u - start) % 1.0) / np.maximum(span, 1e-6)  # 0..1 across the blade
+    tip = (0.05 + rng.random(count) * max_tip)[index]
+    # Mostly blunt, slightly rounded cut ends: a ragged fringe rather than pointed shingles.
+    pointed = tip * (0.7 + 0.3 * np.sqrt(np.clip(1 - np.abs(pos * 2 - 1), 0, 1)))
+    tone = (0.88 + rng.random(count) * 0.2)[index]
+    grey = (rng.random(count) < 0.06)[index]
+    seam = np.clip(1 - np.minimum(pos, 1 - pos) * 10, 0, 1)
+    return pointed, tone, grey, seam
+
+
+def thatch(size: int = 512, seed: int = 21, rows: int = 8, base: str = "#9c7d54") -> np.ndarray:
+    """Nipah attap: overlapping rows of dried blades. V runs up the slope; each row's ragged, pointed tips hang
+    over the row below and shade it, so rows read as layered thatch rather than tiles (tileable in U and V)."""
     rng = np.random.default_rng(seed)
-    v = np.arange(size)[:, None] / size * rows
-    row = np.floor(v).astype(int)
-    within = v - np.floor(v)
-    u = np.arange(size)[None, :] / size
-    blades = np.zeros((size, size), dtype=np.float32)
-    for r in range(rows):
-        count = 46 + int(rng.integers(0, 10))
-        centers = rng.random(count)
-        widths = 0.004 + rng.random(count) * 0.006
-        shades = 0.75 + rng.random(count) * 0.5
-        d = np.abs(((u - centers[:, None, None]) + 0.5) % 1.0 - 0.5)
-        stripe = np.clip(1 - d / widths[:, None, None], 0, 1) * shades[:, None, None]
-        row_value = stripe.max(axis=0)
-        mask = row == r
-        blades = np.where(mask, row_value, blades)
-    streak = fbm(size, seed, gx=48, gy=4, octaves=3)
+    v = (np.arange(size)[:, None] + 0.5) / size * rows  # row units, up the slope
+    band = np.floor(v).astype(int) % rows
+    within = v - np.floor(v)  # 0 at a row's nominal bottom edge, 1 at the next row's
+    data = [_row_blades(size, rng, 96 + int(rng.integers(0, 24)), 0.22) for _ in range(rows)]
+    u_axis = (np.arange(size) + 0.5) / size
+    # Rows sag and wave a little (whole periods across U, so the texture still tiles).
+    wobble = np.stack([
+        0.07 * np.sin(2 * np.pi * (int(rng.integers(1, 3)) * u_axis + rng.random()))
+        + 0.03 * np.sin(2 * np.pi * (int(rng.integers(3, 6)) * u_axis + rng.random()))
+        for _ in range(rows)
+    ])
+    tips = np.stack([d[0] for d in data]) + 0.1 + wobble  # (rows, size), always > 0
+    tones = np.stack([d[1] for d in data])
+    greys = np.stack([d[2] for d in data])
+    seams = np.stack([d[3] for d in data])
+    above = (band + 1) % rows
+    cols = np.arange(size)[None, :]
+    # Pixel belongs to the row above where that row's tips hang down over this band.
+    hang = 1.0 - within  # distance below the next row's nominal edge
+    covered = hang <= tips[above, cols]
+    layer = np.where(covered, above, band)
+    # Distance from the visible blade's own tip (0 at the tip): exposed tips are light, deeper parts darker.
+    from_tip = np.where(covered, tips[above, cols] - hang, within + tips[band, cols])
+    light = 0.78 + 0.3 * np.clip(1 - from_tip / 0.9, 0, 1)
+    # Shadow cast on a row just under the tips of the row above.
+    gap = np.where(covered, 1.0, hang - tips[above, cols])
+    shadow = np.where(covered, 0.0, np.clip(1 - gap / 0.3, 0, 1) ** 1.5)
+    tone = tones[layer, cols]
+    fibre = fbm(size, seed, gx=128, gy=3, octaves=3)
+    streak = fbm(size, seed + 4, gx=32, gy=2, octaves=2)
     base_rgb = _hex(base)
-    shade = 0.62 + 0.38 * within
-    rgb = base_rgb * (shade * (0.8 + 0.25 * blades) * (0.85 + 0.3 * streak))[..., None]
-    lip = np.clip((within - 0.9) * 10, 0, 1)[..., None]
-    rgb = rgb * (1 - 0.45 * lip)
-    damp = fbm(size, seed + 9, gx=4, octaves=4)[..., None]
-    rgb = rgb * (1 - 0.18 * damp) + np.array([0.18, 0.2, 0.16]) * 0.18 * damp
-    return _rgba(_painterly(rgb, seed, 0.1))
+    grey_rgb = _hex(base) * 0.75 + np.array([0.5, 0.5, 0.48], dtype=np.float32) * 0.25
+    colour = np.where(greys[layer, cols][..., None], grey_rgb, base_rgb)
+    rgb = colour * (tone * light * (0.84 + 0.22 * fibre) * (0.92 + 0.14 * streak))[..., None]
+    rgb = rgb * (1 - 0.55 * shadow[..., None])
+    rgb = rgb * (1 - 0.28 * seams[layer, cols][..., None])
+    tip_edge = np.where(covered, np.clip(1 - from_tip / 0.035, 0, 1), 0.0)
+    rgb = rgb * (1 - 0.25 * tip_edge[..., None])
+    damp = fbm(size, seed + 9, gx=3, octaves=4)[..., None]
+    rgb = rgb * (1 - 0.2 * damp) + np.array([0.16, 0.18, 0.13]) * 0.2 * damp
+    return _rgba(_painterly(rgb, seed, 0.08))
 
 
-def weave(size: int = 512, seed: int = 31, strips: int = 12, base: str = "#c9a86a") -> np.ndarray:
-    """A generic over-under woven bamboo panel (functional weave geometry, no specific motif)."""
+def weave(size: int = 512, seed: int = 31, strips: int = 12, base: str = "#c9a86a", twill: bool = False) -> np.ndarray:
+    """A woven bamboo panel (functional weave geometry, no specific motif). `twill` gives a 2/2 herringbone twill,
+    the diagonal structure of plaited bamboo walls; otherwise a plain over-under weave (cloth)."""
     u = np.arange(size)[None, :] / size * strips
     v = np.arange(size)[:, None] / size * strips
     iu = np.floor(u).astype(int)
     iv = np.floor(v).astype(int)
     fu = u - iu
     fv = v - iv
-    over = ((iu // 2 + iv) % 2 == 0)
+    if twill:
+        # The diagonal reverses every `strips // 2` columns (herringbone); strips must be a multiple of 8 to tile.
+        direction = np.where((iu // (strips // 2)) % 2 == 0, 1, -1)
+        over = ((iu + direction * iv) % 4) < 2
+    else:
+        over = ((iu // 2 + iv) % 2 == 0)
     across = np.where(over, fu, fv)
     shade = 0.72 + 0.28 * np.sin(across * np.pi)
     gap = np.where(over, np.minimum(fv, 1 - fv), np.minimum(fu, 1 - fu))
@@ -149,6 +192,23 @@ def weave(size: int = 512, seed: int = 31, strips: int = 12, base: str = "#c9a86
     age = fbm(size, seed + 17, gx=3, octaves=4)[..., None]
     rgb = rgb * (1 - 0.22 * age)
     return _rgba(_painterly(rgb, seed, 0.06))
+
+
+def net(size: int = 256, seed: int = 33, cells: int = 8, base: str = "#6c5f43") -> np.ndarray:
+    """Alpha-cut diamond fishing net (jala): two diagonal twine sets with darker knots; tiles in U and V."""
+    u = np.arange(size)[None, :] / size
+    v = np.arange(size)[:, None] / size
+    d1 = (u + v) * cells
+    d2 = (u - v) * cells
+    width = 0.07
+    line1 = np.minimum(d1 % 1, 1 - d1 % 1) < width
+    line2 = np.minimum(d2 % 1, 1 - d2 % 1) < width
+    knot = line1 & line2
+    alpha = (line1 | line2).astype(np.float32)
+    fibre = fbm(size, seed, gx=16, octaves=3)
+    rgb = _hex(base) * (0.85 + 0.3 * fibre)[..., None]
+    rgb = np.where(knot[..., None], rgb * 0.7, rgb)
+    return _rgba(rgb.astype(np.float32), alpha)
 
 
 def bark(size: int = 512, seed: int = 41, base: str = "#5e5144", moss: str = "#4c5b34") -> np.ndarray:
@@ -194,20 +254,37 @@ def palm_frond(size: int = 512, seed: int = 61, base: str = "#4f7a3a", tip: str 
     return _rgba(_painterly(rgb, seed, 0.05), alpha)
 
 
-def leaf_cluster(size: int = 512, seed: int = 51, count: int = 140, greens=("#3f6b35", "#56803f", "#2f5530", "#6f8f45")) -> np.ndarray:
-    """Alpha-cut cluster of oval leaves for foliage cards (not tiled)."""
+def leaf_cluster(
+    size: int = 512,
+    seed: int = 51,
+    count: int = 140,
+    greens=("#3f6b35", "#56803f", "#2f5530", "#6f8f45"),
+    leaf: tuple[float, float] = (0.05, 0.1),
+    disc: float | None = None,
+) -> np.ndarray:
+    """Alpha-cut cluster of oval leaves for foliage cards (not tiled). With `disc` (a radius in UV units) leaves fill a
+    round clump that is darker toward its centre, so cards never show square silhouettes."""
     rng = np.random.default_rng(seed)
     yy, xx = np.mgrid[0:size, 0:size].astype(np.float32) / size
     rgb = np.zeros((size, size, 3), dtype=np.float32)
     alpha = np.zeros((size, size), dtype=np.float32)
     palette = np.array([_hex(c) for c in greens])
     for _ in range(count):
-        cx, cy = 0.1 + rng.random() * 0.8, 0.1 + rng.random() * 0.8
-        # Cluster leaves toward the centre so the card silhouette is rounded.
-        cx = 0.5 + (cx - 0.5) * 0.85
-        cy = 0.5 + (cy - 0.5) * 0.85
-        length = 0.05 + rng.random() * 0.05
-        width = length * (0.32 + rng.random() * 0.12)
+        if disc:
+            a = rng.random() * 2 * np.pi
+            # Lobed, irregular rim: the reachable radius varies with the angle, so clumps never read as discs.
+            rim = disc * (0.78 + 0.14 * np.sin(3 * a + seed) + 0.08 * np.sin(5 * a + 2 * seed))
+            r = rim * np.sqrt(rng.random())
+            cx, cy = 0.5 + np.cos(a) * r, 0.5 + np.sin(a) * r
+            depth = 0.72 + 0.36 * (r / disc)
+        else:
+            cx, cy = 0.1 + rng.random() * 0.8, 0.1 + rng.random() * 0.8
+            # Cluster leaves toward the centre so the card silhouette is rounded.
+            cx = 0.5 + (cx - 0.5) * 0.85
+            cy = 0.5 + (cy - 0.5) * 0.85
+            depth = 1.0
+        length = leaf[0] + rng.random() * (leaf[1] - leaf[0])
+        width = length * (0.36 + rng.random() * 0.14)
         angle = rng.random() * np.pi
         dx = xx - cx
         dy = yy - cy
@@ -217,7 +294,7 @@ def leaf_cluster(size: int = 512, seed: int = 51, count: int = 140, greens=("#3f
         inside = lx * lx + ly * ly <= 1.0
         if not inside.any():
             continue
-        colour = palette[rng.integers(0, len(palette))] * (0.8 + rng.random() * 0.4)
+        colour = palette[rng.integers(0, len(palette))] * (0.8 + rng.random() * 0.4) * depth
         vein = np.clip(1 - np.abs(ly) * 6, 0, 1) * 0.12
         light = (0.82 + 0.25 * (1 - (lx + 1) * 0.5)) * (1 + vein)
         rgb[inside] = colour * light[inside][:, None]

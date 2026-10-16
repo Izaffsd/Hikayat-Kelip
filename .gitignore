@@ -30,6 +30,10 @@ dist/
 /blob-report/
 /screenshots/
 
+# Python bytecode (Blender scripts, skill scripts)
+__pycache__/
+*.pyc
+
 # Logs
 *.log
 npm-debug.log*
