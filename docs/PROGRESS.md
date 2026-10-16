@@ -3,11 +3,13 @@
 Resume rule: when Izaf says "continue from PROGRESS.md", start at **Resume point** below.
 
 ## Resume point
-Setup, nearly done (2026-10-16). The project now lives at `D:\dev\hikayat-kelip` (see DECISIONS D-001).
-Waiting on Izaf for: (1) the GitHub sign-in, then the first push to the private repo; (2) the single VS Code
-restart into `D:\dev\hikayat-kelip` with Blender open. After the restart: verify every tool version in a fresh
-process, confirm the `blender` and `chrome-devtools` MCP servers are connected, write the Playwright visual-test
-harness, then start Phase 0 (TECHNICAL.md, ASSETS.md, CULTURE.md).
+Setup done except the items that need Izaf (2026-10-16). The project lives at `D:\dev\hikayat-kelip` (D-001).
+- Push: Izaf said "no need to push yet". Keep committing locally; ask before the first push (make the repo private
+  first, then `gh auth login --web --git-protocol https --scopes workflow`). Vercel previews start after that push.
+- VS Code restart: deferred until the MCP tools are first needed (end of Phase 1). Izaf then opens
+  `D:\dev\hikayat-kelip` in VS Code with Blender running; verify tool versions and the `blender` and
+  `chrome-devtools` MCP connections. Until then, shell commands refresh PATH from the registry.
+- Next: Phase 0 (TECHNICAL.md, ASSETS.md, CULTURE.md), then Phase 1.
 
 ## Setup checklist status
 
@@ -20,7 +22,7 @@ harness, then start Phase 0 (TECHNICAL.md, ASSETS.md, CULTURE.md).
 | S5 | Git, Node.js LTS, GitHub CLI, uv (winget); FFmpeg (Gyan zip, D-009); KTX-Software (Khronos installer, D-004) | Done |
 | S6 | Blender 5.2 and KTX on user PATH | Done (takes effect in new processes) |
 | S7 | Git identity + defaults (init.defaultBranch main, core.longpaths true) | Done |
-| S8 | gh auth login, git init, first commit, push to Izaffsd/Hikayat-Kelip (made private) | git init done; sign-in pending (Izaf) |
+| S8 | gh auth login, git init, first commit, push to Izaffsd/Hikayat-Kelip (made private) | Local commits done; push deferred by Izaf |
 | S9 | ui-ux-pro-max skill (project scope, `.claude/skills/ui-ux-pro-max`, MIT) | Done |
 | S10 | Live tools: uv, blender_mcp clone + venv, `.mcp.json` (blender, chrome-devtools) | Done; connection check after restart |
 | S11 | VS Code restart, verify versions and MCP connections | Pending (needs Izaf) |
@@ -44,7 +46,8 @@ harness, then start Phase 0 (TECHNICAL.md, ASSETS.md, CULTURE.md).
 | chrome-devtools-mcp | latest via npx (1.11.0 today) | `.mcp.json` |
 | ui-ux-pro-max skill | skills CLI 1.7.2, lock hash 7ac62d93 | `.claude/skills/ui-ux-pro-max` |
 
-Pinned npm packages for the project are listed in `package.json` once Phase 1 starts.
+Project npm packages (exact pins in `package.json`): three 0.186.1, @dimforge/rapier3d-compat 0.21.0, vite 8.3.4,
+vitest 5.0.5, @gltf-transform/cli 4.5.1, @playwright/test 1.64.1, eslint 10.12.0, prettier 3.9.10.
 
 ## Setup notes
 - Drive C: had 0.78 GB free after the installs; everything large lives on D: (`D:\dev`). Izaf should free space

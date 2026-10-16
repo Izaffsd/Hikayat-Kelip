@@ -1,0 +1,33 @@
+{
+  "name": "hikayat-kelip",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hikayat Kelip: a story-driven 3D action-adventure for the browser, on PC and phones in landscape.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:visual": "playwright test",
+    "assets": "node tools/build-assets.mjs"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "4.5.1",
+    "@playwright/test": "1.64.1",
+    "eslint": "10.12.0",
+    "prettier": "3.9.10",
+    "vite": "8.3.4",
+    "vitest": "5.0.5"
+  }
+}
