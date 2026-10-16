@@ -5,6 +5,20 @@
       "id": "kampung_kit",
       "script": "tools/blender/kits/kampung.py",
       "outputs": [{ "file": "kampung_kit.glb", "group": "kits", "textureSize": 512 }]
+    },
+    {
+      "id": "anim_packs",
+      "script": "tools/blender/anim/build_clips.py",
+      "outputs": [
+        { "file": "anim_core.glb", "group": "anim", "pipeline": "gltfpack", "gltfpackArgs": ["-ar", "14"] },
+        {
+          "file": "anim_villager.glb",
+          "group": "anim",
+          "pipeline": "gltfpack",
+          "gltfpackArgs": ["-ar", "14"]
+        },
+        { "file": "anim_cursed.glb", "group": "anim", "pipeline": "gltfpack", "gltfpackArgs": ["-ar", "14"] }
+      ]
     }
   ]
 }

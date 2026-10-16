@@ -101,6 +101,29 @@ function runBlenderJob(blender, job) {
 }
 
 /**
+ * Compresses with gltfpack (best for animation-only packs: drops constant tracks, quantises rotations,
+ * Meshopt filters). Keeps named nodes (bones) and extras.
+ * @param {string} input
+ * @param {string} output
+ * @param {string[]} extraArgs
+ * @returns {{ inputBytes: number, outputBytes: number }}
+ */
+function gltfpack(input, output, extraArgs) {
+  mkdirSync(path.dirname(output), { recursive: true });
+  const cli = path.join(ROOT, 'node_modules', 'gltfpack', 'cli.js');
+  const result = spawnSync(
+    process.execPath,
+    [cli, '-i', input, '-o', output, '-kn', '-ke', '-cc', ...extraArgs],
+    {
+      encoding: 'utf8',
+      shell: false,
+    },
+  );
+  if (result.status !== 0) throw new Error(`gltfpack failed for ${input}: ${result.stderr || result.stdout}`);
+  return { inputBytes: readFileSync(input).byteLength, outputBytes: readFileSync(output).byteLength };
+}
+
+/**
  * Lists collider nodes in an optimised GLB (sanity check that pruning kept them).
  * @param {import('@gltf-transform/core').Document} document
  * @returns {number}
@@ -151,9 +174,10 @@ async function main() {
       if (!existsSync(raw)) throw new Error(`Missing raw output ${raw}`);
       const base = path.basename(output.file, '.glb');
       const temp = path.join(ROOT, 'build-cache', 'opt', output.file);
-      const { inputBytes, outputBytes } = await optimizeGlb(raw, temp, {
-        textureSize: output.textureSize ?? 512,
-      });
+      const { inputBytes, outputBytes } =
+        output.pipeline === 'gltfpack'
+          ? gltfpack(raw, temp, output.gltfpackArgs ?? [])
+          : await optimizeGlb(raw, temp, { textureSize: output.textureSize ?? 512 });
       const bytes = readFileSync(temp);
       const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 10);
       const groupDir = path.join(PUBLIC_ASSETS, output.group);

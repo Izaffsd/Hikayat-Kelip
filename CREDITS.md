@@ -7,6 +7,7 @@ Game assets (models, animation, audio, fonts) and development tools are listed s
 
 | File(s) | Source | Author | License | Link |
 | --- | --- | --- | --- | --- |
+| `public/assets/anim/anim_*.glb` (74 clips, renamed and compressed) | Universal Animation Library (standard, Unreal FBX) and Universal Animation Library 2 (standard) | Quaternius | CC0 1.0 | https://quaternius.itch.io/universal-animation-library · https://quaternius.itch.io/universal-animation-library-2 (mirrors: opengameart.org) |
 | `public/fonts/cormorant-garamond-600-latin.woff2` | Cormorant Garamond SemiBold, Latin subset (via Google Fonts) | Christian Thalmann, the Cormorant Project Authors | SIL OFL 1.1 (`public/fonts/OFL-CormorantGaramond.txt`) | https://github.com/CatharsisFonts/Cormorant |
 | `public/fonts/source-sans-3-latin.woff2` | Source Sans 3 variable, Latin subset (via Google Fonts) | Paul D. Hunt, Adobe | SIL OFL 1.1 (`public/fonts/OFL-SourceSans3.txt`) | https://github.com/adobe-fonts/source-sans |
 

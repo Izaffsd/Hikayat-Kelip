@@ -1,0 +1,84 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { NodeIO } from '@gltf-transform/core';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
+import { MeshoptDecoder as NodeMeshoptDecoder } from 'meshoptimizer';
+import { data } from '../../src/core/Data.js';
+
+const manifest = data('generated/assets').assets;
+const publicDir = path.resolve('public');
+const file = (key) => readFileSync(path.join(publicDir, manifest[key].url));
+
+/**
+ * Parses a GLB with three's GLTFLoader (as the game does) and returns the result.
+ * @param {Buffer} buffer
+ */
+function parse(buffer) {
+  const loader = new GLTFLoader();
+  loader.setMeshoptDecoder(MeshoptDecoder);
+  const array = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  return loader.parseAsync(array, '');
+}
+
+describe('published assets', () => {
+  it('lists only hashed files that exist and match their recorded size', () => {
+    for (const [key, entry] of Object.entries(manifest)) {
+      expect(entry.url, key).toMatch(/\.[0-9a-f]{10}\.glb$/);
+      expect(file(key).byteLength, key).toBe(entry.bytes);
+    }
+  });
+
+  it('animation packs load in three.js with the expected clips bound to universal-rig bones', async () => {
+    const expected = {
+      'anim/anim_core': [
+        'idle',
+        'walk',
+        'jog',
+        'sprint',
+        'jump_start',
+        'jump_loop',
+        'jump_land',
+        'climb_up_1m_rm',
+        'block',
+        'lay_to_idle',
+      ],
+      'anim/anim_villager': ['talk', 'sit_idle', 'lantern_idle', 'rail_idle', 'harvest'],
+      'anim/anim_cursed': ['cursed_idle', 'cursed_walk', 'shield_idle'],
+    };
+    for (const [key, clips] of Object.entries(expected)) {
+      const gltf = await parse(file(key));
+      const names = gltf.animations.map((clip) => clip.name);
+      for (const clip of clips) expect(names, key).toContain(clip);
+      for (const clip of gltf.animations) {
+        expect(clip.duration, `${key}:${clip.name}`).toBeGreaterThan(0);
+        expect(clip.tracks.some((t) => t.name.startsWith('upperarm_l.'))).toBe(true);
+      }
+    }
+  });
+
+  it('the Kampung kit keeps one node per piece plus collider empties', async () => {
+    await NodeMeshoptDecoder.ready;
+    const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
+      'meshopt.decoder': NodeMeshoptDecoder,
+    });
+    const document = await io.readBinary(new Uint8Array(file('kits/kampung_kit')));
+    const nodes = document.getRoot().listNodes();
+    const pieces = nodes.filter((n) => n.getExtras()?.hk_piece).map((n) => n.getExtras().hk_piece);
+    for (const piece of [
+      'post',
+      'floor_3x3',
+      'wall_planks',
+      'roof_gable_3',
+      'stairs',
+      'jetty_3',
+      'berembang_a',
+      'pondok_kelip',
+    ]) {
+      expect(pieces).toContain(piece);
+    }
+    expect(nodes.filter((n) => n.getExtras()?.hk_collider === 'box').length).toBeGreaterThanOrEqual(25);
+  });
+});
