@@ -90,6 +90,22 @@ describe('published assets', () => {
     expect(triangles).toBeLessThanOrEqual(12000);
   });
 
+  it('Kelip and the shadow wisp keep their _SWAY attribute for shader animation', async () => {
+    const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
+      'meshopt.decoder': NodeMeshoptDecoder,
+    });
+    await NodeMeshoptDecoder.ready;
+    for (const key of ['characters/kelip', 'characters/wisp']) {
+      const document = await io.readBinary(new Uint8Array(file(key)));
+      const semantics = document
+        .getRoot()
+        .listMeshes()
+        .flatMap((mesh) => mesh.listPrimitives())
+        .flatMap((prim) => prim.listSemantics());
+      expect(semantics, key).toContain('_SWAY');
+    }
+  });
+
   it('the Kampung kit keeps one node per piece plus collider empties', async () => {
     await NodeMeshoptDecoder.ready;
     const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({

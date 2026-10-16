@@ -12,6 +12,14 @@
       "outputs": [{ "file": "tokbelang.glb", "group": "characters", "textureSize": 1024 }]
     },
     {
+      "id": "spirits",
+      "script": "tools/blender/characters/spirits.py",
+      "outputs": [
+        { "file": "kelip.glb", "group": "characters", "textureSize": 256, "keepAttributes": true },
+        { "file": "wisp.glb", "group": "characters", "textureSize": 64, "keepAttributes": true }
+      ]
+    },
+    {
       "id": "anim_packs",
       "script": "tools/blender/anim/build_clips.py",
       "outputs": [

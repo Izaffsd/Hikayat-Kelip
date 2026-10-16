@@ -38,15 +38,20 @@ export async function createIO() {
  * @param {object} [options]
  * @param {number} [options.textureSize=512] maximum texture dimension
  * @param {number} [options.quality=160] ETC1S quality (1–255)
+ * @param {boolean} [options.keepAttributes=false] keep vertex attributes no material uses (e.g. custom `_SWAY`)
  * @returns {Promise<{ inputBytes: number, outputBytes: number }>}
  */
-export async function optimizeGlb(inputPath, outputPath, { textureSize = 512, quality = 160 } = {}) {
+export async function optimizeGlb(
+  inputPath,
+  outputPath,
+  { textureSize = 512, quality = 160, keepAttributes = false } = {},
+) {
   const io = await createIO();
   const document = await io.read(inputPath);
   const resize = /** @type {[number, number]} */ ([textureSize, textureSize]);
   await document.transform(
     dedup(),
-    prune({ keepLeaves: true, keepExtras: true, keepAttributes: false }),
+    prune({ keepLeaves: true, keepExtras: true, keepAttributes }),
     weld(),
     resample(),
     toktx({ encoder: sharp, mode: Mode.ETC1S, slots: COLOR_SLOTS, quality, compression: 2, resize }),

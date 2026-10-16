@@ -177,7 +177,10 @@ async function main() {
       const { inputBytes, outputBytes } =
         output.pipeline === 'gltfpack'
           ? gltfpack(raw, temp, output.gltfpackArgs ?? [])
-          : await optimizeGlb(raw, temp, { textureSize: output.textureSize ?? 512 });
+          : await optimizeGlb(raw, temp, {
+              textureSize: output.textureSize ?? 512,
+              keepAttributes: output.keepAttributes ?? false,
+            });
       const bytes = readFileSync(temp);
       const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 10);
       const groupDir = path.join(PUBLIC_ASSETS, output.group);

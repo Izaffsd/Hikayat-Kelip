@@ -113,6 +113,42 @@ def add_cylinder(bm, start, end, radius, segments=8, radius_end=None, material=0
     return faces
 
 
+def add_tube(bm, points, radii, segments: int = 6, material: int = 0, cap_start: bool = True):
+    """Adds one continuous tube along a polyline (rings oriented by parallel transport), tapering by `radii`.
+    The last ring collapses to a point when its radius is 0. Returns the list of rings (lists of BMVerts)."""
+    points = [Vector(p) for p in points]
+    tangents = []
+    for i in range(len(points)):
+        a = points[max(i - 1, 0)]
+        b = points[min(i + 1, len(points) - 1)]
+        tangents.append((b - a).normalized())
+    normal = tangents[0].orthogonal().normalized()
+    rings = []
+    for i, (p, t, r) in enumerate(zip(points, tangents, radii)):
+        if i > 0:
+            # Parallel transport the normal so rings do not twist.
+            normal = (normal - t * normal.dot(t)).normalized()
+        binormal = t.cross(normal)
+        ring = []
+        for k in range(segments):
+            a = k / segments * math.tau
+            ring.append(bm.verts.new(p + (normal * math.cos(a) + binormal * math.sin(a)) * r))
+        rings.append(ring)
+    for i in range(len(rings) - 1):
+        for k in range(segments):
+            k2 = (k + 1) % segments
+            face = bm.faces.new((rings[i][k], rings[i][k2], rings[i + 1][k2], rings[i + 1][k]))
+            face.material_index = material
+    if cap_start:
+        face = bm.faces.new(list(reversed(rings[0])))
+        face.material_index = material
+    tip = bm.verts.new(points[-1] + tangents[-1] * radii[-1])
+    for k in range(segments):
+        face = bm.faces.new((rings[-1][k], rings[-1][(k + 1) % segments], tip))
+        face.material_index = material
+    return rings
+
+
 def jitter(bm, amount: float, seed: int, faces=None) -> None:
     """Offsets vertices by a small deterministic amount (hand-made, slightly crooked look)."""
     rng = random.Random(seed)

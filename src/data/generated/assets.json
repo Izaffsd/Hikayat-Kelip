@@ -15,9 +15,19 @@
       "bytes": 367492,
       "type": "glb"
     },
+    "characters/kelip": {
+      "url": "/assets/characters/kelip.ec9a8f207f.glb",
+      "bytes": 27140,
+      "type": "glb"
+    },
     "characters/tokbelang": {
       "url": "/assets/characters/tokbelang.af1ebd0018.glb",
       "bytes": 287340,
+      "type": "glb"
+    },
+    "characters/wisp": {
+      "url": "/assets/characters/wisp.3812da7d92.glb",
+      "bytes": 22644,
       "type": "glb"
     },
     "kits/kampung_kit": {
