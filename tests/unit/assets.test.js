@@ -183,6 +183,33 @@ describe('published assets', () => {
     }
   });
 
+  it('slice props keep their runtime hooks (attach points, hinge, light, colliders)', async () => {
+    await NodeMeshoptDecoder.ready;
+    const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
+      'meshopt.decoder': NodeMeshoptDecoder,
+    });
+    const document = await io.readBinary(new Uint8Array(file('props/props_slice')));
+    const nodes = document.getRoot().listNodes();
+    const extras = (name) => nodes.find((n) => n.getName() === name)?.getExtras() ?? {};
+    const props = nodes.map((n) => n.getExtras()?.hk_prop).filter(Boolean);
+    for (const prop of [
+      'tongkat',
+      'wau_bulan',
+      'hikayat',
+      'page_torn',
+      'pelita_air',
+      'peti',
+      'lore_scroll',
+    ]) {
+      expect(props, prop).toContain(prop);
+    }
+    expect(extras('tongkat').hk_attach).toBe('hand');
+    expect(extras('wau_bulan').hk_grips.split(';')).toHaveLength(2);
+    expect(extras('peti__lid').hk_hinge).toBe('x');
+    expect(extras('pelita_air').hk_pelita).toBe('air');
+    expect(nodes.filter((n) => n.getExtras()?.hk_collider === 'box').length).toBeGreaterThanOrEqual(3);
+  });
+
   it('the Kampung kit keeps one node per piece plus collider empties', async () => {
     await NodeMeshoptDecoder.ready;
     const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({

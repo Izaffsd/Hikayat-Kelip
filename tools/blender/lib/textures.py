@@ -211,6 +211,79 @@ def net(size: int = 256, seed: int = 33, cells: int = 8, base: str = "#6c5f43") 
     return _rgba(rgb.astype(np.float32), alpha)
 
 
+def paper(size: int = 512, seed: int = 101, lines: int = 14, ink: bool = True, torn: bool = False) -> np.ndarray:
+    """Aged hand-written page: cream paper with stains and rows of illegible cursive strokes (generic handwriting,
+    deliberately no real script). `torn` gives a ragged alpha edge along the right side."""
+    rng = np.random.default_rng(seed)
+    yy, xx = np.mgrid[0:size, 0:size].astype(np.float32) / size
+    stain = fbm(size, seed, gx=4, octaves=4)
+    fibre = fbm(size, seed + 1, gx=64, gy=64, octaves=2)
+    rgb = _hex("#e9dcbc") * (0.9 + 0.12 * fibre)[..., None]
+    rgb = rgb * (1 - 0.22 * np.clip(stain - 0.45, 0, 1)[..., None] * 2)
+    edge = np.minimum(np.minimum(xx, 1 - xx), np.minimum(yy, 1 - yy))
+    rgb = rgb * (0.82 + 0.18 * np.clip(edge * 12, 0, 1))[..., None]
+    if ink:
+        ink_mask = np.zeros((size, size), dtype=bool)
+        for row in range(lines):
+            base = 0.9 - (row + 0.5) * (0.8 / lines)
+            x = 0.1
+            while x < 0.88:
+                length = 0.05 + rng.random() * 0.14
+                end = min(x + length, 0.9)
+                seg = (xx >= x) & (xx <= end)
+                wave = base + 0.006 * np.sin((xx - x) * 2 * np.pi * (90 + rng.random() * 30)) + (rng.random() - 0.5) * 0.004
+                ink_mask |= seg & (np.abs(yy - wave) < 0.0028)
+                x = end + 0.015 + rng.random() * 0.02
+        rgb = np.where(ink_mask[..., None], np.array([0.17, 0.12, 0.1], dtype=np.float32), rgb)
+    alpha = np.ones((size, size), dtype=np.float32)
+    if torn:
+        ragged = 0.9 + 0.035 * fbm(size, seed + 5, gx=2, gy=24, octaves=4)[:, :1] * 2
+        alpha = (xx < ragged).astype(np.float32)
+        rgb = rgb * (1 - 0.3 * np.clip(1 - (ragged - xx) * 60, 0, 1))[..., None]
+    return _rgba(rgb.astype(np.float32), alpha)
+
+
+def polygon_distance(size: int, polygon: list[tuple[float, float]]) -> tuple[np.ndarray, np.ndarray]:
+    """Inside mask and distance to the outline (UV units) for a polygon given in UV space (0..1)."""
+    yy, xx = np.mgrid[0:size, 0:size].astype(np.float32)
+    px, py = (xx + 0.5) / size, (yy + 0.5) / size
+    inside = np.zeros((size, size), dtype=bool)
+    dist = np.full((size, size), np.inf, dtype=np.float32)
+    pts = list(polygon)
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:] + pts[:1]):
+        crosses = ((y0 > py) != (y1 > py)) & (px < (x1 - x0) * (py - y0) / ((y1 - y0) or 1e-9) + x0)
+        inside ^= crosses
+        dx, dy = x1 - x0, y1 - y0
+        t = np.clip(((px - x0) * dx + (py - y0) * dy) / max(dx * dx + dy * dy, 1e-12), 0, 1)
+        dist = np.minimum(dist, np.hypot(px - (x0 + t * dx), py - (y0 + t * dy)))
+    return inside, dist
+
+
+def wau_skin(polygon_uv: list[tuple[float, float]], size: int = 1024, seed: int = 111, metres: float = 2.6) -> np.ndarray:
+    """Layered cut-paper kite skin: colour bands that follow the outline (as layered paper does on a wau) and a
+    column of nested diamonds and dots down the spine. Original geometry, no copied motif."""
+    inside, dist = polygon_distance(size, polygon_uv)
+    d = dist * metres  # metres from the edge
+    yy, xx = np.mgrid[0:size, 0:size].astype(np.float32) / size
+    rgb = np.zeros((size, size, 3), dtype=np.float32) + _hex("#efe2c4")
+    bands = [(0.0, 0.035, "#a3242a"), (0.035, 0.05, "#d9a441"), (0.05, 0.08, "#1f5f63"), (0.08, 0.095, "#d9a441"),
+             (0.2, 0.235, "#a3242a"), (0.235, 0.25, "#d9a441")]
+    for lo, hi, colour in bands:
+        rgb[(d >= lo) & (d < hi)] = _hex(colour)
+    # Spine column: nested diamonds and dots (|x| small in metres).
+    cx = (xx - 0.5) * metres
+    cy = (yy - 0.5) * metres
+    for k, z in enumerate(np.arange(-0.62, 0.86, 0.16)):
+        diamond = np.abs(cx) + np.abs(cy - z)
+        rgb[(diamond < 0.07) & (d > 0.1)] = _hex("#a3242a" if k % 2 else "#1f5f63")
+        rgb[(diamond < 0.045) & (d > 0.1)] = _hex("#d9a441")
+        rgb[(diamond < 0.02) & (d > 0.1)] = _hex("#efe2c4")
+    paper_grain = fbm(size, seed, gx=48, octaves=2)
+    rgb = rgb * (0.92 + 0.12 * paper_grain)[..., None]
+    rgb[~inside] = _hex("#efe2c4")  # outside the outline (never shown; keeps mip edges clean)
+    return _rgba(_painterly(rgb, seed, 0.04))
+
+
 def bark(size: int = 512, seed: int = 41, base: str = "#5e5144", moss: str = "#4c5b34") -> np.ndarray:
     """Fibrous vertical bark with moss patches (mangrove trunks, posts)."""
     fibres = fbm(size, seed, gx=16, gy=2, octaves=5)

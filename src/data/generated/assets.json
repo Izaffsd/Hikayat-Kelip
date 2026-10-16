@@ -645,6 +645,11 @@
       "url": "/assets/kits/kampung_kit.d85867f600.glb",
       "bytes": 737012,
       "type": "glb"
+    },
+    "props/props_slice": {
+      "url": "/assets/props/props_slice.b4da2e48b6.glb",
+      "bytes": 327340,
+      "type": "glb"
     }
   }
 }

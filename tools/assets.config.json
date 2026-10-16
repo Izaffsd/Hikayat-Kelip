@@ -20,6 +20,11 @@
       ]
     },
     {
+      "id": "props_slice",
+      "script": "tools/blender/props/slice_props.py",
+      "outputs": [{ "file": "props_slice.glb", "group": "props", "textureSize": 512 }]
+    },
+    {
       "id": "anim_packs",
       "script": "tools/blender/anim/build_clips.py",
       "outputs": [

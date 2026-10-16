@@ -105,6 +105,11 @@ body (Data Transfer), paint/bake a painterly atlas, split LODs, export one GLB p
 | Sawah props | Scarecrows (orang-orang sawah), huts (dangau), ropes/vines for swings, kite stands | | P1 |
 | Kota Kayu props | Market stalls, carving tools, gambus, harbour cranes (wooden), lighthouse, festival lanterns and banners (no religious symbols) | | P1 |
 
+P0 props built 2026-10-17 by `tools/blender/props/slice_props.py` → `props/props_slice`: `tongkat` (origin at the grip,
+`hk_attach=hand`), `wau_bulan` (layered cut-paper skin, crescent tail, humming bow, `hk_grips`), `hikayat_closed`,
+`hikayat_open` (one torn page), `page_torn` (collectible), `pelita_air` (teal water-glass lantern, `hk_pelita=air`,
+light offset), `peti` (lid hinged on `hk_hinge=x`) and `lore_scroll`. 1,418 triangles, 320 KB.
+
 ## 6. Environment kits and regions
 
 | Region | Kit contents | Landmarks | Priority |
