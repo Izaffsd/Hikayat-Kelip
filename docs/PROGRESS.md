@@ -26,7 +26,10 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   (2) kit polish noted: smaller/denser berembang leaves, less shingle-like thatch, check the stall roof;
   (3) Tok Belang model + quadruped rig; (4) animation library build; (5) characters once Izaf saves
   `Universal Base Characters[Standard].zip` in `D:\dev\raw\quaternius\ubc\`; (6) audio pipeline; (7) wisp, Kelip mesh,
-  prologue flood variants. Also record `npm run test:perf` results (a run was in progress when the session stopped).
+  prologue flood variants.
+- **Phase 1 perf checks (Playwright CDP, both backends, all 6 passed in 21.7 min):** 4× CPU throttle ~100 FPS avg /
+  99 FPS p5 (display-limited); trace: 1 long task (~138 ms, at start-up) during 5 s of play; 10-minute soak: JS heap
+  after GC flat at 11.1 MB, geometry/texture counts unchanged (no leaks). MCP-based checks still to repeat after restart.
 - **After the restart (when Izaf does it):** (VS Code open on `D:\dev\hikayat-kelip`, Blender running), confirm
   the `blender` and `chrome-devtools` MCP servers are connected and verify tool versions in the fresh process; run the
   Phase 1 DevTools checks (console, performance trace of the sandbox, 10-minute memory check, 4× CPU throttle) on
