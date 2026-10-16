@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 /**
  * `npm run assets` — regenerates every shipped asset headless (docs/ASSETS.md §1):
- *   1. checks the toolchain (Blender 5.2, ffmpeg, ktx),
+ *   1. checks the toolchain the selected jobs need (Blender 5.2, ktx, ffmpeg),
  *   2. runs each Blender job in tools/assets.config.json → build-cache/raw/*.glb (+ previews),
  *   3. optimises each output (tools/optimize-glb.mjs) → public/assets/<group>/<name>.<hash>.glb,
- *   4. removes stale hashed versions and writes src/data/generated/assets.json.
+ *   4. builds the sound banks (tools/audio/build-audio.mjs) → public/assets/audio/<bank>.<hash>.ogg,
+ *   5. removes stale hashed versions and writes src/data/generated/assets.json.
  *
- * Options: --only <jobId>[,<jobId>]   run selected jobs (the manifest keeps other entries)
+ * Options: --only <jobId>[,<jobId>]   run selected jobs; `audio` selects the sound banks (the manifest keeps the rest)
  *          --skip-blender            only re-optimise existing raw outputs
+ * Env:     HK_RAW_DIR                raw third-party library (default: ../raw next to the repo, outside git)
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -21,6 +23,7 @@ const RAW_DIR = path.join(ROOT, 'build-cache', 'raw');
 const PREVIEW_DIR = path.join(ROOT, 'build-cache', 'previews');
 const PUBLIC_ASSETS = path.join(ROOT, 'public', 'assets');
 const MANIFEST = path.join(ROOT, 'src', 'data', 'generated', 'assets.json');
+const RAW_LIBRARY = process.env.HK_RAW_DIR ?? path.resolve(ROOT, '..', 'raw');
 
 // Large temporary files (Blender, KTX encoding) must not land on drive C: (DECISIONS D-008).
 const TMP = process.platform === 'win32' && existsSync('D:\\dev\\.cache') ? 'D:\\dev\\.cache\\tmp' : null;
@@ -137,18 +140,26 @@ function countColliders(document) {
 
 async function main() {
   const args = parseArgs();
-  const blender = findBlender();
-  if (!blender) {
-    console.error(
-      'Blender 5.2 was not found (PATH, BLENDER env var or the default path). Install it, then retry.',
-    );
-    process.exit(1);
+  const config = JSON.parse(readFileSync(path.join(ROOT, 'tools', 'assets.config.json'), 'utf8'));
+  const only = typeof args.only === 'string' ? new Set(args.only.split(',')) : null;
+  const jobs = config.blender.filter((job) => !only || only.has(job.id));
+  const runAudio = !only || only.has('audio');
+  if (only && jobs.length === 0 && !runAudio) throw new Error(`No job matches --only ${args.only}`);
+
+  let blender = null;
+  const tools = {};
+  if (jobs.length && !args['skip-blender']) {
+    blender = findBlender();
+    if (!blender) {
+      console.error(
+        'Blender 5.2 was not found (PATH, BLENDER env var or the default path). Install it, then retry.',
+      );
+      process.exit(1);
+    }
+    tools.blender = version(blender, ['--background', '--factory-startup', '--version']);
   }
-  const tools = {
-    blender: version(blender, ['--background', '--factory-startup', '--version']),
-    ffmpeg: version('ffmpeg', ['-hide_banner', '-version']),
-    ktx: version('ktx', ['--version']),
-  };
+  if (jobs.length) tools.ktx = version('ktx', ['--version']);
+  if (runAudio) tools.ffmpeg = version('ffmpeg', ['-hide_banner', '-version']);
   for (const [name, line] of Object.entries(tools)) {
     console.log(`${name.padEnd(8)} ${line ?? 'MISSING'}`);
     if (!line) {
@@ -156,11 +167,6 @@ async function main() {
       process.exit(1);
     }
   }
-
-  const config = JSON.parse(readFileSync(path.join(ROOT, 'tools', 'assets.config.json'), 'utf8'));
-  const only = typeof args.only === 'string' ? new Set(args.only.split(',')) : null;
-  const jobs = config.blender.filter((job) => !only || only.has(job.id));
-  if (only && jobs.length === 0) throw new Error(`No job matches --only ${args.only}`);
 
   const { optimizeGlb, createIO } = await import('./optimize-glb.mjs');
   const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, 'utf8')) : { assets: {} };
@@ -206,11 +212,24 @@ async function main() {
     }
   }
 
+  let audioReport = [];
+  if (runAudio) {
+    console.log('\n[audio]');
+    const { buildAudio } = await import('./audio/build-audio.mjs');
+    const audio = await buildAudio({ root: ROOT, rawDir: RAW_LIBRARY });
+    for (const key of Object.keys(manifest.assets)) {
+      if (key.startsWith('audio/') && !(key in audio.entries)) delete manifest.assets[key];
+    }
+    Object.assign(manifest.assets, audio.entries);
+    audioReport = audio.report;
+  }
+
   const sorted = Object.fromEntries(Object.entries(manifest.assets).sort(([a], [b]) => a.localeCompare(b)));
   mkdirSync(path.dirname(MANIFEST), { recursive: true });
   writeFileSync(MANIFEST, `${JSON.stringify({ assets: sorted }, null, 2)}\n`);
   console.log('');
-  console.table(report);
+  if (report.length) console.table(report);
+  if (audioReport.length) console.table(audioReport);
   const totalKB = Object.values(sorted).reduce((sum, entry) => sum + entry.bytes, 0) / 1024;
   console.log(`Manifest: ${Object.keys(sorted).length} assets, ${totalKB.toFixed(0)} KB shipped.`);
 }

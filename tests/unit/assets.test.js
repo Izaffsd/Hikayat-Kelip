@@ -23,12 +23,89 @@ function parse(buffer) {
   return loader.parseAsync(array, '');
 }
 
+/**
+ * Walks an Ogg Vorbis file's pages: channel count and sample rate from the identification header, duration from the
+ * last page's granule position (the exact sample count after end trimming).
+ * @param {Buffer} buffer
+ */
+function oggInfo(buffer) {
+  let offset = 0;
+  let granule = 0n;
+  let firstBody = -1;
+  while (offset < buffer.byteLength) {
+    expect(buffer.toString('latin1', offset, offset + 4)).toBe('OggS');
+    const segments = buffer[offset + 26];
+    let size = 27 + segments;
+    for (let i = 0; i < segments; i++) size += buffer[offset + 27 + i];
+    if (firstBody < 0) firstBody = offset + 27 + segments;
+    granule = buffer.readBigInt64LE(offset + 6);
+    offset += size;
+  }
+  expect(buffer.toString('latin1', firstBody + 1, firstBody + 7)).toBe('vorbis');
+  const rate = buffer.readUInt32LE(firstBody + 12);
+  return { channels: buffer[firstBody + 11], rate, duration: Number(granule) / rate };
+}
+
 describe('published assets', () => {
   it('lists only hashed files that exist and match their recorded size', () => {
     for (const [key, entry] of Object.entries(manifest)) {
-      expect(entry.url, key).toMatch(/\.[0-9a-f]{10}\.glb$/);
+      expect(entry.url, key).toMatch(
+        entry.type === 'audio' ? /\.[0-9a-f]{10}\.ogg$/ : /\.[0-9a-f]{10}\.glb$/,
+      );
       expect(file(key).byteLength, key).toBe(entry.bytes);
     }
+  });
+
+  it('sound banks are mono 44.1 kHz Vorbis and every sound region lies inside its file', () => {
+    const banks = Object.entries(manifest).filter(([, entry]) => entry.type === 'audio');
+    const keys = banks.map(([key]) => key);
+    for (const key of [
+      'audio/ui',
+      'audio/sfx',
+      'audio/storm',
+      'audio/amb_night',
+      'audio/amb_rain',
+      'audio/glide_wind',
+    ]) {
+      expect(keys).toContain(key);
+    }
+    for (const [key, entry] of banks) {
+      const info = oggInfo(file(key));
+      expect(info.channels, key).toBe(1);
+      expect(info.rate, key).toBe(44100);
+      expect(['music', 'ambience', 'sfx', 'voice', 'ui'], key).toContain(entry.bus);
+      for (const [id, regions] of Object.entries(entry.sounds)) {
+        expect(regions.length, id).toBeGreaterThan(0);
+        for (const [offset, duration] of regions) {
+          expect(offset, id).toBeGreaterThanOrEqual(0);
+          expect(duration, id).toBeGreaterThan(0);
+          expect(offset + duration, id).toBeLessThanOrEqual(info.duration + 1e-3);
+        }
+      }
+      if (entry.loop) {
+        const regions = Object.values(entry.sounds);
+        expect(regions, key).toHaveLength(1);
+        expect(regions[0][0][0]).toBe(0);
+        expect(Math.abs(regions[0][0][1] - info.duration), `${key} loop length`).toBeLessThan(1e-3);
+      }
+    }
+    const sfx = manifest['audio/sfx'].sounds;
+    for (const id of [
+      'step_wood',
+      'hit_light',
+      'whoosh_light',
+      'parry_perfect',
+      'tell',
+      'freed',
+      'kelip_twinkle',
+    ]) {
+      expect(sfx[id]?.length, id).toBeGreaterThan(0);
+    }
+  });
+
+  it('audio sources are CC0 only', () => {
+    const config = JSON.parse(readFileSync(path.resolve('tools/audio/sounds.json'), 'utf8'));
+    for (const [id, source] of Object.entries(config.sources)) expect(source.license, id).toBe('CC0-1.0');
   });
 
   it('animation packs load in three.js with the expected clips bound to universal-rig bones', async () => {

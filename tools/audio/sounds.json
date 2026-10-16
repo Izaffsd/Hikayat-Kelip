@@ -1,0 +1,265 @@
+{
+  "comment": "Sound banks for `npm run assets` (docs/ASSETS.md §9). Each bank becomes one mono OGG Vorbis file with every sound's variants as [offset, duration] regions in the manifest. A sound takes `source` + `files` (a licensed pack in the raw library, D:\\dev\\raw or HK_RAW_DIR) or `synth` + `seeds` (tools/audio/synth.mjs). `gain` is dB after normalisation (one-shots peak -1 dBFS, loops RMS -20 dBFS); optional `lowpass`/`highpass` Hz and `maxLength` s.",
+  "sources": {
+    "kenney-impact": {
+      "dir": "audio/kenney/impact-sounds/extracted/Audio",
+      "title": "Impact Sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "url": "https://kenney.nl/assets/impact-sounds"
+    },
+    "kenney-interface": {
+      "dir": "audio/kenney/interface-sounds/extracted/Audio",
+      "title": "Interface Sounds",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "url": "https://kenney.nl/assets/interface-sounds"
+    },
+    "kenney-ui": {
+      "dir": "audio/kenney/ui-audio/extracted/Audio",
+      "title": "UI Audio",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "url": "https://kenney.nl/assets/ui-audio"
+    },
+    "kenney-rpg": {
+      "dir": "audio/kenney/rpg-audio/extracted/Audio",
+      "title": "RPG Audio",
+      "author": "Kenney",
+      "license": "CC0-1.0",
+      "url": "https://kenney.nl/assets/rpg-audio"
+    }
+  },
+  "banks": [
+    {
+      "id": "ui",
+      "bus": "ui",
+      "quality": 4,
+      "sounds": {
+        "ui_hover": { "source": "kenney-ui", "files": ["rollover2.ogg"], "gain": -16, "lowpass": 7000 },
+        "ui_select": {
+          "source": "kenney-interface",
+          "files": ["select_001.ogg"],
+          "gain": -10,
+          "lowpass": 7000
+        },
+        "ui_confirm": {
+          "source": "kenney-interface",
+          "files": ["confirmation_001.ogg"],
+          "gain": -8,
+          "lowpass": 8000
+        },
+        "ui_back": { "source": "kenney-interface", "files": ["back_001.ogg"], "gain": -10, "lowpass": 7000 },
+        "ui_open": { "source": "kenney-interface", "files": ["open_001.ogg"], "gain": -10, "lowpass": 7000 },
+        "ui_close": {
+          "source": "kenney-interface",
+          "files": ["close_001.ogg"],
+          "gain": -10,
+          "lowpass": 7000
+        },
+        "ui_toggle": {
+          "source": "kenney-interface",
+          "files": ["toggle_001.ogg"],
+          "gain": -12,
+          "lowpass": 7000
+        },
+        "ui_error": {
+          "source": "kenney-interface",
+          "files": ["error_004.ogg"],
+          "gain": -10,
+          "lowpass": 6000
+        },
+        "page_flip": {
+          "source": "kenney-rpg",
+          "files": ["bookFlip1.ogg", "bookFlip2.ogg", "bookFlip3.ogg"],
+          "gain": -8
+        },
+        "book_open": { "source": "kenney-rpg", "files": ["bookOpen.ogg"], "gain": -6 },
+        "book_close": { "source": "kenney-rpg", "files": ["bookClose.ogg"], "gain": -6 },
+        "count_tick": { "synth": "gambangTick", "seeds": [1], "gain": -6 },
+        "count_go": { "synth": "gambangGo", "seeds": [1], "gain": -4 }
+      }
+    },
+    {
+      "id": "sfx",
+      "bus": "sfx",
+      "quality": 3,
+      "sounds": {
+        "step_wood": {
+          "source": "kenney-impact",
+          "files": [
+            "footstep_wood_000.ogg",
+            "footstep_wood_001.ogg",
+            "footstep_wood_002.ogg",
+            "footstep_wood_003.ogg",
+            "footstep_wood_004.ogg"
+          ],
+          "gain": -12
+        },
+        "step_mud": {
+          "source": "kenney-impact",
+          "files": [
+            "footstep_grass_000.ogg",
+            "footstep_grass_001.ogg",
+            "footstep_grass_002.ogg",
+            "footstep_grass_003.ogg",
+            "footstep_grass_004.ogg"
+          ],
+          "gain": -14,
+          "lowpass": 2200,
+          "maxLength": 0.3
+        },
+        "step_water": { "synth": "stepWater", "seeds": [1, 2, 3, 4], "gain": -14 },
+        "jump": {
+          "source": "kenney-rpg",
+          "files": ["cloth1.ogg", "cloth2.ogg", "cloth3.ogg", "cloth4.ogg"],
+          "gain": -14
+        },
+        "land_wood": {
+          "source": "kenney-impact",
+          "files": [
+            "impactWood_light_000.ogg",
+            "impactWood_light_001.ogg",
+            "impactWood_light_002.ogg",
+            "impactWood_light_003.ogg",
+            "impactWood_light_004.ogg"
+          ],
+          "gain": -10
+        },
+        "land_heavy": {
+          "source": "kenney-impact",
+          "files": ["impactWood_heavy_000.ogg", "impactWood_heavy_001.ogg", "impactWood_heavy_002.ogg"],
+          "gain": -6
+        },
+        "land_mud": {
+          "source": "kenney-impact",
+          "files": ["impactSoft_medium_000.ogg", "impactSoft_medium_001.ogg", "impactSoft_medium_002.ogg"],
+          "gain": -10,
+          "lowpass": 1800
+        },
+        "roll": {
+          "source": "kenney-impact",
+          "files": ["impactSoft_medium_003.ogg", "impactSoft_medium_004.ogg"],
+          "gain": -12
+        },
+        "slide": { "synth": "slideScrape", "seeds": [1, 2], "gain": -12 },
+        "climb": { "source": "kenney-rpg", "files": ["clothBelt.ogg", "clothBelt2.ogg"], "gain": -14 },
+        "creak": { "source": "kenney-rpg", "files": ["creak1.ogg", "creak2.ogg", "creak3.ogg"], "gain": -14 },
+        "splash": { "synth": "splash", "seeds": [1, 2], "gain": -6 },
+        "whoosh_light": { "synth": "whooshLight", "seeds": [1, 2, 3], "gain": -10 },
+        "whoosh_heavy": { "synth": "whooshHeavy", "seeds": [1, 2], "gain": -8 },
+        "hit_light": {
+          "source": "kenney-impact",
+          "files": [
+            "impactPunch_medium_000.ogg",
+            "impactPunch_medium_001.ogg",
+            "impactPunch_medium_002.ogg",
+            "impactPunch_medium_003.ogg",
+            "impactPunch_medium_004.ogg"
+          ],
+          "gain": -6
+        },
+        "hit_heavy": {
+          "source": "kenney-impact",
+          "files": [
+            "impactPunch_heavy_000.ogg",
+            "impactPunch_heavy_001.ogg",
+            "impactPunch_heavy_002.ogg",
+            "impactPunch_heavy_003.ogg",
+            "impactPunch_heavy_004.ogg"
+          ],
+          "gain": -3
+        },
+        "hit_staff": {
+          "source": "kenney-impact",
+          "files": [
+            "impactWood_medium_000.ogg",
+            "impactWood_medium_001.ogg",
+            "impactWood_medium_002.ogg",
+            "impactWood_medium_003.ogg",
+            "impactWood_medium_004.ogg"
+          ],
+          "gain": -5
+        },
+        "block_staff": {
+          "source": "kenney-impact",
+          "files": [
+            "impactPlank_medium_000.ogg",
+            "impactPlank_medium_001.ogg",
+            "impactPlank_medium_002.ogg",
+            "impactPlank_medium_003.ogg",
+            "impactPlank_medium_004.ogg"
+          ],
+          "gain": -6
+        },
+        "block_hand": {
+          "source": "kenney-impact",
+          "files": ["impactSoft_heavy_000.ogg", "impactSoft_heavy_001.ogg", "impactSoft_heavy_002.ogg"],
+          "gain": -8
+        },
+        "body_fall": {
+          "source": "kenney-impact",
+          "files": ["impactSoft_heavy_003.ogg", "impactSoft_heavy_004.ogg"],
+          "gain": -6,
+          "lowpass": 1500
+        },
+        "parry_perfect": { "synth": "perfectChime", "seeds": [1, 2], "gain": -6 },
+        "tell": { "synth": "tellCue", "seeds": [1], "gain": -8 },
+        "wisp_dissolve": { "synth": "wispDissolve", "seeds": [1, 2], "gain": -6 },
+        "freed": { "synth": "freedChime", "seeds": [1], "gain": -6 },
+        "kelip_twinkle": { "synth": "kelipTwinkle", "seeds": [1, 2, 3, 4], "gain": -12 },
+        "kelip_call": { "synth": "kelipCall", "seeds": [1], "gain": -8 },
+        "pondok_awaken": { "synth": "pondokAwaken", "seeds": [1], "gain": -6 },
+        "pelita_relight": { "synth": "pelitaRelight", "seeds": [1], "gain": -3 }
+      }
+    },
+    {
+      "id": "storm",
+      "bus": "sfx",
+      "quality": 3,
+      "sounds": {
+        "thunder": { "synth": "thunder", "seeds": [1, 2], "gain": -2 },
+        "plank_break": {
+          "source": "kenney-impact",
+          "files": ["impactWood_heavy_003.ogg", "impactWood_heavy_004.ogg"],
+          "gain": -3
+        },
+        "shutter_bang": {
+          "source": "kenney-rpg",
+          "files": ["doorClose_1.ogg", "doorClose_2.ogg", "doorClose_3.ogg", "doorClose_4.ogg"],
+          "gain": -8
+        }
+      }
+    },
+    {
+      "id": "amb_night",
+      "bus": "ambience",
+      "quality": 3,
+      "loop": { "synth": "nightInsects", "seed": 7, "gain": -4 }
+    },
+    {
+      "id": "amb_water",
+      "bus": "ambience",
+      "quality": 3,
+      "loop": { "synth": "waterLapping", "seed": 3, "gain": -6 }
+    },
+    {
+      "id": "amb_rain",
+      "bus": "ambience",
+      "quality": 3,
+      "loop": { "synth": "rainStorm", "seed": 5, "gain": -2 }
+    },
+    {
+      "id": "amb_wind",
+      "bus": "ambience",
+      "quality": 3,
+      "loop": { "synth": "windStorm", "seed": 9, "gain": -4 }
+    },
+    {
+      "id": "glide_wind",
+      "bus": "sfx",
+      "quality": 3,
+      "loop": { "synth": "glideWind", "seed": 2, "gain": -8 }
+    }
+  ]
+}
