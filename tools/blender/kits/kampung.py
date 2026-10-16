@@ -536,6 +536,101 @@ def crate(coll):
     return p.finish(coll, jitter=0.01, seed=23, hk_tags="prop,vault")
 
 
+# ------------------------------------------------------------------------------------------------- prologue flood
+
+
+def post_snapped(coll):
+    """A stilt post snapped by the storm: shorter, leaning, with a splintered top."""
+    p = Piece("post_snapped")
+    lean = Euler((math.radians(9), math.radians(-6), 0))
+    top = lean.to_matrix() @ Vector((0, 0, 1.55))
+    p.cyl("beam", (0, 0, -0.6), tuple(top), 0.11, segments=6, radius_end=0.1)
+    rng = random.Random(41)
+    for k in range(5):
+        a = k / 5 * math.tau
+        base = top + Vector((math.cos(a) * 0.06, math.sin(a) * 0.06, -0.02))
+        tip = base + Vector((rng.uniform(-0.04, 0.04), rng.uniform(-0.04, 0.04), rng.uniform(0.08, 0.22)))
+        p.cyl("beam", tuple(base), tuple(tip), 0.03, segments=4, radius_end=0.004)
+    p.collider((0, 0, 0.45), (0.11, 0.11, 1.05), (math.radians(9), math.radians(-6), 0))
+    return p.finish(coll, jitter=0.01, seed=43, hk_tags="post,broken")
+
+
+def floor_broken(coll):
+    """Storm-damaged floor: planks as strips with gaps and one plank levered up."""
+    p = Piece("floor_broken")
+    strips = 10
+    width = 3.0 / strips
+    missing = {3, 7}
+    for i in range(strips):
+        if i in missing:
+            continue
+        y = -1.5 + width * (i + 0.5)
+        if i == 5:
+            p.box("planks", (0.2, y, FLOOR + 0.12), (2.6, width * 0.92, 0.06), Euler((math.radians(-14), math.radians(4), 0)))
+        else:
+            p.box("planks", (0, y, FLOOR - 0.03), (3.0, width * 0.94, 0.06))
+    for y in (-1.38, 0.0, 1.38):
+        p.box("beam", (0, y, FLOOR - 0.13), (3.0, 0.12, 0.14))
+    for x in (-1.38, 1.38):
+        p.box("beam", (x, 0, FLOOR - 0.24), (0.14, 3.0, 0.16))
+    # Colliders for the intact runs of planks (gaps stay open).
+    p.collider((0, -1.5 + width * 1.5, FLOOR - 0.1), (1.5, width * 1.5, 0.1))
+    p.collider((0, -1.5 + width * 5.0, FLOOR - 0.1), (1.5, width * 1.0, 0.1))
+    p.collider((0, -1.5 + width * 9.0, FLOOR - 0.1), (1.5, width * 1.0, 0.1))
+    return p.finish(coll, jitter=0.012, seed=45, hk_tags="floor,broken")
+
+
+def wall_planks_broken(coll):
+    """Wall with missing planks and one hanging by a nail."""
+    p = Piece("wall_planks_broken")
+    _wall_frame(p)
+    rows = 10
+    height = (WALL_H - 0.24) / rows
+    missing = {2, 3, 7}
+    for r in range(rows):
+        if r in missing:
+            continue
+        z = FLOOR + 0.12 + height * (r + 0.5)
+        p.box("planks", (0, 0, z), (2.76, 0.06, height * 0.95))
+    hang = Euler((0, math.radians(32), 0))
+    p.box("planks", (0.55, -0.05, FLOOR + 0.12 + height * 3.0), (1.3, 0.05, height * 0.9), hang)
+    p.collider((0, 0, FLOOR + WALL_H / 2), (1.5, 0.06, WALL_H / 2))
+    return p.finish(coll, jitter=0.01, seed=47, hk_tags="wall,broken")
+
+
+def roof_broken(coll):
+    """Roof module torn open: one slab section missing, another sagging."""
+    p = Piece("roof_broken")
+    slope_len = HALF_SPAN / math.cos(PITCH)
+    thick = 0.16
+    for side in (-1, 1):
+        for k, y in enumerate((-1.0, 0.0, 1.0)):
+            if side == -1 and k == 1:
+                continue  # the hole
+            pitch = PITCH + (math.radians(12) if side == 1 and k == 2 else 0)
+            rot = Euler((0, side * pitch, 0))
+            mid = Vector((side * HALF_SPAN / 2, y, (EAVE + RIDGE) / 2 - (0.18 if side == 1 and k == 2 else 0)))
+            normal = rot.to_matrix() @ Vector((0, 0, 1))
+            centre = mid + normal * (thick / 2)
+            p.box("thatch", tuple(centre), (slope_len + 0.05, 0.98, thick), rot)
+            p.collider(tuple(centre), (slope_len / 2, 0.49, thick / 2), (0, side * pitch, 0))
+    p.cyl("thatch", (0, -1.5, RIDGE + 0.14), (0, 0.4, RIDGE + 0.1), 0.16, segments=8)
+    p.cyl("beam", (0, 0.4, RIDGE - 0.1), (0.3, 1.5, RIDGE - 0.7), 0.06, segments=5)
+    return p.finish(coll, jitter=0.02, seed=49, hk_tags="roof,broken")
+
+
+def debris_planks(coll):
+    """Floating flood debris: loose planks and a basket, origin at the water line (the runtime bobs it)."""
+    rng = random.Random(51)
+    p = Piece("debris_planks")
+    for _ in range(7):
+        x, y = rng.uniform(-1.6, 1.6), rng.uniform(-1.6, 1.6)
+        rot = Euler((math.radians(rng.uniform(-8, 8)), math.radians(rng.uniform(-6, 6)), rng.uniform(0, math.pi)))
+        p.box("planks", (x, y, 0.02), (rng.uniform(1.2, 2.4), 0.22, 0.05), rot)
+    p.cyl("weave", (0.6, -0.4, -0.08), (0.6, -0.4, 0.22), 0.24, segments=10, radius_end=0.28)
+    return p.finish(coll, hk_tags="debris,float")
+
+
 # ------------------------------------------------------------------------------------------------- build & export
 
 BUILDERS = [
@@ -564,6 +659,11 @@ BUILDERS = [
     pondok_kelip,
     stall_gerai,
     crate,
+    post_snapped,
+    floor_broken,
+    wall_planks_broken,
+    roof_broken,
+    debris_planks,
 ]
 
 
@@ -630,6 +730,35 @@ def vignette(pieces: dict) -> list:
     return placed
 
 
+def flood_vignette(pieces: dict) -> list:
+    """A storm-damaged house over flood water for previewing the prologue pieces (not exported)."""
+    coll = hk.collection("flood_vignette")
+    placed = []
+
+    def place(name, x, y, z=0.0, rz=0.0):
+        src = pieces[name]
+        dup = src.copy()
+        dup.parent = None
+        coll.objects.link(dup)
+        dup.location = (x, y, z)
+        dup.rotation_euler = (0, 0, rz)
+        dup.hide_render = False  # the kit originals are hidden for the first previews
+        placed.append(dup)
+
+    place("floor_broken", -1.5, 0)
+    place("floor_3x3", 1.5, 0)
+    for gx, gy in ((-3.0, -1.5), (0.0, -1.5), (3.0, -1.5), (-3.0, 1.5), (3.0, 1.5)):
+        place("post", gx, gy)
+    place("post_snapped", 0.0, 1.5)
+    place("wall_planks_broken", -1.5, -1.5)
+    place("wall_window", 1.5, -1.5)
+    place("roof_broken", -1.5, 0, 0, math.pi / 2)
+    place("roof_gable_3", 1.5, 0, 0, math.pi / 2)
+    place("debris_planks", -4.0, -5.0, 0.4)
+    place("debris_planks", 3.0, -6.0, 0.4, 1.2)
+    return placed
+
+
 def main() -> None:
     args = hk.cli_args()
     out_dir = args.get("out", os.path.join(hk.REPO_DIR, "build-cache", "raw"))
@@ -658,6 +787,10 @@ def main() -> None:
             obj.hide_render = True
         hk.render_preview(os.path.join(preview_dir, "kampung_vignette_a.png"), placed, azimuth_deg=35, elevation_deg=20)
         hk.render_preview(os.path.join(preview_dir, "kampung_vignette_b.png"), placed, azimuth_deg=200, elevation_deg=14)
+        for obj in placed:
+            obj.hide_render = True
+        flooded = flood_vignette(pieces)
+        hk.render_preview(os.path.join(preview_dir, "kampung_flood.png"), flooded, azimuth_deg=25, elevation_deg=18)
     triangles = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in meshes)
     print(f"HK_KIT kampung pieces={len(pieces)} meshes={len(meshes)} triangles={triangles}")
 
