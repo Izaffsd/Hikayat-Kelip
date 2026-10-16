@@ -11,7 +11,23 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   `chrome-devtools` MCP connections. Until then, shell commands refresh PATH from the registry.
 - Phase 0 done. Phase 1 built and verified locally (see log below); two phase-end checks wait on Izaf:
   the Chrome DevTools MCP checks need the VS Code restart, and the Vercel preview needs the first push.
-- **Next session starts here:** after the restart (VS Code open on `D:\dev\hikayat-kelip`, Blender running), confirm
+- **Phase 2 in progress (stopped at usage limit, 2026-10-16 ~23:55).** Done: `tools/blender/lib/hk.py` (scene,
+  bmesh helpers, box UVs, NumPy textures → packed images, AO bake to vertex colours, collider empties, glTF export with
+  extras, EEVEE previews with absolute paths), `lib/textures.py` (planks, thatch, weave, bark, leaves, palm frond),
+  `kits/kampung.py` (25 pieces, 3,712 tris, builds in ~20 s → `build-cache/raw/kampung_kit.glb`, previews in
+  `build-cache/previews/`), `inspect_glb.py`, `introspect_api.py`. Quaternius UAL1 + UAL2 (CC0) downloaded to
+  `D:\dev\raw\quaternius\` and inspected: UAL1 *Unreal FBX* and UAL2 GLB share the Unreal-style skeleton (only leaf
+  bone names differ) → retarget/bake UAL1 clips onto the UAL2 `Armature` by world-space constraints. Installed
+  @gltf-transform/core/functions/extensions 4.5.1 + meshoptimizer 1.3.0.
+  **Resume with:** (1) check whether `@gltf-transform/cli` exports `toktx`/`Mode` (else call the `ktx` CLI directly),
+  then write `tools/optimize-glb.mjs` (dedup, prune keepLeaves, weld, resample, KTX2 ETC1S colour / UASTC data,
+  meshopt + quantize; runtime must bake node transforms into kit geometry) and extend `tools/build-assets.mjs`
+  (run Blender jobs → optimise → `public/assets/<group>/<name>.<hash>.glb` → `src/data/generated/assets.json`);
+  (2) kit polish noted: smaller/denser berembang leaves, less shingle-like thatch, check the stall roof;
+  (3) Tok Belang model + quadruped rig; (4) animation library build; (5) characters once Izaf saves
+  `Universal Base Characters[Standard].zip` in `D:\dev\raw\quaternius\ubc\`; (6) audio pipeline; (7) wisp, Kelip mesh,
+  prologue flood variants. Also record `npm run test:perf` results (a run was in progress when the session stopped).
+- **After the restart (when Izaf does it):** (VS Code open on `D:\dev\hikayat-kelip`, Blender running), confirm
   the `blender` and `chrome-devtools` MCP servers are connected and verify tool versions in the fresh process; run the
   Phase 1 DevTools checks (console, performance trace of the sandbox, 10-minute memory check, 4× CPU throttle) on
   `npm run preview`; record results here; then start Phase 2 (asset and audio pipeline).
