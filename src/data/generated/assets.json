@@ -627,8 +627,8 @@
       }
     },
     "characters/kelip": {
-      "url": "/assets/characters/kelip.ec9a8f207f.glb",
-      "bytes": 27140,
+      "url": "/assets/characters/kelip.7a9cf145ec.glb",
+      "bytes": 35092,
       "type": "glb"
     },
     "characters/tokbelang": {
@@ -637,8 +637,8 @@
       "type": "glb"
     },
     "characters/wisp": {
-      "url": "/assets/characters/wisp.3812da7d92.glb",
-      "bytes": 22644,
+      "url": "/assets/characters/wisp.43fdadedc4.glb",
+      "bytes": 22596,
       "type": "glb"
     },
     "kits/kampung_kit": {

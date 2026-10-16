@@ -83,20 +83,42 @@ def build_kelip(coll):
             ("ELLIPSOID", (0, 0.11, -0.016), (0.03, 0.03, 0.028)),
         ],
         coll,
+        resolution=0.005,  # fine enough that the 7 cm lantern has a smooth silhouette
     )
+    dec = body.modifiers.new("budget", "DECIMATE")
+    dec.ratio = min(1.0, 900 / max(1, sum(len(p.vertices) - 2 for p in body.data.polygons)))
+    bpy.context.view_layer.objects.active = body
+    bpy.ops.object.modifier_apply(modifier=dec.name)
     # Glow material on the abdomen (y > 0.0), dark body elsewhere.
     body_mat = hk.textured_material("kelip_body", hk.image_from_array("kelip_body", np.full((8, 8, 4), (0.16, 0.14, 0.12, 1.0), np.float32)), 0.5)
-    glow = hk.emissive_material("kelip_glow", (0.85, 0.96, 0.45), 6.0)
+    glow = hk.emissive_material("kelip_glow", (0.62, 1.0, 0.25), 5.0)
     body.data.materials.append(body_mat)
     body.data.materials.append(glow)
     for poly in body.data.polygons:
         poly.material_index = 1 if poly.center.y > 0.012 else 0
-    # Antennae.
+    # Antennae: curved forward and out, ending in small clubs. Eyes: two dark beads at the front of the head.
+    # Pronotum: the warm shield real fireflies carry over the head, which gives Kelip a recognisable face.
     bm = bmesh.new()
     for sx in (-1, 1):
-        hk.add_cylinder(bm, (sx * 0.012, -0.095, 0.02), (sx * 0.035, -0.15, 0.06), 0.003, segments=4, radius_end=0.0015)
+        points = [Vector((sx * (0.01 + 0.03 * t * t), -0.095 - 0.05 * t, 0.018 + 0.05 * t - 0.018 * t * t)) for t in (0, 0.25, 0.5, 0.75, 1.0)]
+        hk.add_tube(bm, points, [0.0032, 0.0028, 0.0024, 0.002, 0.0018], segments=5)
+        club = bmesh.ops.create_uvsphere(bm, u_segments=6, v_segments=4, radius=0.0045)
+        for v in club["verts"]:
+            v.co += points[-1]
+        eye = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=6, radius=0.009)
+        for v in eye["verts"]:
+            v.co += Vector((sx * 0.019, -0.097, 0.002))
     ant = hk.object_from_bmesh("kelip_antennae", bm, coll)
     ant.data.materials.append(body_mat)
+    shield_mat = hk.textured_material(
+        "kelip_shield", hk.image_from_array("kelip_shield", np.full((8, 8, 4), (0.86, 0.46, 0.26, 1.0), np.float32)), 0.45
+    )
+    bm = bmesh.new()
+    shield = bmesh.ops.create_uvsphere(bm, u_segments=12, v_segments=8, radius=1.0)
+    for v in shield["verts"]:
+        v.co = Vector((v.co.x * 0.036, v.co.y * 0.03 - 0.07, v.co.z * 0.012 + 0.026))
+    shield_obj = hk.object_from_bmesh("kelip_shield", bm, coll)
+    shield_obj.data.materials.append(shield_mat)
     # Wings: two pairs of quads, alpha texture, double sided.
     wing_img = hk.image_from_array("kelip_wing", wing_texture(), alpha=True)
     wing_mat = hk.textured_material("kelip_wing", wing_img, 0.4, alpha_clip=False)
@@ -108,10 +130,11 @@ def build_kelip(coll):
     uv = bm.loops.layers.uv.new("UVMap")
     sway = []
     for sx in (-1, 1):
-        for pair, (y, length, lift) in enumerate(((-0.03, 0.13, 0.03), (0.0, 0.11, 0.02))):
-            root = Vector((sx * 0.02, y, 0.03))
-            tip = Vector((sx * (0.02 + length), y + 0.05 + pair * 0.03, 0.03 + lift))
-            width = Vector((0, 0.045, 0))
+        # Rounded forewings and slightly smaller hindwings raised in a V; nothing trails past the abdomen.
+        for y, length, lift, back, w in ((-0.035, 0.11, 0.045, 0.025, 0.062), (-0.01, 0.095, 0.025, 0.055, 0.05)):
+            root = Vector((sx * 0.018, y, 0.03))
+            tip = Vector((sx * (0.018 + length), y + back, 0.03 + lift))
+            width = Vector((0, w, 0))
             corners = [root - width * 0.5, tip - width * 0.5, tip + width * 0.5, root + width * 0.5]
             verts = [bm.verts.new(tuple(c)) for c in corners]
             face = bm.faces.new(verts)
@@ -124,8 +147,14 @@ def build_kelip(coll):
     set_sway(wings, sway)
     set_sway(body, [0.0] * len(body.data.vertices))
     set_sway(ant, [min(1.0, max(0.0, (v.co.z - 0.02) / 0.04)) for v in ant.data.vertices])
-    for part in (ant, wings):
+    set_sway(shield_obj, [0.0] * len(shield_obj.data.vertices))
+    for part in (ant, wings, shield_obj):
         part.parent = body
+    for obj in (body, ant, shield_obj):
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(True)
+        bpy.ops.object.shade_smooth()
     hk.set_extras(body, hk_character="kelip", hk_light="kelip")
     return body
 
@@ -142,7 +171,7 @@ def build_wisp(coll, seed=7):
         coll,
         resolution=0.03,
     )
-    ink = hk.textured_material("wisp_ink", hk.image_from_array("wisp_ink", np.full((8, 8, 4), (0.05, 0.04, 0.08, 1.0), np.float32)), 0.35)
+    ink = hk.textured_material("wisp_ink", hk.image_from_array("wisp_ink", np.full((8, 8, 4), (0.05, 0.04, 0.08, 1.0), np.float32)), 0.92)
     eyes = hk.emissive_material("wisp_eyes", (0.62, 0.52, 0.95), 2.5)
     body.data.materials.append(ink)
     # Two faint violet lights sit on the body surface (found by raycast), so nothing floats.
