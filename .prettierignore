@@ -9,6 +9,7 @@ blob-report/
 .claude/
 design-system/
 package-lock.json
+src/data/generated/
 skills-lock.json
 # Docs are prose (BUILD_PROMPT.md must stay verbatim); never reflow them.
 *.md

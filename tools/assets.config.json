@@ -1,0 +1,10 @@
+{
+  "comment": "Asset jobs for `npm run assets` (docs/ASSETS.md §1). Each Blender job writes raw GLBs to build-cache/raw; each output is optimised, content-hashed and published to public/assets/<group>/.",
+  "blender": [
+    {
+      "id": "kampung_kit",
+      "script": "tools/blender/kits/kampung.py",
+      "outputs": [{ "file": "kampung_kit.glb", "group": "kits", "textureSize": 512 }]
+    }
+  ]
+}
