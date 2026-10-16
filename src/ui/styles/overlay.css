@@ -1,0 +1,94 @@
+/* Debug overlay: a developer tool, kept legible and compact. */
+.hk-debug {
+  position: fixed;
+  top: calc(var(--safe-top) + 8px);
+  left: calc(var(--safe-left) + 8px);
+  z-index: 90;
+  width: min(380px, 46vw);
+  max-height: calc(100vh - 16px - var(--safe-top) - var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: rgb(7 10 20 / 0.86);
+  color: var(--color-text);
+  font:
+    13px/1.35 ui-monospace,
+    'Cascadia Mono',
+    Consolas,
+    Menlo,
+    monospace;
+  pointer-events: auto;
+}
+
+.hk-debug[hidden] {
+  display: none;
+}
+
+.hk-debug__stats {
+  margin: 0;
+  white-space: pre;
+  font-variant-numeric: tabular-nums;
+}
+
+.hk-debug__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hk-debug__btn {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--hk-ink-800);
+  font: 600 13px var(--font-ui);
+}
+
+.hk-debug__log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  max-height: 34vh;
+}
+
+.hk-debug__entry {
+  padding: 4px 0;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.hk-debug__entry.is-error {
+  color: #ff9a85;
+}
+
+.hk-debug__entry.is-warn {
+  color: var(--hk-lamp-300);
+}
+
+.hk-debug-badge {
+  position: fixed;
+  top: calc(var(--safe-top) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 91;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-round);
+  border: 1px solid var(--color-danger);
+  background: rgb(7 10 20 / 0.9);
+  color: #ff9a85;
+  font: 600 14px var(--font-ui);
+  pointer-events: auto;
+}
+
+.hk-debug-badge[hidden] {
+  display: none;
+}

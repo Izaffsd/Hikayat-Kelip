@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1020" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="Hikayat Kelip — follow the last firefly spirit across Pulau Seri. A story-driven silat action-adventure you can play instantly in the browser."
+    />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Hikayat Kelip" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+    <link
+      rel="preload"
+      href="/fonts/cormorant-garamond-600-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <title>Hikayat Kelip</title>
+    <style>
+      /* Critical title styles: inline so the title paints with the first HTML bytes (DECISIONS D-014). */
+      @font-face {
+        font-family: 'Cormorant Garamond';
+        src: url('/fonts/cormorant-garamond-600-latin.woff2') format('woff2');
+        font-weight: 600;
+        font-display: swap;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0b1020;
+        color: #f6eedf;
+        overflow: hidden;
+      }
+      .hk-title {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(ellipse 60% 40% at 50% 62%, rgb(46 74 138 / 0.35), transparent 70%),
+          linear-gradient(#070a14 0%, #0d1530 48%, #14234a 62%, #0b1020 63%, #070a14 100%);
+        transition: opacity 600ms cubic-bezier(0.55, 0, 1, 0.45);
+        touch-action: none;
+        cursor: pointer;
+      }
+      .hk-title.is-leaving {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .hk-title__treeline {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 44%;
+        width: 100%;
+        height: 19%;
+        fill: #050811;
+      }
+      .hk-title__reflection {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 63%;
+        width: 100%;
+        height: 12%;
+        fill: #050811;
+        opacity: 0.45;
+        transform: scaleY(-1);
+        filter: blur(1px);
+      }
+      #title-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .hk-title__content {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2vh;
+        margin-top: -18vh;
+        padding: 0 16px;
+        text-align: center;
+      }
+      .hk-title__name {
+        margin: 0;
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-weight: 600;
+        font-size: clamp(40px, 11vh, 96px);
+        line-height: 1;
+        letter-spacing: 0.02em;
+        color: #f6eedf;
+        text-shadow:
+          0 0 24px rgb(232 149 47 / 0.35),
+          0 0 2px rgb(248 208 140 / 0.6);
+      }
+      .hk-title__start {
+        margin: 0;
+        min-height: 1.5em;
+        font-family:
+          'Source Sans 3',
+          'Segoe UI',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: clamp(16px, 3.4vh, 20px);
+        font-weight: 600;
+        color: #d9cdb6;
+        letter-spacing: 0.02em;
+      }
+      .hk-title__progress {
+        width: min(240px, 40vw);
+        height: 2px;
+        border-radius: 2px;
+        background: rgb(217 205 182 / 0.18);
+        overflow: hidden;
+      }
+      .hk-title__progress > span {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, #e8952f, #d8f06a);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .hk-title__progress.is-indeterminate > span {
+        transform: scaleX(0.3);
+        animation: hk-indeterminate 1.4s ease-in-out infinite;
+      }
+      @keyframes hk-indeterminate {
+        from {
+          translate: -100% 0;
+        }
+        to {
+          translate: 333% 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .hk-title__progress.is-indeterminate > span {
+          animation: none;
+        }
+      }
+      .hk-title.is-ready .hk-title__progress {
+        visibility: hidden;
+      }
+      .hk-rotate {
+        display: none;
+      }
+      @media (orientation: portrait) and (pointer: coarse) {
+        .hk-rotate {
+          position: fixed;
+          inset: 0;
+          z-index: 100;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          padding: 24px;
+          background: #0b1020;
+          color: #f6eedf;
+          text-align: center;
+          font-family:
+            'Source Sans 3',
+            'Segoe UI',
+            system-ui,
+            -apple-system,
+            sans-serif;
+        }
+        .hk-rotate h2 {
+          margin: 0;
+          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-weight: 600;
+          font-size: 32px;
+        }
+        .hk-rotate p {
+          margin: 0;
+          color: #d9cdb6;
+          font-size: 17px;
+        }
+        .hk-rotate svg {
+          width: 72px;
+          height: 72px;
+          stroke: #e8952f;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game-canvas" tabindex="-1" aria-hidden="true"></canvas>
+    <div id="ui-root"></div>
+    <div id="touch-root"></div>
+
+    <section id="title" class="hk-title" aria-labelledby="title-name">
+      <svg class="hk-title__treeline" viewBox="0 0 1600 200" preserveAspectRatio="none" aria-hidden="true">
+        <path
+          d="M0 150 C30 132 52 140 78 126 C104 112 126 124 150 110 C176 96 204 112 232 104 C262 96 280 118 312 112 C344 106 360 88 392 92 C424 96 446 116 478 110 C508 104 530 90 562 96 C594 102 618 120 650 118 C684 116 700 98 734 100 C768 102 790 122 824 120 C858 118 880 104 912 106 C944 108 968 124 1000 122 C1030 120 1052 108 1084 112 C1112 116 1130 128 1158 124 C1180 121 1196 96 1212 70 C1222 52 1232 30 1246 26 C1262 22 1272 44 1282 66 C1294 92 1308 112 1332 116 C1362 120 1384 106 1416 110 C1448 114 1470 126 1502 124 C1534 122 1560 112 1600 118 L1600 200 L0 200 Z"
+        />
+      </svg>
+      <svg class="hk-title__reflection" viewBox="0 0 1600 200" preserveAspectRatio="none" aria-hidden="true">
+        <path
+          d="M0 150 C30 132 52 140 78 126 C104 112 126 124 150 110 C176 96 204 112 232 104 C262 96 280 118 312 112 C344 106 360 88 392 92 C424 96 446 116 478 110 C508 104 530 90 562 96 C594 102 618 120 650 118 C684 116 700 98 734 100 C768 102 790 122 824 120 C858 118 880 104 912 106 C944 108 968 124 1000 122 C1030 120 1052 108 1084 112 C1112 116 1130 128 1158 124 C1180 121 1196 96 1212 70 C1222 52 1232 30 1246 26 C1262 22 1272 44 1282 66 C1294 92 1308 112 1332 116 C1362 120 1384 106 1416 110 C1448 114 1470 126 1502 124 C1534 122 1560 112 1600 118 L1600 200 L0 200 Z"
+        />
+      </svg>
+      <canvas id="title-canvas" aria-hidden="true"></canvas>
+      <div class="hk-title__content">
+        <h1 id="title-name" class="hk-title__name">Hikayat Kelip</h1>
+        <p class="hk-title__start" id="title-start" aria-live="polite"></p>
+        <div
+          class="hk-title__progress is-indeterminate"
+          id="title-progress"
+          role="progressbar"
+          aria-label="Loading"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <span></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="hk-rotate" id="rotate-screen" role="alert">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="7" y="2.5" width="10" height="19" rx="2" />
+        <path d="M19.5 9.5a8 8 0 0 1 0 5M2.5 12a9.5 9.5 0 0 1 16.4-6.5M18.9 5.5V2.8M18.9 5.5h-2.7" />
+      </svg>
+      <h2 data-i18n="rotate.title">Turn your phone sideways</h2>
+      <p data-i18n="rotate.body">Hikayat Kelip is played in landscape.</p>
+    </div>
+
+    <noscript>
+      <p style="position: fixed; bottom: 16px; width: 100%; text-align: center; font-family: sans-serif">
+        Hikayat Kelip needs JavaScript. / Hikayat Kelip memerlukan JavaScript.
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

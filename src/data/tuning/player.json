@@ -1,0 +1,38 @@
+{
+  "capsule": { "radius": 0.3, "halfHeight": 0.5 },
+  "kcc": {
+    "offset": 0.02,
+    "autostepMaxHeight": 0.35,
+    "autostepMinWidth": 0.2,
+    "snapToGround": 0.3,
+    "maxSlopeClimbDeg": 50,
+    "minSlopeSlideDeg": 60
+  },
+  "move": {
+    "walkSpeed": 2.2,
+    "runSpeed": 5.2,
+    "sprintSpeed": 7.6,
+    "groundAccel": 38,
+    "groundDecel": 46,
+    "airAccel": 14,
+    "airDecel": 4,
+    "turnSpeedDeg": 720,
+    "stickRunThreshold": 0.55,
+    "stickSprintThreshold": 0.95,
+    "sprintBuildTime": 0.9
+  },
+  "jump": {
+    "height": 1.25,
+    "coyoteTime": 0.12,
+    "bufferTime": 0.15,
+    "releaseCut": 0.5,
+    "minJumpTime": 0.06,
+    "apexThreshold": 1.2,
+    "apexGravityScale": 0.6,
+    "fallGravityScale": 1.6,
+    "maxFallSpeed": 30,
+    "groundStickVelocity": -1.5
+  },
+  "gravity": 24,
+  "respawn": { "safeGroundTime": 0.3, "killHeight": -20 }
+}

@@ -1,0 +1,70 @@
+{
+  "comment": "Centres are measured from the bottom-right (action buttons) or the named corner, in CSS px at size 1.0. GDD 'Mobile landscape design'.",
+  "joystick": { "baseSize": 120, "knobSize": 52, "radius": 48, "deadzone": 0.08 },
+  "lookSensitivityScale": 1,
+  "buttons": [
+    {
+      "action": "jump",
+      "anchor": "bottom-right",
+      "x": 70,
+      "y": 70,
+      "size": 84,
+      "icon": "jump",
+      "label": "touch.jump"
+    },
+    {
+      "action": "strike",
+      "anchor": "bottom-right",
+      "x": 168,
+      "y": 52,
+      "size": 64,
+      "icon": "strike",
+      "label": "touch.strike"
+    },
+    {
+      "action": "langkah",
+      "anchor": "bottom-right",
+      "x": 196,
+      "y": 132,
+      "size": 64,
+      "icon": "langkah",
+      "label": "touch.langkah"
+    },
+    {
+      "action": "tangkis",
+      "anchor": "bottom-right",
+      "x": 120,
+      "y": 172,
+      "size": 64,
+      "icon": "tangkis",
+      "label": "touch.tangkis"
+    },
+    {
+      "action": "context",
+      "anchor": "bottom-right",
+      "x": 44,
+      "y": 186,
+      "size": 60,
+      "icon": "context",
+      "label": "touch.context"
+    },
+    {
+      "action": "kelip",
+      "anchor": "top-left",
+      "x": 44,
+      "y": 44,
+      "size": 56,
+      "icon": "kelip",
+      "label": "touch.kelip"
+    },
+    {
+      "action": "pause",
+      "anchor": "top-right",
+      "x": 36,
+      "y": 36,
+      "size": 48,
+      "icon": "pause",
+      "label": "touch.pause"
+    }
+  ]
+}

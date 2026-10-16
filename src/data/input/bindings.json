@@ -1,0 +1,81 @@
+{
+  "keyboard": {
+    "moveForward": ["KeyW", "ArrowUp"],
+    "moveBack": ["KeyS", "ArrowDown"],
+    "moveLeft": ["KeyA", "ArrowLeft"],
+    "moveRight": ["KeyD", "ArrowRight"],
+    "jump": ["Space"],
+    "sprint": ["ShiftLeft"],
+    "strike": ["Mouse0"],
+    "heavy": ["KeyF"],
+    "langkah": ["KeyQ"],
+    "tangkis": ["Mouse2"],
+    "context": ["KeyE"],
+    "kelip": ["KeyR"],
+    "lockon": ["Mouse1", "Tab"],
+    "pause": ["Escape", "KeyP"],
+    "journal": ["KeyM"]
+  },
+  "gamepad": {
+    "jump": ["A"],
+    "langkah": ["B"],
+    "strike": ["X"],
+    "heavy": ["Y"],
+    "tangkis": ["LB"],
+    "context": ["RB"],
+    "lockon": ["LT"],
+    "kelip": ["RT"],
+    "sprint": ["LS"],
+    "recenter": ["RS"],
+    "pause": ["Start"],
+    "journal": ["Back"]
+  },
+  "ui": {
+    "keyboard": {
+      "uiUp": ["ArrowUp"],
+      "uiDown": ["ArrowDown"],
+      "uiLeft": ["ArrowLeft"],
+      "uiRight": ["ArrowRight"],
+      "uiConfirm": ["Enter", "Space"],
+      "uiBack": ["Escape", "Backspace"],
+      "uiTabLeft": ["KeyQ"],
+      "uiTabRight": ["KeyE"]
+    },
+    "gamepad": {
+      "uiUp": ["DpadUp"],
+      "uiDown": ["DpadDown"],
+      "uiLeft": ["DpadLeft"],
+      "uiRight": ["DpadRight"],
+      "uiConfirm": ["A"],
+      "uiBack": ["B"],
+      "uiTabLeft": ["LB"],
+      "uiTabRight": ["RB"]
+    }
+  },
+  "gamepadButtons": {
+    "A": 0,
+    "B": 1,
+    "X": 2,
+    "Y": 3,
+    "LB": 4,
+    "RB": 5,
+    "LT": 6,
+    "RT": 7,
+    "Back": 8,
+    "Start": 9,
+    "LS": 10,
+    "RS": 11,
+    "DpadUp": 12,
+    "DpadDown": 13,
+    "DpadLeft": 14,
+    "DpadRight": 15,
+    "Home": 16
+  },
+  "analog": {
+    "stickDeadzone": 0.15,
+    "triggerThreshold": 0.35,
+    "uiStickThreshold": 0.6,
+    "uiRepeatDelay": 0.38,
+    "uiRepeatRate": 0.11
+  }
+}

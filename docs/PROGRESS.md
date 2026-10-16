@@ -9,7 +9,12 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - VS Code restart: deferred until the MCP tools are first needed (end of Phase 1). Izaf then opens
   `D:\dev\hikayat-kelip` in VS Code with Blender running; verify tool versions and the `blender` and
   `chrome-devtools` MCP connections. Until then, shell commands refresh PATH from the registry.
-- Phase 0 done (see log below). Next: Phase 1 — Foundation.
+- Phase 0 done. Phase 1 built and verified locally (see log below); two phase-end checks wait on Izaf:
+  the Chrome DevTools MCP checks need the VS Code restart, and the Vercel preview needs the first push.
+- **Next session starts here:** after the restart (VS Code open on `D:\dev\hikayat-kelip`, Blender running), confirm
+  the `blender` and `chrome-devtools` MCP servers are connected and verify tool versions in the fresh process; run the
+  Phase 1 DevTools checks (console, performance trace of the sandbox, 10-minute memory check, 4× CPU throttle) on
+  `npm run preview`; record results here; then start Phase 2 (asset and audio pipeline).
 
 ## Phase log
 
@@ -22,6 +27,38 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   transform feedback, `renderer.info.render.drawCalls`).
 - Open for Izaf: proposal C-1 (CULTURE.md §5): call Tok Belang *harimau penjaga* instead of *harimau keramat*.
 - Not done: Vercel preview (no push yet, D-011).
+
+### Phase 1 — Foundation (built 2026-10-16; DevTools MCP checks and Vercel preview pending)
+- **Built:** Vite 8 + ESLint 10 flat config + Prettier; folder layout with READMEs for systems not built yet;
+  `vercel.json` (wasm/glb/ktx2/ogg types, immutable caching for hashed assets, security headers); `.env.example`;
+  GitHub Actions CI (lint, format check, unit tests, build on pull requests).
+- **Core:** Engine (system wiring and frame order), fixed 60 Hz Loop with interpolation, time scale and hit-stop, 30 FPS
+  cap; EventBus (copy-on-write, queued delivery per tick); Input (keyboard/mouse with pointer lock, gamepad standard
+  mapping with radial deadzones, touch, tick-stamped presses and buffers, UI navigation with key repeat, remapping);
+  AssetLoader (byte-accurate progress, glTF + Meshopt + KTX2, reference counting); SaveManager (CRC32, atomic write,
+  backup, migrations, export/import codes); Settings (typed, 'auto' per device, own storage key); I18n (BM/EN, browser
+  default, live switch); Log (on-screen error log); Telemetry (anonymous, GPC-aware) + `/api/event`.
+- **Render/physics/player:** WebGPURenderer with probed fallback (no console warnings), quality presets and dynamic
+  resolution, RenderPipeline post chain (bloom, SMAA/FXAA); Rapier world with groups, queries and interpolation;
+  KinematicCharacterController capsule; first Traversal slice (run, sprint build-up, coyote time, jump buffer,
+  variable jump, apex hang, respawn at last safe ground); FollowOrbit camera with sphere-cast collision and recentering.
+- **UI:** design system (`design-system/hikayat-kelip/MASTER.md`, tokens, OFL fonts self-hosted), instant title with
+  synchronized fireflies, rotate screen (pure CSS), boot error screen, debug overlay (F3 / three-finger tap / `?debug=1`,
+  WebGL2 toggle, error badge), touch controls in the GDD layout, movement sandbox scene.
+- **Verified:** `npm run lint` clean; `npm run format:check` clean; 62 unit tests pass (event bus, loop, saves and
+  migrations, codec, settings, i18n parity, input buffering, telemetry validation, movement maths, data integrity,
+  touch spacing, asset loader); `npm run build` OK; Playwright headed Chrome 155 on the gaming PC's GPU, WebGPU and
+  forced-WebGL2 projects: title paints, boot, tap-to-start, sandbox renders, run ≥ 3.5 m/s·1 s, sprint > 6.5 m/s,
+  held jump apex 1.1–1.45 m, clean landing — all pass with **zero console errors or warnings**. Screenshots inspected.
+- **Measured (gaming PC, Chrome 155, 1280×720, both backends):** ~93 FPS (display-limited), 10.7 ms frames, 30–31 draw
+  calls, 7.2 k triangles, GPU memory estimate 60 MB, JS heap ~25 MB. Build: entry 10.2 KB gz (+ 2.8 KB CSS), engine
+  17.5 KB gz, three 282 KB gz, Rapier 1.67 MB gz (D-021). Phones not measured yet (needs a deployed URL).
+- **ui-ux-pro-max checklist** (title, rotate, error screen, touch controls): touch targets 48–84 px with ≥ 15 px gaps
+  (unit-tested); press feedback 90 ms via transform/opacity; keyboard, gamepad and touch start the title; contrast
+  parchment/ink ≈ 16:1; reduced motion stops drift and loaders; icons one set, `aria-hidden`, labelled buttons in BM/EN;
+  tokens only (touch.css fixed); safe areas respected. Debug overlay is a developer tool (exempt from styling rules).
+- **Known limitations:** the sandbox stands in for the prologue until Phase 3; Low-preset anti-aliasing to be judged
+  on the iPhone; no audio content yet (graph and unlock only).
 
 ## Setup checklist status
 

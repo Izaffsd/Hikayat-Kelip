@@ -1,0 +1,50 @@
+/* Full-screen messages (boot errors). */
+.hk-error {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  padding: max(24px, var(--safe-top)) max(var(--gutter-x), var(--safe-right)) max(24px, var(--safe-bottom))
+    max(var(--gutter-x), var(--safe-left));
+  background: var(--color-scrim);
+}
+
+.hk-error__panel {
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.hk-error__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-h1);
+  line-height: 1.15;
+}
+
+.hk-error__body {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.hk-sandbox-hint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 12px);
+  transform: translateX(-50%);
+  max-width: min(720px, 90vw);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-round);
+  background: rgb(7 10 20 / 0.6);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+  text-align: center;
+  pointer-events: none;
+}
+
+.hk-touch-device .hk-sandbox-hint {
+  display: none;
+}

@@ -1,0 +1,25 @@
+{
+  "fov": 60,
+  "near": 0.1,
+  "far": 600,
+  "follow": {
+    "pivotHeight": 1.45,
+    "distance": 4.2,
+    "minDistance": 0.8,
+    "pitchMin": -0.65,
+    "pitchMax": 1.15,
+    "defaultPitch": 0.22,
+    "pivotLerp": 14,
+    "collisionRadius": 0.25,
+    "collisionMargin": 0.12,
+    "pushOutSpeed": 3.5,
+    "recenterDelay": 1.6,
+    "recenterSpeed": 1.8
+  },
+  "look": {
+    "mouseSensitivity": 0.0022,
+    "gamepadSpeed": 3.2,
+    "touchSensitivity": 0.0055,
+    "gamepadDeadzone": 0.15
+  }
+}

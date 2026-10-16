@@ -1,0 +1,121 @@
+/* Touch controls (design system §8, GDD "Mobile landscape design"). */
+.hk-touch {
+  --touch-scale: 1;
+  --touch-opacity: 0.55;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  pointer-events: none;
+}
+
+.hk-touch.is-active {
+  display: block;
+}
+
+.hk-touch__zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.hk-touch__zone--left {
+  left: 0;
+}
+
+.hk-touch__zone--right {
+  right: 0;
+}
+
+.hk-touch__joystick {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(120px * var(--touch-scale));
+  height: calc(120px * var(--touch-scale));
+  margin: calc(-60px * var(--touch-scale)) 0 0 calc(-60px * var(--touch-scale));
+  border-radius: 50%;
+  border: 2px solid var(--color-joystick-ring);
+  background: var(--color-joystick-base);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.hk-touch__joystick.is-visible {
+  opacity: var(--touch-opacity);
+}
+
+.hk-touch__knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(52px * var(--touch-scale));
+  height: calc(52px * var(--touch-scale));
+  border-radius: 50%;
+  background: var(--color-joystick-knob);
+  transform: translate(-50%, -50%);
+}
+
+.hk-touch__btn {
+  --size: 64px;
+  --d: calc(var(--size) * var(--touch-scale));
+  position: absolute;
+  width: var(--d);
+  height: var(--d);
+  margin: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--color-control-border);
+  background: var(--color-control-fill);
+  color: var(--color-text);
+  opacity: var(--touch-opacity);
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  transition:
+    transform var(--dur-press) var(--ease-out),
+    opacity var(--dur-press) var(--ease-out),
+    background-color var(--dur-press) var(--ease-out);
+}
+
+.hk-touch__btn svg {
+  width: calc(var(--d) * 0.42);
+  height: calc(var(--d) * 0.42);
+}
+
+.hk-touch__btn.is-pressed {
+  transform: scale(0.94);
+  opacity: 0.9;
+  background: var(--color-control-pressed);
+}
+
+.hk-touch__btn--jump {
+  border-color: var(--color-control-border-strong);
+}
+
+.hk-touch__btn--kelip {
+  color: var(--color-accent);
+}
+
+/* Anchors: centres measured from the named corner, inside the safe areas. */
+.hk-touch__btn.is-bottom.is-right {
+  right: calc(var(--safe-right) + var(--right) * var(--touch-scale) - var(--d) / 2);
+  bottom: calc(var(--safe-bottom) + var(--bottom) * var(--touch-scale) - var(--d) / 2);
+}
+
+.hk-touch__btn.is-top.is-left {
+  left: calc(var(--safe-left) + var(--left) * var(--touch-scale) - var(--d) / 2);
+  top: calc(var(--safe-top) + var(--top) * var(--touch-scale) - var(--d) / 2);
+}
+
+.hk-touch__btn.is-top.is-right {
+  right: calc(var(--safe-right) + var(--right) * var(--touch-scale) - var(--d) / 2);
+  top: calc(var(--safe-top) + var(--top) * var(--touch-scale) - var(--d) / 2);
+}

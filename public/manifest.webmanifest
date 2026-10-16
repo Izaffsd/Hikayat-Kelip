@@ -1,0 +1,13 @@
+{
+  "name": "Hikayat Kelip",
+  "short_name": "Hikayat Kelip",
+  "description": "Follow the last firefly spirit across Pulau Seri. A story-driven silat action-adventure.",
+  "lang": "en",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

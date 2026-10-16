@@ -104,9 +104,10 @@ at the end of the current fixed tick, to avoid re-entrancy during physics callba
 
 ### 2.6 Save, settings, i18n
 
-- **SaveManager:** one JSON document `{ schema: N, savedAt, story, player, missions, progression, competitive,
-  settings }` under key `hk.save` in `localStorage` (small: < 64 KB). Writes are atomic (write `hk.save.tmp`, verify by
-  parsing, then swap) with a CRC32 field to detect corruption; the previous good save is kept as `hk.save.bak`.
+- **SaveManager:** one JSON document `{ schema: N, createdAt, savedAt, story, checkpoint, missions, progression,
+  competitive, stats }` stored as `{ crc, doc }` under key `hk.save` in `localStorage` (small: < 64 KB). Writes are
+  atomic (write `hk.save.tmp`, read back to verify, then swap) with a CRC32 of the document to detect corruption; the
+  previous good save is kept as `hk.save.bak`. Settings are stored separately (`hk.settings`, D-019).
   **Migrations:** an ordered list `migrations[n]: (doc) => doc` upgrades any older schema step by step; each migration
   has a unit test with a fixture of the old shape. Unknown future schemas are refused with a clear message (never
   overwritten).
@@ -142,8 +143,9 @@ await renderer.init();                       // must complete before KTX2 detect
 const backend = renderer.backend.isWebGPUBackend ? 'webgpu' : 'webgl2';
 ```
 
-- `forceWebGL` comes from `?webgl=1` or the debug overlay toggle (stored in settings; applying it re-creates the
-  renderer, which is safe because all GPU resources are owned by the loader and re-uploaded).
+- `forceWebGL` comes from `?webgl=1` or the debug overlay toggle (stored in settings; applying it reloads the page,
+  keeping a single renderer per page lifetime — D-020). Before creating the renderer, `navigator.gpu.requestAdapter()`
+  is probed and `forceWebGL` is passed explicitly when no adapter exists, so three's fallback warning never fires.
 - Post-processing uses **`RenderPipeline`** (three r183+ name; `PostProcessing` is deprecated and warns — D-012).
 - Output: sRGB, tone mapping per region (AgX on Medium/High for the painterly highlights, cheaper Neutral/ACES on Low
   if profiling shows a difference), exposure animated by DayNight.

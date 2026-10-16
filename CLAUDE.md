@@ -74,6 +74,9 @@ browser on PC and phones in landscape. Three.js WebGPU + Rapier + Vite, deployed
 - `npm run test:visual` — Playwright, headed Chrome, `--enable-unsafe-webgpu`; screenshots in WebGPU and
   forced-WebGL2 modes. Never run `playwright install`. Never trust a headless capture of a WebGPU canvas.
 - `npm run assets` — regenerates every model, texture and audio file headless (Blender + gltf-transform + ffmpeg).
+- URL options: `?webgl=1` (force WebGL2), `?debug=1` (overlay), `?test=1` (read-only `window.__hk` hook for Playwright).
+- Shell is PowerShell 5.1 (no `&&`). The ui-ux-pro-max scripts need Python: `uv run --no-project --python 3.13 -- python
+  .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <d>` (no `-I`; the script imports its own modules).
 
 ## Folder layout (keep it)
 ```

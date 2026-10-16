@@ -1,0 +1,142 @@
+/* Design tokens — design-system/hikayat-kelip/MASTER.md. Components use only the semantic aliases. */
+
+@font-face {
+  font-family: 'Cormorant Garamond';
+  src: url('/fonts/cormorant-garamond-600-latin.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url('/fonts/source-sans-3-latin.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  /* Palette */
+  --hk-ink-950: #070a14;
+  --hk-ink-900: #0b1020;
+  --hk-ink-800: #121a30;
+  --hk-ink-700: #1b2542;
+  --hk-ink-600: #2a3557;
+  --hk-river-500: #2e4a8a;
+  --hk-lamp-500: #e8952f;
+  --hk-lamp-400: #f2b45a;
+  --hk-lamp-300: #f8d08c;
+  --hk-kelip-400: #d8f06a;
+  --hk-kelip-300: #e9f7a6;
+  --hk-parchment-50: #f6eedf;
+  --hk-parchment-200: #d9cdb6;
+  --hk-mist-400: #a3adc4;
+  --hk-kelam-700: #2a1f3d;
+  --hk-kelam-400: #8c7bd6;
+  --hk-danger-500: #e0533d;
+
+  /* Semantic aliases */
+  --color-bg: var(--hk-ink-900);
+  --color-surface: rgb(18 26 48 / 0.92);
+  --color-surface-raised: var(--hk-ink-700);
+  --color-border: rgb(232 149 47 / 0.35);
+  --color-border-strong: var(--hk-ink-600);
+  --color-text: var(--hk-parchment-50);
+  --color-text-secondary: var(--hk-parchment-200);
+  --color-text-muted: var(--hk-mist-400);
+  --color-primary: var(--hk-lamp-500);
+  --color-primary-hover: var(--hk-lamp-400);
+  --color-on-primary: var(--hk-ink-950);
+  --color-accent: var(--hk-kelip-400);
+  --color-danger: var(--hk-danger-500);
+  --color-kelam: var(--hk-kelam-400);
+  --color-focus: var(--hk-lamp-300);
+  --color-scrim: rgb(7 10 20 / 0.72);
+  --color-control-fill: rgb(7 10 20 / 0.45);
+  --color-control-border: rgb(246 238 223 / 0.45);
+  --color-control-border-strong: rgb(248 208 140 / 0.7);
+  --color-control-pressed: rgb(232 149 47 / 0.55);
+  --color-joystick-base: rgb(7 10 20 / 0.25);
+  --color-joystick-ring: rgb(246 238 223 / 0.35);
+  --color-joystick-knob: rgb(246 238 223 / 0.75);
+
+  /* Type */
+  --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Source Sans 3', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  --ui-scale: 1;
+  --text-caption: calc(14px * var(--ui-scale));
+  --text-body: calc(16px * var(--ui-scale));
+  --text-label: calc(17px * var(--ui-scale));
+  --text-subtitle: calc(20px * var(--ui-scale));
+  --text-h3: calc(22px * var(--ui-scale));
+  --text-h2: calc(26px * var(--ui-scale));
+  --text-h1: calc(32px * var(--ui-scale));
+  --text-title: clamp(40px, 11vh, 96px);
+
+  /* Space (4/8 rhythm) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Shape */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-round: 999px;
+
+  /* Icons */
+  --icon-sm: 16px;
+  --icon-md: 24px;
+  --icon-lg: 32px;
+
+  /* Motion */
+  --dur-press: 90ms;
+  --dur-fast: 150ms;
+  --dur-base: 240ms;
+  --dur-scene: 600ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+
+  /* Safe areas (landscape notch can be on either side) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --gutter-x: max(16px, 2vw);
+}
+
+/* High-contrast mode (accessibility setting) replaces a light theme. */
+.hk-high-contrast {
+  --color-surface: rgb(0 0 0 / 0.92);
+  --color-border: var(--hk-lamp-300);
+  --color-text: #ffffff;
+  --color-text-secondary: #ffffff;
+  --color-text-muted: #e6e6e6;
+  --color-accent: #f5ff7a;
+}
+
+/* Reduced motion: opacity-only fades, short. Applied by the OS setting or the in-game toggle. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 100ms;
+    --dur-base: 120ms;
+    --dur-scene: 120ms;
+  }
+}
+.hk-reduced-motion {
+  --dur-fast: 100ms;
+  --dur-base: 120ms;
+  --dur-scene: 120ms;
+}

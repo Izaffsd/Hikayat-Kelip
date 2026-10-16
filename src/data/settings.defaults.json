@@ -1,0 +1,36 @@
+{
+  "language": "auto",
+  "subtitles": true,
+  "audio": { "master": 1, "music": 0.8, "sfx": 1, "ambience": 0.8, "voice": 1, "ui": 0.8 },
+  "graphics": {
+    "preset": "auto",
+    "fpsCap30": "auto",
+    "batterySaver": false,
+    "dynamicResolution": true,
+    "forceWebGL": false
+  },
+  "camera": { "sensitivity": 1, "invertY": false, "shake": true, "autoCamera": "auto" },
+  "accessibility": {
+    "reducedMotion": "auto",
+    "highContrastKelip": false,
+    "highContrastUI": false,
+    "colorBlindTelegraphs": false,
+    "uiScale": 1,
+    "subtitleSize": 1
+  },
+  "assists": {
+    "difficulty": "normal",
+    "widerParry": "auto",
+    "gameSpeed": 1,
+    "autoCombo": false,
+    "skipEncounter": true,
+    "ledgeMagnet": "auto",
+    "autoLockOn": "auto",
+    "autoSprint": false,
+    "autoMantle": true
+  },
+  "touch": { "size": 1, "opacity": 0.55, "layout": null },
+  "bindings": { "keyboard": null, "gamepad": null },
+  "telemetry": true,
+  "a2hsPromptShown": false
+}

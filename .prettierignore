@@ -1,0 +1,14 @@
+dist/
+node_modules/
+public/
+build-cache/
+art/
+test-results/
+playwright-report/
+blob-report/
+.claude/
+design-system/
+package-lock.json
+skills-lock.json
+# Docs are prose (BUILD_PROMPT.md must stay verbatim); never reflow them.
+*.md

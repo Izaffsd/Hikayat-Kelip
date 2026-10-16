@@ -1,0 +1,61 @@
+{
+  "presets": {
+    "low": {
+      "targetFps": 30,
+      "maxPixelRatio": 1.5,
+      "renderScale": 0.8,
+      "minRenderScale": 0.5,
+      "shadows": "blob",
+      "shadowMapSize": 0,
+      "fireflies": 2000,
+      "foliageDensity": 0.4,
+      "drawDistance": 120,
+      "lodBias": 0.6,
+      "animLodHz": 15,
+      "post": {
+        "enabled": false,
+        "bloom": false,
+        "fxaa": false,
+        "smaa": false,
+        "godrays": false,
+        "fsr": false
+      }
+    },
+    "medium": {
+      "targetFps": 60,
+      "maxPixelRatio": 1.5,
+      "renderScale": 1,
+      "minRenderScale": 0.6,
+      "shadows": "single",
+      "shadowMapSize": 2048,
+      "fireflies": 6000,
+      "foliageDensity": 0.75,
+      "drawDistance": 220,
+      "lodBias": 1,
+      "animLodHz": 30,
+      "post": { "enabled": true, "bloom": true, "fxaa": false, "smaa": true, "godrays": false, "fsr": true }
+    },
+    "high": {
+      "targetFps": 60,
+      "maxPixelRatio": 2,
+      "renderScale": 1,
+      "minRenderScale": 0.7,
+      "shadows": "csm",
+      "shadowMapSize": 2048,
+      "fireflies": 12000,
+      "foliageDensity": 1,
+      "drawDistance": 400,
+      "lodBias": 1.4,
+      "animLodHz": 60,
+      "post": { "enabled": true, "bloom": true, "fxaa": false, "smaa": true, "godrays": true, "fsr": true }
+    }
+  },
+  "dynamicResolution": {
+    "sampleFrames": 30,
+    "stepDown": 0.05,
+    "stepUp": 0.05,
+    "upHeadroom": 0.8,
+    "upHoldSeconds": 2
+  },
+  "batterySaver": { "preset": "low", "fpsCap": 30, "maxRenderScale": 0.7 }
+}
