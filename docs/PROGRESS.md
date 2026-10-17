@@ -7,8 +7,10 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - **Push:** Izaf said "push and go ahead" (2026-10-17); `main` is on GitHub. The repo is still **public**; Izaf chose
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
   fresh `gh auth login --web`). Vercel previews start once he imports the repo on vercel.com (Vite preset).
-- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. **Resume with milestone 3 (traversal)** after
-  writing the kampung layout (`tools/layout/kampung.mjs`).
+- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. **Resume with the rest of milestone 3:** a
+  scripted run of the kampung race route in the browser (validates layout + moves together), the ledge magnet
+  assist, glide and wall-run cameras, then authored `ledge_hang` and `glide` poses (Blender, previewed live) and the
+  wau prop on the glide.
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
   session `blender` and `chrome-devtools` are connected (the standalone `claude mcp list` still says "pending" because
   the CLI keeps its own approvals). Live previews use `tools/blender/live/hk_preview.py`: everything goes into an
@@ -119,6 +121,16 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
   FPS; 586 colliders; GPU memory estimate 62 MB; no console errors or warnings on either backend.
 - **Notes for M6:** roofs read as near-black silhouettes in the storm; the ridge route needs a readable rim/key on the
   roofs before the first 30 seconds can be judged.
+- **Kampung layout done** (`e6793c6`, D-028, D-032): home, race route, waterfront deck and stall, long jetty with Tok
+  Wan's pondok, grove across the river, rooftop chain, old jetty and arena, the tallest berembang (≈ 32 m) with its
+  climb. 1,572 placements: 83 draw calls, 375 k tris, 1,684 colliders, 92.9 FPS (WebGPU), no console errors.
+  Fixed on the way: kit pieces without colliders (gable ends, nipah, roots, debris) were mis-scaled by Meshopt
+  quantization (D-029) — the prologue had the same bug.
+- **M3 core done** (`5788371`, D-030, D-031): step-up (≤ 0.42 m), automatic mantle (≤ 1.3 m), ledge grab and hang
+  (≤ 2.4 m, climb or drop), wall-run (tagged walls, gravity curve, jump-off), slide (shrunk capsule, crawls until there
+  is headroom), wau glide (hold jump; dive, pull up, steer); abilities per region (`data/abilities.json`). Found and
+  fixed a real stutter: Rapier's controller stopped or deflected grounded moves at random on flat ground. Headless
+  movement lab: 16 tests (`tests/unit/traversal.test.js`); browser test of every move on both backends.
 
 ## Setup checklist status
 
