@@ -637,8 +637,8 @@
       "type": "glb"
     },
     "characters/kelip": {
-      "url": "/assets/characters/kelip.5360b0cdc9.glb",
-      "bytes": 35140,
+      "url": "/assets/characters/kelip.40cf95de26.glb",
+      "bytes": 35276,
       "type": "glb"
     },
     "characters/maksom": {
@@ -682,18 +682,18 @@
       "type": "glb"
     },
     "characters/wisp": {
-      "url": "/assets/characters/wisp.f67d7f3c23.glb",
-      "bytes": 22600,
+      "url": "/assets/characters/wisp.dd7943f353.glb",
+      "bytes": 22688,
       "type": "glb"
     },
     "kits/kampung_kit": {
-      "url": "/assets/kits/kampung_kit.d85867f600.glb",
-      "bytes": 737012,
+      "url": "/assets/kits/kampung_kit.aa913c43a3.glb",
+      "bytes": 737300,
       "type": "glb"
     },
     "props/props_slice": {
-      "url": "/assets/props/props_slice.b4da2e48b6.glb",
-      "bytes": 327340,
+      "url": "/assets/props/props_slice.e1d6e64a91.glb",
+      "bytes": 327716,
       "type": "glb"
     }
   }

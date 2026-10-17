@@ -32,6 +32,23 @@ export async function createIO() {
 }
 
 /**
+ * Gives every unskinned mesh its own leaf node. Meshopt quantization stores a dequantizing scale and offset on the
+ * node that holds a mesh; on a childless piece root (gable ends, nipah, debris) that would overwrite the root's
+ * authored frame, which the LevelBuilder and prop attachment read. With the mesh on a leaf, roots stay pure frames.
+ * @returns {import('@gltf-transform/core').Transform}
+ */
+export function meshesOnLeaves() {
+  return (document) => {
+    for (const node of document.getRoot().listNodes()) {
+      const mesh = node.getMesh();
+      if (!mesh || node.getSkin() || node.listChildren().length > 0) continue;
+      const leaf = document.createNode(`${node.getName()}__mesh`).setMesh(mesh);
+      node.setMesh(null).addChild(leaf);
+    }
+  };
+}
+
+/**
  * Optimises one GLB.
  * @param {string} inputPath
  * @param {string} outputPath
@@ -56,6 +73,7 @@ export async function optimizeGlb(
     resample(),
     toktx({ encoder: sharp, mode: Mode.ETC1S, slots: COLOR_SLOTS, quality, compression: 2, resize }),
     toktx({ encoder: sharp, mode: Mode.UASTC, slots: DATA_SLOTS, rdo: true, zstd: 18, resize }),
+    meshesOnLeaves(),
     meshopt({ encoder: MeshoptEncoder, level: 'medium' }),
   );
   const bytes = await io.writeBinary(document);
