@@ -248,12 +248,25 @@ export class Engine {
    */
   _fixed(dt) {
     this.input.beginTick(this.time.tick);
-    const intent = this.controller.update(this.cameraSystem.yaw);
+    const intent = this._testIntent ?? this.controller.update(this.cameraSystem.yaw);
     if (this.world?.deadlyWater) this.traversal.hazardWaterLevel = this.world.waterLevel;
+    this._updateAssists();
     this.traversal.fixedUpdate(dt, intent);
     this.physics.step(dt);
     this._probeGround();
     this.bus.flush();
+  }
+
+  /** Movement assists from settings: ledge magnet radius ('auto' follows the device) and auto-mantle. */
+  _updateAssists() {
+    const setting = this.settings.get('assists.ledgeMagnet');
+    const radii = data('tuning/player').magnet;
+    let radius = radii.keyboard;
+    if (setting === 'auto') radius = radii[this.input.device] ?? radii.keyboard;
+    else if (setting === false || setting === 'off') radius = 0;
+    else if (typeof setting === 'number') radius = setting;
+    this.traversal.assist.magnetRadius = radius;
+    this.traversal.assist.autoMantle = this.settings.get('assists.autoMantle') !== false;
   }
 
   /**
@@ -316,7 +329,7 @@ export class Engine {
     this.avatar.root.rotation.y = facing;
     this._syncAnimator(dt);
     this.physics.interpolate(alpha);
-    this.cameraSystem.update(dt, this._feet, facing, this.traversal.speed);
+    this.cameraSystem.update(dt, this._feet, facing, this.traversal.speed, this.traversal.state);
     this.avatar.update(dt, this.camera, this.groundY);
     this.world?.update(dt, this.camera, this._feet);
     this.renderer.render(this.scene, this.camera);
@@ -506,6 +519,20 @@ export class Engine {
          * @param {number[]} feet
          */
         teleport: (feet) => engine.traversal.respawnAt({ x: feet[0], y: feet[1], z: feet[2] }),
+        /**
+         * Drives the player with a world-space intent instead of the camera-relative controls (bots, tests);
+         * null hands control back.
+         * @param {{ x: number, z: number, magnitude: number, sprintHeld?: boolean }|null} intent
+         */
+        drive: (intent) => {
+          engine._testIntent = intent ? { sprintHeld: false, ...intent } : null;
+        },
+        /**
+         * Holds or releases a game action as a virtual button.
+         * @param {string} action
+         * @param {boolean} down
+         */
+        button: (action, down) => engine.input.setVirtualButton(action, down),
         /**
          * Loads manifest entries with the real AssetLoader (KTX2 + Meshopt on this renderer), summarises what came
          * back, then releases everything. Test hook only (`?test=1`).

@@ -40,6 +40,11 @@ export class Traversal {
     this.abilities = abilities;
     this.tagsOf = tagsOf;
     this.probe = physics ? new LedgeProbe(physics, character) : null;
+    /**
+     * Movement assists (settings → Engine): ledge magnet radius in metres (0 = off) and whether waist-high edges are
+     * climbed without pressing jump.
+     */
+    this.assist = { magnetRadius: 0, autoMantle: true };
     /** @type {'ground'|'air'|'step'|'mantle'|'climb'|'hang'|'wallRun'|'slide'|'glide'} */
     this.state = 'ground';
     this.velocity = { x: 0, y: 0, z: 0 };
@@ -234,6 +239,73 @@ export class Traversal {
     if (grounded && !wasGrounded) this.bus.emit(EV.PLAYER_LANDED, { speed: Math.max(0, -vyBefore) });
     this.state = grounded ? 'ground' : 'air';
     if (!grounded && (this._tryAirEdge(intent) || this._tryWallRun(intent))) return;
+    if (!grounded) this._ledgeMagnet();
+  }
+
+  /**
+   * Ledge magnet (TECHNICAL §5.3, GDD "assist, don't punish"): when the landing 0.25 s ahead would miss, nudge the
+   * jump toward the nearest walkable spot within the assist radius.
+   */
+  _ledgeMagnet() {
+    const radius = this.assist.magnetRadius;
+    const t = this.tuning.magnet;
+    const v = this.velocity;
+    if (!this.probe || radius <= 0 || v.y > -1 || this.time.tick % t.everyTicks !== 0) return;
+    const feet = this._currentFeet();
+    const g = this.tuning.gravity * this.tuning.jump.fallGravityScale;
+    const top = feet.y + 0.3;
+    // Walk the arc over the window: if it meets walkable ground, it lands and needs no help. Otherwise find where it
+    // first drops below the ground right beside it: that is the miss to correct.
+    let missTime = 0;
+    let px = 0;
+    let pz = 0;
+    let py = 0;
+    for (let tau = 0.05; tau <= t.window + 1e-6; tau += 0.05) {
+      px = feet.x + v.x * tau;
+      pz = feet.z + v.z * tau;
+      py = feet.y + v.y * tau - 0.5 * g * tau * tau;
+      const ground = this.probe.groundAt(px, top, pz, Math.max(0.5, top - py + 0.3));
+      if (!Number.isNaN(ground) && py <= ground + 0.08) return; // lands on it
+      if (Number.isNaN(ground) && py < feet.y - 0.05) {
+        missTime = tau;
+        break;
+      }
+    }
+    if (!missTime) return;
+    // Look as far as the radius plus the capsule's own (its rounded bottom catches an edge it overhangs), but move
+    // the landing by at most the radius.
+    const reach = radius + this.cc.radius;
+    const length = Math.max(0.5, top - py + 0.4);
+    let bestX = 0;
+    let bestZ = 0;
+    let best = Infinity;
+    for (const ring of [0.5, 1]) {
+      for (let k = 0; k < 8; k++) {
+        const angle = (k * Math.PI) / 4;
+        const x = px + Math.cos(angle) * reach * ring;
+        const z = pz + Math.sin(angle) * reach * ring;
+        const ground = this.probe.groundAt(x, top, z, length);
+        if (Number.isNaN(ground) || ground < py - 0.4) continue;
+        const d = Math.hypot(x - px, z - pz);
+        if (d < best) {
+          best = d;
+          bestX = x;
+          bestZ = z;
+        }
+      }
+      if (best < Infinity) break;
+    }
+    if (best === Infinity) return;
+    const shift = Math.min(best, radius);
+    let dvx = (((bestX - px) / best) * shift) / missTime;
+    let dvz = (((bestZ - pz) / best) * shift) / missTime;
+    const len = Math.hypot(dvx, dvz);
+    if (len > t.maxPush) {
+      dvx *= t.maxPush / len;
+      dvz *= t.maxPush / len;
+    }
+    v.x += dvx;
+    v.z += dvz;
   }
 
   _jump(coyote) {
@@ -259,6 +331,7 @@ export class Traversal {
   /** Grounded and blocked: a short edge is stepped up, a waist-high one mantled (when pushing toward it). */
   _tryGroundEdge(intent) {
     if (!this.probe || intent.magnitude < 0.3) return false;
+    const manual = !this.assist.autoMantle;
     const n = this.cc.wallNormal;
     if (-(intent.x * n.x + intent.z * n.z) < this.tuning.mantle.approachDot) return false;
     const t = this.tuning;
@@ -273,6 +346,8 @@ export class Traversal {
     if (!edge) return false;
     if (edge.height <= t.step.maxHeight) {
       this._startScript('step', edge, t.step.baseTime + edge.height * t.step.timePerMetre, 0.95, 0.75);
+    } else if (manual) {
+      return false; // auto-mantle off: jump at the edge and the air mantle takes it
     } else {
       this._startScript(
         'mantle',
@@ -468,7 +543,9 @@ export class Traversal {
     w.tangentZ = tz;
     w.speed = Math.max(speed, t.minSpeed) + t.speedBoost;
     w.time = 0;
-    v.y = Math.max(v.y, t.rise);
+    w.lastDistance = wall.distance;
+    // A gentle arc whatever the entry: the jump's upward speed would rocket up the wall at near-zero gravity.
+    v.y = t.rise;
     this._jumping = false;
     this.wallSide = wall.side;
     this.facing = Math.atan2(tx, tz);

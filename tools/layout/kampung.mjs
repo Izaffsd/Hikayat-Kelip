@@ -134,18 +134,8 @@ export function kampung() {
     [-4, -6 - JAMBATAN_HALF],
     [-4, -19],
   ]);
-  // Boat shed beside the gap to the waterfront: its west wall is the wall-run.
-  L.house({
-    x: 7.1,
-    z: -12,
-    y: WALK - FLOOR,
-    yaw: 180,
-    depth: 2,
-    stairs: false,
-    ground: MUD,
-    seed: 131,
-    walls: ['wall_door', 'wall_planks', 'wall_planks', 'wall_planks', 'wall_planks', 'wall_planks'],
-  });
+  // Tall boat shed beside the gap to the waterfront: its west wall (two storeys, nothing overhead) is the wall-run.
+  L.shed({ x: 7.1, z: -12, floorTop: WALK, yaw: 180, depth: 2, storeys: 2, ground: MUD });
   L.put('sampan', 10.4, WATER - 0.1, -15.5, 4);
 
   // --- Waterfront deck at the jetty root: Mak Som's stall, crates, lamps. The race finishes across it.

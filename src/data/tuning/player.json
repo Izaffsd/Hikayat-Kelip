@@ -69,13 +69,21 @@
     "dropPush": 1.2,
     "grabMaxRise": 2.5
   },
+  "magnet": {
+    "window": 0.25,
+    "keyboard": 0.4,
+    "gamepad": 0.6,
+    "touch": 0.8,
+    "maxPush": 3.0,
+    "everyTicks": 3
+  },
   "wallRun": {
     "minSpeed": 4.2,
     "maxDuration": 1.15,
-    "reach": 0.55,
+    "reach": 0.9,
     "maxApproachDeg": 55,
     "minClearance": 0.7,
-    "rise": 1.6,
+    "rise": 1.2,
     "gravityStart": 0.06,
     "gravityEnd": 1.0,
     "speedBoost": 0.6,

@@ -9,6 +9,8 @@
  */
 
 export const FLOOR = 2.4;
+/** Eave (top of the walls) above a piece origin: floor 2.4 + walls 2.2. */
+export const EAVE_ABOVE_FLOOR = 2.4 + 2.2;
 export const RIDGE = 2.4 + 2.2 + 2.0 * Math.tan((40 * Math.PI) / 180);
 
 const round = (v) => Math.round(v * 1000) / 1000;
@@ -152,6 +154,45 @@ export class Layout {
     } else if (stairs) {
       f.put('stairs', 0, 0, 0, 180);
     }
+    return f;
+  }
+
+  /**
+   * A tall timber building (boat shed, store): one floor at `floorTop`, `storeys` rows of walls, the roof on top.
+   * Its long sides make good wall-run walls (nothing overhangs the runner's head). Axes as `house`.
+   * @param {object} o
+   * @param {number} o.x
+   * @param {number} o.z
+   * @param {number} o.floorTop
+   * @param {number} [o.yaw=0]
+   * @param {number} [o.depth=2]
+   * @param {number} [o.storeys=2]
+   * @param {number} [o.ground] mud height for the stilts
+   */
+  shed({ x, z, floorTop, yaw = 0, depth = 2, storeys = 2, ground }) {
+    const y0 = floorTop - FLOOR;
+    const f = this.frame(x, y0, z, yaw);
+    const len = depth * 3;
+    for (let j = 0; j <= depth; j++) {
+      for (const sx of [-1.5, 1.5]) {
+        const [wx, , wz] = f.toWorld(sx, 0, j * 3);
+        this.stilt(wx, y0, wz, ground ?? y0 - 0.6);
+      }
+    }
+    for (let j = 0; j < depth; j++) f.put('floor_3x3', 0, 0, 1.5 + j * 3);
+    for (let s = 0; s < storeys; s++) {
+      const ly = s * (EAVE_ABOVE_FLOOR - FLOOR);
+      f.put(s === 0 ? 'wall_door' : 'wall_window', 0, ly, 0, 180);
+      f.put('wall_planks', 0, ly, len, 0);
+      for (let j = 0; j < depth; j++) {
+        f.put('wall_planks', -1.5, ly, 1.5 + j * 3, -90);
+        f.put('wall_planks', 1.5, ly, 1.5 + j * 3, 90);
+      }
+    }
+    const top = (storeys - 1) * (EAVE_ABOVE_FLOOR - FLOOR);
+    for (let j = 0; j < depth; j++) f.put('roof_gable_3', 0, top, 1.5 + j * 3);
+    f.put('gable_end', 0, top, 0, 180);
+    f.put('gable_end', 0, top, len, 0);
     return f;
   }
 

@@ -16,6 +16,34 @@
     "recenterDelay": 1.6,
     "recenterSpeed": 1.8
   },
+  "modes": {
+    "comment": "Per-traversal-state adjustments (TECHNICAL §7: glide pulled back with a higher FOV, horizon stable). Blended at `blend` per second.",
+    "blend": 4,
+    "glide": {
+      "distanceScale": 1.4,
+      "fovAdd": 9,
+      "pitchAdd": 0.06,
+      "pivotAdd": 0.2,
+      "recenter": true,
+      "recenterSpeed": 2.6
+    },
+    "wallRun": {
+      "distanceScale": 1.12,
+      "fovAdd": 5,
+      "pitchAdd": 0,
+      "pivotAdd": 0,
+      "recenter": true,
+      "recenterSpeed": 3.2
+    },
+    "slide": {
+      "distanceScale": 1.0,
+      "fovAdd": 4,
+      "pitchAdd": 0,
+      "pivotAdd": -0.55,
+      "recenter": false,
+      "recenterSpeed": 0
+    }
+  },
   "look": {
     "mouseSensitivity": 0.0022,
     "gamepadSpeed": 3.2,

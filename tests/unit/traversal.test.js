@@ -216,6 +216,39 @@ describe('ledges', () => {
   });
 });
 
+describe('ledge magnet assist', () => {
+  /** Runs at run speed and jumps at z = 2.8 off the end of a floor that stops at z = 3. */
+  async function jumpGap(farStart, radius) {
+    const near = { c: [0, -0.5, -7], h: [4, 0.5, 10] }; // top 0, z −17…3
+    const far = { c: [0, -0.5, farStart + 10], h: [4, 0.5, 10] };
+    const lab = await makeLab([near, far], [0, 0.05, -4]);
+    lab.traversal.assist.magnetRadius = radius;
+    // The air mantle would also rescue this jump; test the magnet on its own.
+    lab.traversal.abilities = { has: (move) => move !== 'mantle' && move !== 'ledge' };
+    lab.stick(0, 0.8);
+    lab.until(() => lab.feet.z >= 2.8, 200);
+    lab.hold('jump', true);
+    lab.tick(1);
+    lab.hold('jump', false);
+    lab.until(() => lab.traversal.state === 'ground' || lab.feet.y < -2, 200);
+    return lab;
+  }
+
+  it('turns a jump that falls just short of a platform into a landing', async () => {
+    // Where does this jump land with floor everywhere ahead? Then move the far edge 0.55 m beyond that (more than
+    // the capsule's rounded bottom can catch on its own).
+    const probe = await jumpGap(3, 0);
+    const landing = probe.feet.z;
+    const missed = await jumpGap(landing + 0.55, 0);
+    expect(missed.feet.y).toBeLessThan(-1);
+    const helped = await jumpGap(landing + 0.55, 0.4);
+    expect(helped.traversal.state).toBe('ground');
+    helped.tick(30); // still pushing forward: steps fully onto the platform
+    expect(helped.feet.y).toBeCloseTo(0, 1);
+    expect(helped.feet.z).toBeGreaterThan(landing + 0.55);
+  });
+});
+
 describe('wall-run', () => {
   it('runs along a wall across a gap and lands on the far side', async () => {
     const before = { c: [0, -0.5, -7], h: [6, 0.5, 10] }; // top 0, z −17…3

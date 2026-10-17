@@ -36,6 +36,8 @@ export class CameraSystem {
     this._idleLook = 0;
     /** @type {{ position: Vector3, target: Vector3 }|null} fixed shot replacing the follow camera */
     this.override = null;
+    /** Blended mode adjustments (glide, wall-run, slide). */
+    this._mode = { distanceScale: 1, fovAdd: 0, pitchAdd: 0, pivotAdd: 0 };
     camera.fov = tuning.fov;
     camera.near = tuning.near;
     camera.far = tuning.far;
@@ -48,8 +50,9 @@ export class CameraSystem {
    * @param {Vector3} targetFeet interpolated player feet position
    * @param {number} targetFacing interpolated player facing yaw
    * @param {number} targetSpeed player horizontal speed (m/s)
+   * @param {string} [mode='ground'] traversal state; glide, wallRun and slide adjust the framing
    */
-  update(dt, targetFeet, targetFacing, targetSpeed) {
+  update(dt, targetFeet, targetFacing, targetSpeed, mode = 'ground') {
     if (this.override) {
       // Fixed shot (cutscenes, test screenshots).
       this.camera.position.copy(this.override.position);
@@ -57,6 +60,8 @@ export class CameraSystem {
       return;
     }
     const { follow, look } = this.tuning;
+    const modeDef = this.tuning.modes?.[mode];
+    this._blendMode(dt, modeDef);
     const sensitivity = this.settings.get('camera.sensitivity');
     const invert = this.settings.get('camera.invertY') ? -1 : 1;
     const l = this.input.consumeLook(this._look);
@@ -71,18 +76,25 @@ export class CameraSystem {
     this.pitch = Math.min(follow.pitchMax, Math.max(follow.pitchMin, this.pitch));
     this.yaw = wrapAngle(this.yaw);
 
-    // Auto-recenter behind the player after a moment without look input, while moving.
+    // Auto-recenter behind the player after a moment without look input, while moving. Glides and wall-runs
+    // recenter on their own (fast moves along a line), unless the player is looking around.
     const looking = Math.abs(yawInput) + Math.abs(pitchInput) > 1e-5;
     this._idleLook = looking ? 0 : this._idleLook + dt;
-    if (this._recenterEnabled() && this._idleLook > follow.recenterDelay && targetSpeed > 0.5) {
+    const modeRecenter = modeDef?.recenter && this._idleLook > 0.4;
+    if (
+      (modeRecenter || (this._recenterEnabled() && this._idleLook > follow.recenterDelay)) &&
+      targetSpeed > 0.5
+    ) {
       const behind = wrapAngle(targetFacing + Math.PI);
       const delta = wrapAngle(behind - this.yaw);
-      const step = follow.recenterSpeed * dt * Math.min(1, targetSpeed / 4);
+      const speed = modeRecenter ? modeDef.recenterSpeed : follow.recenterSpeed;
+      const step = speed * dt * Math.min(1, targetSpeed / 4);
       this.yaw = wrapAngle(this.yaw + Math.sign(delta) * Math.min(Math.abs(delta), step));
     }
 
     // Pivot follows the target with exponential smoothing (frame-rate independent).
-    this._desiredPivot.set(targetFeet.x, targetFeet.y + follow.pivotHeight, targetFeet.z);
+    const m = this._mode;
+    this._desiredPivot.set(targetFeet.x, targetFeet.y + follow.pivotHeight + m.pivotAdd, targetFeet.z);
     if (!this._pivotReady) {
       this.pivot.copy(this._desiredPivot);
       this._pivotReady = true;
@@ -92,13 +104,15 @@ export class CameraSystem {
     }
 
     // Collision: sweep a sphere from the pivot toward the desired camera position.
-    const cp = Math.cos(this.pitch);
-    this._dir.set(Math.sin(this.yaw) * cp, Math.sin(this.pitch), Math.cos(this.yaw) * cp);
+    const pitch = Math.min(follow.pitchMax, this.pitch + m.pitchAdd);
+    const cp = Math.cos(pitch);
+    this._dir.set(Math.sin(this.yaw) * cp, Math.sin(pitch), Math.cos(this.yaw) * cp);
+    const distance = this.distance * m.distanceScale;
     const hitDistance = this.physics.sphereCast(
       this._ball,
       this.pivot,
       this._dir,
-      this.distance + follow.collisionMargin,
+      distance + follow.collisionMargin,
     );
     const allowed = Math.max(follow.minDistance, hitDistance - follow.collisionMargin);
     if (allowed < this.currentDistance) {
@@ -110,6 +124,25 @@ export class CameraSystem {
 
     this.camera.position.copy(this.pivot).addScaledVector(this._dir, this.currentDistance);
     this.camera.lookAt(this.pivot);
+    const fov = this.tuning.fov + m.fovAdd;
+    if (Math.abs(this.camera.fov - fov) > 0.01) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
+  /**
+   * Eases the framing adjustments toward the current mode's (or back to none).
+   * @param {number} dt
+   * @param {object|undefined} def
+   */
+  _blendMode(dt, def) {
+    const m = this._mode;
+    const k = 1 - Math.exp(-(this.tuning.modes?.blend ?? 4) * dt);
+    m.distanceScale += ((def?.distanceScale ?? 1) - m.distanceScale) * k;
+    m.fovAdd += ((def?.fovAdd ?? 0) - m.fovAdd) * k;
+    m.pitchAdd += ((def?.pitchAdd ?? 0) - m.pitchAdd) * k;
+    m.pivotAdd += ((def?.pivotAdd ?? 0) - m.pivotAdd) * k;
   }
 
   /**

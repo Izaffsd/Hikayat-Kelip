@@ -223,6 +223,24 @@ export class LedgeProbe {
   }
 
   /**
+   * Height of a walkable surface below a point (NaN when none within `length`, or too steep).
+   * @param {number} x
+   * @param {number} y start height
+   * @param {number} z
+   * @param {number} length
+   * @returns {number}
+   */
+  groundAt(x, y, z, length) {
+    const origin = this._origin;
+    origin.x = x;
+    origin.y = y;
+    origin.z = z;
+    const hit = this.physics.castRay(origin, this._downDir, length, undefined, this.cc.collider);
+    if (!hit.hit || hit.distance < 0.01 || hit.normal.y < 0.7) return NaN;
+    return hit.point.y;
+  }
+
+  /**
    * Distance from the feet down to the nearest surface (Infinity when nothing within `max`).
    * @param {{ x: number, y: number, z: number }} feet
    * @param {number} max
