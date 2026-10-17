@@ -35,6 +35,14 @@
       "recenter": true,
       "recenterSpeed": 3.2
     },
+    "lockOn": {
+      "distanceScale": 1.08,
+      "fovAdd": 2,
+      "pitchAdd": 0.04,
+      "pivotAdd": 0,
+      "recenter": true,
+      "recenterSpeed": 4.5
+    },
     "slide": {
       "distanceScale": 1.0,
       "fovAdd": 4,
@@ -44,6 +52,7 @@
       "recenterSpeed": 0
     }
   },
+  "shake": { "maxOffset": 0.16, "maxRollDeg": 1.5, "decay": 1.8, "frequency": 22 },
   "look": {
     "mouseSensitivity": 0.0022,
     "gamepadSpeed": 3.2,

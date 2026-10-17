@@ -54,7 +54,7 @@ export class Traversal {
      * climbed without pressing jump.
      */
     this.assist = { magnetRadius: 0, autoMantle: true };
-    /** @type {'ground'|'air'|'step'|'mantle'|'climb'|'hang'|'wallRun'|'slide'|'glide'} */
+    /** @type {'ground'|'air'|'step'|'mantle'|'climb'|'hang'|'wallRun'|'slide'|'glide'|'combat'|'respawn'} */
     this.state = 'ground';
     this.velocity = { x: 0, y: 0, z: 0 };
     /** Facing yaw (radians); 0 faces +Z. */
@@ -145,6 +145,9 @@ export class Traversal {
       case 'respawn':
         this._updateFalling(dt);
         return;
+      case 'combat':
+        // The combat system moves the character during silat actions.
+        break;
       default:
         this._updateFree(dt, intent);
     }

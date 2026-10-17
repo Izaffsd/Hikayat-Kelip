@@ -25,5 +25,8 @@
   "touch.kelip": "Call Kelip",
   "touch.pause": "Pause",
   "touch.move": "Move",
-  "sandbox.hint": "Movement sandbox — WASD or left stick to move, Space or A to jump"
+  "sandbox.hint": "Movement sandbox — WASD or left stick to move, Space or A to jump",
+  "enemy.wisp": "Shadow wisp",
+  "enemy.brawler": "Villager gripped by Kelam",
+  "enemy.adi": "Adi"
 }

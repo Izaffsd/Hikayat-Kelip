@@ -39,7 +39,7 @@ export const EV = Object.freeze({
   PLAYER_LANDED: 'player:landed',
   /** { coyote: boolean, buffered: boolean } */
   PLAYER_JUMPED: 'player:jumped',
-  /** { reason: 'water'|'fell' } — fell into a hazard; the screen fades and a respawn follows (GDD: under 2 s) */
+  /** { reason: 'water'|'fell'|'defeated' } — the screen fades; a respawn or encounter restart follows (under 2 s) */
   PLAYER_FELL: 'player:fell',
   /** { reason: string } */
   PLAYER_RESPAWNED: 'player:respawned',
@@ -53,6 +53,44 @@ export const EV = Object.freeze({
   PLAYER_SLIDE: 'player:slide',
   /** { open: boolean } — the wau opened or closed */
   PLAYER_GLIDE: 'player:glide',
+
+  /** { damage: number, health: number } — an enemy strike connected */
+  PLAYER_HIT: 'player:hit',
+  /** { perfect: boolean } — tangkis met a strike (perfect = attacker staggered) */
+  PLAYER_PARRY: 'player:parry',
+  /** { perfect: boolean } — langkah avoided a strike (perfect = slow motion and an opening) */
+  PLAYER_DODGE: 'player:dodge',
+  /** { move: string } — a strike, heavy, counter or finisher started */
+  PLAYER_ATTACK: 'player:attack',
+  /** { action: 'attack'|'finisher'|'dodge'|'guard'|'hit', move: string, clip: string, seconds: number } (animation) */
+  COMBAT_ACTION: 'combat:action',
+  /** { health: number, max: number } */
+  PLAYER_HEALTH: 'player:health',
+  /** {} — health reached zero; the encounter restarts */
+  PLAYER_DEFEATED: 'player:defeated',
+  /** { value: number, max: number } */
+  SEMANGAT_CHANGED: 'combat:semangat',
+  /** { id: number|null } — lock-on target changed */
+  LOCK_CHANGED: 'combat:lock',
+
+  /** { id: number, archetype: string } */
+  ENEMY_SPAWNED: 'enemy:spawned',
+  /** { id: number, kind: 'strike'|'dash', seconds: number } — wind-up began (read the tell) */
+  ENEMY_TELEGRAPH: 'enemy:telegraph',
+  /** { id: number, damage: number, vitality: number, max: number } */
+  ENEMY_HIT: 'enemy:hit',
+  /** { id: number, reason: 'parry'|'poise' } */
+  ENEMY_STAGGERED: 'enemy:staggered',
+  /** { id: number, phase: number } — a boss entered its next phase */
+  ENEMY_PHASE: 'enemy:phase',
+  /** { id: number, archetype: string, kind: 'wisp'|'cursed'|'boss' } — dissolved (wisp) or freed (cursed) */
+  ENEMY_DEFEATED: 'enemy:defeated',
+  /** { id: number } — gone from the scene */
+  ENEMY_REMOVED: 'enemy:removed',
+  /** { id: string } */
+  ENCOUNTER_STARTED: 'encounter:started',
+  /** { id: string } */
+  ENCOUNTER_CLEARED: 'encounter:cleared',
 
   /** { delay: number } — a lightning flash; thunder should follow after `delay` seconds */
   LIGHTNING: 'world:lightning',

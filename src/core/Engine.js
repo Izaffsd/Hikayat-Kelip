@@ -6,8 +6,14 @@ import { Abilities } from '../player/Abilities.js';
 import { prepareClips } from '../player/Animator.js';
 import { Avatar } from '../player/Avatar.js';
 import { PlayerController } from '../player/Controller.js';
+import { EnemyDirector } from '../ai/EnemyDirector.js';
+import { EnemyViews } from '../ai/EnemyViews.js';
+import { CombatSystem } from '../combat/CombatSystem.js';
+import { Encounters } from '../combat/Encounters.js';
 import { Traversal } from '../player/Traversal.js';
 import { Wau } from '../player/Wau.js';
+import { MoteBurst } from '../render/MoteBurst.js';
+import { CombatHud } from '../ui/CombatHud.js';
 import { PostFX } from '../render/PostFX.js';
 import { QualityManager } from '../render/QualityManager.js';
 import { Renderer } from '../render/Renderer.js';
@@ -29,6 +35,9 @@ import { Telemetry, telemetryAllowed } from './Telemetry.js';
 import { Time } from './Time.js';
 
 const TELEMETRY_FPS_INTERVAL = 60;
+
+/** Character model per enemy archetype (data/combat/enemies.json). */
+const ENEMY_MODELS = { wisp: 'characters/wisp', brawler: 'characters/villager_man', adi: 'characters/adi' };
 
 /**
  * Owns every runtime system and the frame/tick order (TECHNICAL §2.2). Core services that the title
@@ -54,6 +63,7 @@ export class Engine {
     this.started = false;
     this.portraitBlocked = false;
     this._feet = new Vector3();
+    this._tickFeet = { x: 0, y: 0, z: 0 };
     this._down = { x: 0, y: -1, z: 0 };
     this._probe = { x: 0, y: 0, z: 0 };
     this.groundY = 0;
@@ -82,13 +92,35 @@ export class Engine {
       renderer: this.renderer.three,
       basisPath: `/vendor/three-${__THREE_VERSION__}/basis/`,
     });
+    /** Region to play: the prologue by default; `?scene=sandbox` keeps the Phase 1 movement course for tests. */
+    this.sceneId = query.get('scene') ?? 'prologue';
+    // Only the enemy models this region's encounters use (the prologue needs just the wisp).
+    const encounterDefs = data('encounters');
+    const enemyKeys = new Set();
+    for (const [id, def] of Object.entries(encounterDefs)) {
+      if (id === 'comment' || def.region !== this.sceneId) continue;
+      for (const spawn of def.spawns) enemyKeys.add(ENEMY_MODELS[spawn.archetype]);
+    }
     const manifest = data('generated/assets').assets;
-    const wanted = ['anim/anim_core', 'characters/bayu', 'props/props_slice'].map((key) => manifest[key]);
-    const assets = await this.assets.loadAll(wanted, (done, total) =>
-      onProgress(0.35 + (0.25 * done) / total),
+    const keys = [
+      'anim/anim_core',
+      'anim/anim_villager',
+      'anim/anim_cursed',
+      'characters/bayu',
+      'props/props_slice',
+      ...enemyKeys,
+    ];
+    const assets = await this.assets.loadAll(
+      keys.map((key) => manifest[key]),
+      (done, total) => onProgress(0.35 + (0.25 * done) / total),
     );
-    const [animPack, bayu, props] = wanted.map((entry) => assets.get(entry.url));
-    this.clips = prepareClips(animPack.animations);
+    const byKey = (key) => assets.get(manifest[key].url);
+    this.clips = new Map();
+    for (const pack of ['anim/anim_core', 'anim/anim_villager', 'anim/anim_cursed']) {
+      for (const [name, clip] of prepareClips(byKey(pack).animations)) this.clips.set(name, clip);
+    }
+    const bayu = byKey('characters/bayu');
+    const props = byKey('props/props_slice');
     onProgress(0.6);
 
     this.scene = new Scene();
@@ -107,8 +139,6 @@ export class Engine {
     this.input.attach({ window, canvas });
     if (platform.isTouch) this.input.device = 'touch';
 
-    /** Region to play: the prologue by default; `?scene=sandbox` keeps the Phase 1 movement course for tests. */
-    this.sceneId = query.get('scene') ?? 'prologue';
     let spawn;
     let facing;
     if (this.sceneId === 'sandbox') {
@@ -155,6 +185,63 @@ export class Engine {
     this._pitch = 0;
     this.wau = new Wau({ gltf: props, avatar: this.avatar, config: data('animation/human').wau });
     bus.on(EV.PLAYER_GLIDE, ({ open }) => this.wau.setOpen(open));
+    this._attachTongkat(props);
+
+    // Silat: the enemy director, Bayu's combat, enemy visuals, the region's encounters.
+    const combatData = data('combat/moves');
+    this.director = new EnemyDirector({
+      bus,
+      archetypes: data('combat/enemies'),
+      tokens: combatData.attackTokens[settings.get('assists.difficulty')] ?? 2,
+    });
+    this.combat = new CombatSystem({
+      traversal: this.traversal,
+      character: this.character,
+      input: this.input,
+      time: this.time,
+      bus,
+      data: combatData,
+      abilities: this.abilities,
+      director: this.director,
+      settings,
+    });
+    this.motes = new MoteBurst();
+    this.scene.add(this.motes.mesh);
+    this.enemyViews = new EnemyViews({
+      scene: this.scene,
+      bus,
+      director: this.director,
+      models: {
+        wisp: enemyKeys.has('characters/wisp') ? byKey('characters/wisp') : null,
+        villager_man: enemyKeys.has('characters/villager_man') ? byKey('characters/villager_man') : null,
+        adi: enemyKeys.has('characters/adi') ? byKey('characters/adi') : null,
+      },
+      clips: this.clips,
+      profile: data('animation/cursed'),
+      motes: this.motes,
+    });
+    this.encounters = new Encounters({
+      bus,
+      director: this.director,
+      combat: this.combat,
+      traversal: this.traversal,
+      defs: encounterDefs,
+      regionId: this.sceneId,
+      world: this.world,
+    });
+    const engine = this;
+    this._playerAdapter = {
+      get feet() {
+        return engine._currentFeet();
+      },
+      get dodgeOrigin() {
+        return engine.combat.dodgeOrigin;
+      },
+      radius: this.character.radius,
+      receiveStrike: (enemy) => this.combat.receiveStrike(enemy),
+    };
+    this._guardAnim = false;
+    bus.on(EV.COMBAT_ACTION, (action) => this._playCombatAction(action));
     bus.on(EV.PLAYER_JUMPED, () => this.avatar.animator.setState('jumpStart', true));
     bus.on(EV.PLAYER_LANDED, ({ speed }) =>
       this.avatar.animator.setState(
@@ -256,10 +343,64 @@ export class Engine {
     const intent = this._testIntent ?? this.controller.update(this.cameraSystem.yaw);
     if (this.world?.deadlyWater) this.traversal.hazardWaterLevel = this.world.waterLevel;
     this._updateAssists();
+    this.combat.fixedUpdate(dt, intent);
     this.traversal.fixedUpdate(dt, intent);
     this.physics.step(dt);
+    this.director.fixedUpdate(dt, this._playerAdapter);
+    this.encounters.fixedUpdate(dt, this._currentFeet());
     this._probeGround();
     this.bus.flush();
+  }
+
+  /** Current (tick) feet position, shared object. */
+  _currentFeet() {
+    const cc = this.character;
+    this._tickFeet.x = cc.position.x;
+    this._tickFeet.y = cc.feetY;
+    this._tickFeet.z = cc.position.z;
+    return this._tickFeet;
+  }
+
+  /**
+   * Plays Bayu's silat on the action layer: strikes, steps, guards, hits, the finisher.
+   * @param {{ action: string, clip: string, seconds: number }} action
+   */
+  _playCombatAction({ action, clip, seconds }) {
+    const animator = this.avatar.animator;
+    const source = this.clips.get(clip);
+    if (!source) return;
+    if (action === 'guard') {
+      animator.playAction(clip, { loop: true, fadeIn: 0.05 });
+      this._guardAnim = true;
+      return;
+    }
+    // Swings and steps are short on purpose: compress the library clip into the move's duration.
+    animator.playAction(clip, {
+      duration: seconds,
+      timeScale: Math.max(1, source.duration / seconds),
+      fadeIn: action === 'hit' ? 0.03 : 0.05,
+      fadeOut: 0.12,
+    });
+  }
+
+  /**
+   * Puts Tok Wan's tongkat in Bayu's right hand.
+   * @param {{ scene: import('three').Object3D }} props
+   */
+  _attachTongkat(props) {
+    const config = data('animation/human').tongkat;
+    const source = props.scene.children.find((node) => node.userData.hk_prop === 'tongkat');
+    if (!source || !config) return;
+    const tongkat = source.clone(true);
+    tongkat.name = 'Tongkat';
+    tongkat.position.fromArray(config.position);
+    const [rx, ry, rz] = config.rotationDeg.map((deg) => (deg * Math.PI) / 180);
+    tongkat.rotation.set(rx, ry, rz);
+    tongkat.traverse((object) => {
+      if (object.isMesh) object.frustumCulled = false;
+    });
+    this.avatar.attach(tongkat, config.bone);
+    this.tongkat = tongkat;
   }
 
   /** Movement assists from settings: ledge magnet radius ('auto' follows the device) and auto-mantle. */
@@ -342,14 +483,40 @@ export class Engine {
   _frame(dt) {
     if (this._resizeQueued) this._resize();
     const alpha = this.time.alpha;
+    // Animation follows game time: frozen in hit-stop, slowed after a perfect langkah.
+    const animDt = this.time.hitStopRemaining > 0 ? 0 : dt * this.time.scale;
+    this.combat.frameUpdate(dt);
     this.character.interpolatedFeet(alpha, this._feet);
     const facing = this.traversal.interpolatedFacing(alpha);
     this.avatar.root.position.copy(this._feet);
     this.avatar.root.rotation.y = facing;
-    this._syncAnimator(dt);
+    this._syncAnimator(animDt);
+    if (this._guardAnim && this.combat.state !== 'guard') {
+      this.avatar.animator.stopAction(0.12);
+      this._guardAnim = false;
+    }
     this.physics.interpolate(alpha);
-    this.cameraSystem.update(dt, this._feet, facing, this.traversal.speed, this.traversal.state);
-    this.avatar.update(dt, this.camera, this.groundY);
+    if (this.combat.trauma > 0) {
+      this.cameraSystem.addTrauma(this.combat.trauma);
+      this.combat.trauma = 0;
+    }
+    // Hard lock-on: the camera settles behind Bayu, looking at the target.
+    const target = this.combat.hardLock ? this.combat.target : null;
+    const lookYaw = target
+      ? Math.atan2(target.position.x - this._feet.x, target.position.z - this._feet.z)
+      : facing;
+    const cameraMode = target ? 'lockOn' : this.traversal.state;
+    this.cameraSystem.update(
+      dt,
+      this._feet,
+      lookYaw,
+      Math.max(this.traversal.speed, target ? 1 : 0),
+      cameraMode,
+    );
+    this.avatar.update(animDt, this.camera, this.groundY);
+    this.enemyViews.update(animDt, alpha, this.camera, this.time.realTime);
+    this.motes.update(this.time.realTime);
+    this.hud.update(dt, this.camera, this.combat.inCombat, this.combat.hardLock);
     this.world?.update(dt, this.camera, this._feet);
     this.renderer.render(this.scene, this.camera);
     this.overlay.update(dt);
@@ -397,6 +564,7 @@ export class Engine {
     });
     if (this.platform.query.get('debug') === '1') this.overlay.setVisible(true);
     this.fade = new ScreenFade({ root: this.uiRoot, bus: this.bus });
+    this.hud = new CombatHud({ root: this.uiRoot, bus: this.bus, i18n: this.i18n, director: this.director });
     this.touch = new TouchControls({
       root: this.touchRoot,
       input: this.input,
@@ -553,6 +721,33 @@ export class Engine {
          * @param {boolean} down
          */
         button: (action, down) => engine.input.setVirtualButton(action, down),
+        /**
+         * Starts one of this region's encounters (data/encounters.json).
+         * @param {string} id
+         */
+        encounter: (id) => engine.encounters.start(id),
+        /** Bayu's combat state. */
+        combat: () => ({
+          state: engine.combat.state,
+          move: engine.combat.moveName,
+          health: engine.combat.health,
+          semangat: engine.combat.semangat,
+          target: engine.combat.target?.id ?? null,
+          hardLock: engine.combat.hardLock,
+          inCombat: engine.combat.inCombat,
+          timeScale: engine.time.scale,
+        }),
+        /** The current encounter's enemies. */
+        enemies: () =>
+          engine.director.enemies.map((e) => ({
+            id: e.id,
+            archetype: e.archetype,
+            state: e.state,
+            vitality: e.vitality,
+            x: e.position.x,
+            y: e.position.y,
+            z: e.position.z,
+          })),
         /**
          * Loads manifest entries with the real AssetLoader (KTX2 + Meshopt on this renderer), summarises what came
          * back, then releases everything. Test hook only (`?test=1`).

@@ -4,6 +4,7 @@
   "actionFade": 0.1,
   "glide": { "pitchDeg": 24, "pivotHeight": 1.92, "blend": 6 },
   "wau": { "position": [0, 1.72, -0.31], "pitchDeg": 70, "openTime": 0.16 },
+  "tongkat": { "bone": "hand_r", "position": [0, 0.08, 0.02], "rotationDeg": [90, 0, 0] },
   "initialState": "ground",
   "locomotion": [
     { "clip": "idle", "at": 0 },

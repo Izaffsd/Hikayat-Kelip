@@ -1,0 +1,44 @@
+{
+  "comment": "Encounters (TECHNICAL §6.3, §9): the arena (a deck: centre, half sizes, floor height; enemies stay on it), the spawns, where Bayu restarts after a defeat, and the layout trigger that starts it until missions drive encounters (Phase 3 M5). World coordinates.",
+  "prologue_wisps": {
+    "region": "prologue",
+    "trigger": "p_arena",
+    "arena": { "cx": 94, "cz": 0, "hx": 6, "hz": 6, "y": 2.6 },
+    "start": [90, 2.65, 0],
+    "spawns": [
+      { "archetype": "wisp", "x": 95, "z": -4.5 },
+      { "archetype": "wisp", "x": 98.5, "z": -1 },
+      { "archetype": "wisp", "x": 98, "z": 4 },
+      { "archetype": "wisp", "x": 91.5, "z": 4.5 }
+    ]
+  },
+  "kampung_jetty": {
+    "region": "kampung",
+    "trigger": "k_pondok",
+    "arena": { "cx": 2, "cz": -65.5, "hx": 4.4, "hz": 4.4, "y": 1.2 },
+    "start": [2, 1.25, -62],
+    "spawns": [
+      { "archetype": "wisp", "x": -1.5, "z": -68.5 },
+      { "archetype": "wisp", "x": 5.5, "z": -68 },
+      { "archetype": "wisp", "x": 5.5, "z": -62.5 }
+    ]
+  },
+  "kampung_adi": {
+    "region": "kampung",
+    "trigger": "k_arena",
+    "arena": { "cx": 53, "cz": -61, "hx": 5.8, "hz": 5.8, "y": 2.4 },
+    "start": [53, 2.45, -56.5],
+    "spawns": [{ "archetype": "adi", "x": 53, "z": -64.5 }]
+  },
+  "sandbox_mixed": {
+    "region": "sandbox",
+    "trigger": null,
+    "arena": { "cx": 0, "cz": 30, "hx": 9, "hz": 7, "y": 0 },
+    "start": [0, 0.05, 25],
+    "spawns": [
+      { "archetype": "wisp", "x": -4, "z": 33 },
+      { "archetype": "wisp", "x": 4, "z": 33 },
+      { "archetype": "brawler", "x": 0, "z": 34 }
+    ]
+  }
+}

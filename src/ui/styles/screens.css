@@ -49,6 +49,96 @@
   display: none;
 }
 
+/* Combat HUD (slice): vitals top left beside the Kelip corner, boss bar top centre, lock-on marker. */
+#ui-root > .hk-hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hk-hud__vitals {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-4));
+  left: calc(var(--safe-left) + 104px);
+  display: grid;
+  gap: var(--space-1);
+  width: min(30vw, 240px);
+  transition: opacity var(--dur-scene) var(--ease-out);
+}
+
+.hk-hud__vitals.is-hidden,
+.hk-hud__boss.is-hidden,
+.hk-hud__lock.is-hidden {
+  opacity: 0;
+}
+
+.hk-hud__bar {
+  height: 8px;
+  border-radius: var(--radius-round);
+  background: var(--color-control-fill);
+  border: 1px solid var(--color-control-border);
+  overflow: hidden;
+}
+
+.hk-hud__bar span {
+  display: block;
+  height: 100%;
+  transform-origin: left center;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.hk-hud__bar--health span {
+  background: var(--color-text);
+}
+
+.hk-hud__vitals.is-low .hk-hud__bar--health span {
+  background: var(--color-danger);
+}
+
+.hk-hud__bar--semangat {
+  height: 5px;
+}
+
+.hk-hud__bar--semangat span {
+  background: var(--color-accent);
+}
+
+.hk-hud__boss {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-4));
+  left: 50%;
+  width: min(46vw, 420px);
+  transform: translateX(-50%);
+  text-align: center;
+  transition: opacity var(--dur-scene) var(--ease-out);
+}
+
+.hk-hud__boss-name {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  color: var(--color-text);
+  text-shadow: 0 1px 3px rgb(7 10 20 / 0.8);
+}
+
+.hk-hud__bar--boss span {
+  background: var(--color-kelam);
+}
+
+.hk-hud__lock {
+  position: absolute;
+  top: -7px;
+  left: -7px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-control-border);
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.hk-hud__lock.is-hard {
+  border-color: var(--color-primary);
+}
+
 /* Respawn fade (TECHNICAL 5.3): never blocks input; quick to black, a little slower back. */
 #ui-root > .hk-fade {
   position: fixed;

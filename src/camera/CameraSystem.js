@@ -38,6 +38,10 @@ export class CameraSystem {
     this.override = null;
     /** Blended mode adjustments (glide, wall-run, slide). */
     this._mode = { distanceScale: 1, fovAdd: 0, pitchAdd: 0, pivotAdd: 0 };
+    /** Shake energy 0..1 (TECHNICAL §7: trauma-based; off with the shake setting or reduced motion). */
+    this.trauma = 0;
+    this._shakeTime = 0;
+    this._reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     camera.fov = tuning.fov;
     camera.near = tuning.near;
     camera.far = tuning.far;
@@ -124,11 +128,38 @@ export class CameraSystem {
 
     this.camera.position.copy(this.pivot).addScaledVector(this._dir, this.currentDistance);
     this.camera.lookAt(this.pivot);
+    this._shake(dt);
     const fov = this.tuning.fov + m.fovAdd;
     if (Math.abs(this.camera.fov - fov) > 0.01) {
       this.camera.fov = fov;
       this.camera.updateProjectionMatrix();
     }
+  }
+
+  /**
+   * Adds shake energy (hits, parries); it decays by itself.
+   * @param {number} amount 0..1
+   */
+  addTrauma(amount) {
+    this.trauma = Math.min(1, this.trauma + amount);
+  }
+
+  /** Trauma² drives a small positional jitter and roll (smooth noise from sines, frame-rate independent). */
+  _shake(dt) {
+    if (this.trauma <= 0) return;
+    const s = this.tuning.shake;
+    this._shakeTime += dt;
+    const reduced = this._reducedMotion || this.settings.get('accessibility.reducedMotion') === true;
+    if (this.settings.get('camera.shake') !== false && !reduced) {
+      const k = this.trauma * this.trauma;
+      const t = this._shakeTime * s.frequency;
+      const n = (a, b) => Math.sin(t * a + b) * 0.6 + Math.sin(t * a * 2.3 + b * 1.7) * 0.4;
+      this.camera.position.x += n(1, 0.3) * s.maxOffset * k;
+      this.camera.position.y += n(1.13, 2.1) * s.maxOffset * k;
+      this.camera.position.z += n(0.91, 4.2) * s.maxOffset * k;
+      this.camera.rotateZ(n(0.77, 1.1) * ((s.maxRollDeg * Math.PI) / 180) * k);
+    }
+    this.trauma = Math.max(0, this.trauma - s.decay * dt);
   }
 
   /**

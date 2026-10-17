@@ -25,5 +25,8 @@
   "touch.kelip": "Panggil Kelip",
   "touch.pause": "Jeda",
   "touch.move": "Gerak",
-  "sandbox.hint": "Kawasan ujian gerakan — WASD atau kayu bedik kiri untuk bergerak, Space atau A untuk melompat"
+  "sandbox.hint": "Kawasan ujian gerakan — WASD atau kayu bedik kiri untuk bergerak, Space atau A untuk melompat",
+  "enemy.wisp": "Bayang Kelam",
+  "enemy.brawler": "Penduduk dicengkam Kelam",
+  "enemy.adi": "Adi"
 }

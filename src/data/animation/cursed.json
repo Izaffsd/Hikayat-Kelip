@@ -1,0 +1,17 @@
+{
+  "comment": "Cursed villagers and Cursed Adi on the universal rig (TECHNICAL §5.4): cursed locomotion, staggers from the core pack, and the freed beat (dazed, a nod of thanks, walking away). Attacks, hits and the dash play on the action layer from enemy events.",
+  "fade": 0.18,
+  "actionFade": 0.1,
+  "initialState": "ground",
+  "locomotion": [
+    { "clip": "cursed_idle", "at": 0 },
+    { "clip": "cursed_walk", "at": 1.4, "nativeSpeed": 1.1, "minTimeScale": 0.8, "maxTimeScale": 2.4 }
+  ],
+  "states": {
+    "ground": { "fade": 0.16 },
+    "stagger": { "clip": "hit_knockback", "fade": 0.08, "timeScale": 0.7 },
+    "freed": { "clip": "idle", "fade": 0.7 },
+    "thanks": { "clip": "yes", "fade": 0.3, "then": "flee" },
+    "flee": { "clip": "walk", "fade": 0.4 }
+  }
+}
