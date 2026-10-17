@@ -1,10 +1,11 @@
 {
-  "comment": "P, Malam Pemburuan (GDD The first 10 minutes, 0:05–3:15). Young Wan, every move borrowed. Rules: no failure state, no text that must be read, one new prompt at a time, cutscenes under 20 s. Phase 3 M6 adds young Wan's model, the tiger and the flood beats on these steps.",
+  "comment": "P, Malam Pemburuan (GDD The first 10 minutes, 0:05–3:15). Young Wan, every move borrowed. Rules: no failure state, no text that must be read, one new prompt at a time, cutscenes under 20 s. Tok Belang flees along paths.tiger from the chase step on and waits on the jetty for the standoff.",
   "id": "P",
   "chapter": "prologue",
   "region": "prologue",
   "abilities": "borrowed",
-  "setup": [{ "light": "storm" }],
+  "avatar": "wan_young",
+  "setup": [{ "light": "storm" }, { "tiger": "load" }, { "undefeatable": true }],
   "start": [],
   "steps": [
     {
@@ -42,8 +43,20 @@
       "checkpoint": true,
       "objective": "objective.P.chase",
       "guide": "trigger:p_standoff",
-      "until": { "trigger": "p_standoff" },
-      "on": { "start": [{ "say": "p.villager.2" }] }
+      "until": { "trigger": "p_wallrun_hint" },
+      "on": {
+        "start": [
+          { "tiger": "chase", "path": "tiger", "end": "marker:standoff_tiger" },
+          { "say": "p.villager.2" }
+        ],
+        "done": [{ "lightning": 0.12 }, { "shake": 0.45 }]
+      }
+    },
+    {
+      "id": "flood",
+      "objective": "objective.P.chase",
+      "guide": "trigger:p_standoff",
+      "until": { "trigger": "p_standoff" }
     },
     {
       "id": "standoff",
@@ -51,5 +64,5 @@
       "on": { "start": [{ "cutscene": "p_standoff" }] }
     }
   ],
-  "end": [{ "region": "kampung", "marker": "spawn" }, { "next": "1.1" }]
+  "end": [{ "avatar": "bayu" }, { "region": "kampung", "marker": "spawn" }, { "next": "1.1" }]
 }

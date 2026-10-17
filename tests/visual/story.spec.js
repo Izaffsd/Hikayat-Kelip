@@ -107,12 +107,25 @@ test('a new save plays the prologue as mission P, cuts to black and wakes Bayu i
   await reach(page, 'P', 'chase');
   expect((await page.evaluate(() => window.__hk.savedDoc().checkpoint)).step).toBe('chase');
 
-  // The standoff: letterbox, then hold to skip; the cut to black, the region change and Chapter 1.
+  // Tok Belang flees ahead; at the wall-run a close lightning strike (the near-miss).
+  await page.waitForFunction(() => window.__hk.tiger()?.mode === 'chase', null, { timeout: 10_000 });
+  await page.evaluate(() => window.__hk.teleport([118, 2.2, 0.4]));
+  await reach(page, 'P', 'flood');
+
+  // The standoff: letterbox, the tiger waiting, Wan raising the tongkat, then hold to skip; the cut to black, the
+  // region change and Chapter 1 as Bayu.
   await page.evaluate(() => window.__hk.teleport([164.5, 1.85, 0]));
   await page.waitForFunction(() => window.__hk.story().cutscene === 'p_standoff', null, { timeout: 10_000 });
   await page.waitForTimeout(2000);
   await expect(page.locator('.hk-letterbox')).toHaveClass(/is-on/);
   await page.screenshot({ path: testInfo.outputPath('10-standoff.png') });
+  expect((await page.evaluate(() => window.__hk.tiger())).mode).toMatch(/standoff/);
+  await page.waitForTimeout(2600);
+  await page.screenshot({ path: testInfo.outputPath('10b-standoff-wan.png') });
+  expect(await page.evaluate(() => window.__hk.playerModel())).toEqual({
+    model: 'wan_young',
+    pose: 'stance',
+  });
   await page.evaluate(() => window.__hk.button('jump', true));
   await page.waitForTimeout(900);
   await page.evaluate(() => window.__hk.button('jump', false));
@@ -120,6 +133,8 @@ test('a new save plays the prologue as mission P, cuts to black and wakes Bayu i
   const awake = await story(page);
   expect(awake.region).toBe('kampung');
   expect(awake.completed).toContain('P');
+  expect(await page.evaluate(() => window.__hk.playerModel())).toEqual({ model: 'bayu', pose: null });
+  expect(await page.evaluate(() => window.__hk.tiger())).toBeNull();
   await page.waitForTimeout(1200);
   await page.screenshot({ path: testInfo.outputPath('11-bayu-wakes.png') });
   const saved = await page.evaluate(() => window.__hk.savedDoc());

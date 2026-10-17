@@ -1,0 +1,45 @@
+{
+  "comment": "Tok Belang, procedural animation on the 26-bone quadruped rig (no clips, CLAUDE.md) and the prologue chase (GDD 2:00). Angles in radians, distances in metres, speeds in m/s. Gait offsets are fractions of the stride cycle per leg; amplitudes scale with speed. `modelYaw` turns the GLB so its head looks along +Z.",
+  "modelYaw": 0,
+  "scale": 1.0,
+  "lodDistance": 22,
+  "chase": {
+    "lead": 13,
+    "leadMax": 22,
+    "runSpeed": 8.5,
+    "catchUpSpeed": 11,
+    "accel": 9,
+    "turnRate": 6,
+    "leapHeight": 1.4,
+    "leapMinRise": 0.8,
+    "standoffWalk": 1.6
+  },
+  "gait": {
+    "walkStride": 1.6,
+    "gallopStride": 3.8,
+    "gallopFrom": 4.5,
+    "walkOffsets": { "hind_l": 0, "fore_l": 0.25, "hind_r": 0.5, "fore_r": 0.75 },
+    "gallopOffsets": { "hind_l": 0, "hind_r": 0.1, "fore_l": 0.5, "fore_r": 0.6 },
+    "swing": { "fore": 0.42, "hind": 0.48 },
+    "gallopSwing": { "fore": 0.75, "hind": 0.8 },
+    "knee": { "fore": 0.55, "hind": 0.6 },
+    "spineFlex": 0.16,
+    "bob": 0.06,
+    "gallopBob": 0.16,
+    "neckCounter": 0.6,
+    "tailLift": 0.18,
+    "tailSway": 0.22,
+    "tailLag": 0.55
+  },
+  "idle": { "breath": 0.02, "breathRate": 1.4, "tailSway": 0.35, "tailRate": 0.9 },
+  "crouch": {
+    "drop": 0.22,
+    "spine": 0.12,
+    "head": -0.25,
+    "thigh": 0.35,
+    "shin": -0.55,
+    "arm": 0.25,
+    "forearm": -0.4
+  },
+  "signs": { "leg": 1, "knee": 1, "spine": 1, "neck": 1, "tail": 1 }
+}

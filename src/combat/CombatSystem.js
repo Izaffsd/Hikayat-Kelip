@@ -37,6 +37,8 @@ export class CombatSystem {
     this.moveName = '';
     this.move = null;
     this.health = data.health.max;
+    /** Health never drops below this (1 = cannot be defeated: the prologue has no failure state, GDD). */
+    this.minHealth = 0;
     this.semangat = 0;
     /** Lock-on target (an Enemy) or null; `hardLock` when chosen with the lock button. */
     this.target = null;
@@ -460,7 +462,8 @@ export class CombatSystem {
 
   _damage(amount, from, stun) {
     const h = this.data.health;
-    this.health = Math.max(0, this.health - amount);
+    // A story can keep Bayu (or young Wan) from being defeated: hits still land, health never empties.
+    this.health = Math.max(this.minHealth, this.health - amount);
     this._sinceCombat = 0;
     this._invulnerable = h.invulnerableTicks;
     this.bus.emit(EV.PLAYER_HIT, { damage: amount, health: this.health });

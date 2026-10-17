@@ -32,6 +32,9 @@
   ],
   "events": [
     { "t": 0, "teleport": "marker:standoff_wan" },
+    { "t": 0, "tiger": "standoff", "at": "marker:standoff_tiger" },
+    { "t": 2.6, "tiger": "roar" },
+    { "t": 3.6, "pose": "stance" },
     { "t": 7.0, "fade": true }
   ]
 }

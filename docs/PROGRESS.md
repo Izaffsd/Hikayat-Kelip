@@ -7,13 +7,14 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - **Push:** Izaf said "push and go ahead" (2026-10-17); `main` is on GitHub. The repo is still **public**; Izaf chose
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
   fresh `gh auth login --web`). Vercel previews start once he imports the repo on vercel.com (Vite preset).
-- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M5 done. **Resume with milestone 6
-  (prologue content):** young Wan's model on the avatar for mission P (Bayu's model stands in), the tiger silhouette
-  fleeing along `paths.tiger` with scripted near-misses, the flood/collapse beats on the chase, Wan raising the
-  tongkat and the tiger in the `p_standoff` shots, the roof rim/key light from the M2 note, and tuning the first three
-  minutes against the GDD rules (no failure before minute 8, one new prompt per minute, cutscenes < 20 s). Mission P's
-  steps, lines and cutscene already run (`src/data/missions/P.json`); M6 hangs content on them. Still open from M4:
-  dedicated langkah/tangkis clips (library staff/dash/block clips stand in; kuncian is Chapter 2, D-033).
+- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M6 done. **Resume with milestone 7
+  (Chapter 1 missions 1.1–1.4):** 1.1 — Adi as the rival runner on `paths.race_adi` with the visible timer and the
+  result (the race takes a bot 12.6 s; the mission wants ~4 min with the dare and banter); 1.2 — Adi's actor at the
+  display, Kelam's tendrils rising on `paths.tendrils_jetty`, Adi caught and fleeing on `paths.adi_flee`, and the jetty
+  fight moved where the camera is not under the pondok roof; 1.3 — Adi fleeing ahead on `paths.adi_rooftops`, the ink
+  trail, the tide flooding the boardwalks with safe ground kept above it; 1.4 — the freeing scene, the climb, the Pelita
+  Air's light and page 1. The missions, lines, cutscenes and data tests exist (`src/data/missions/1.*.json`); M7 adds
+  actors and beats on them. Still open from M4: dedicated langkah/tangkis clips (library clips stand in).
 - **Visual tests:** run `npm run chrome:test` once, then `npx playwright test`: every test is a tab in that one window
   (D-035; Izaf asked for no window per run). Quick live checks go through the Chrome DevTools MCP.
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
@@ -168,6 +169,15 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
   standoff, hold to skip, cut to black), wakes Bayu in his room in 1.1 with the save at 1.1/wake and resumes there
   after a reload; 1.2 runs Kelip's rise, the call, the display going dark, the jetty fight, the chapter card, the
   journal line and the first Cahaya, and saves at 1.3. No console errors or warnings.
+- **M6 done (2026-10-18)** (D-038): young Wan plays the prologue (missions name the player model; the swap to Bayu
+  happens in the cut to black); Tok Belang as a scripted actor animated in code (`ai/TokBelang.js`,
+  `data/tuning/tiger.json`: walk to rotary gallop, spine flex, bob, lagging tail, crouch, roar; a `preview` mode for
+  tuning) that flees along `paths.tiger` keeping 11–16 m ahead in the browser test, leaps between heights and waits
+  crouched at the standoff; the standoff cutscene places it, it roars and Wan takes his stance; a close lightning
+  strike and camera shake at the wall-run; P undefeatable (no failure before minute 8); a moonlight rim on the player
+  so dark clothes read against dark roofs; the tiger loads in the background when P starts and is released when the
+  kampung loads. Verified: 121 unit tests; 29 browser tests on both backends (new: the tiger's gaits from the side,
+  the chase lead and the standoff, the model swap and pose in the story test); screenshots inspected.
 - **Open, for later milestones:** (1) a 1.5–1.9 s stall on the first frames after the start tap on this PC, both
   backends, story or not; the engine's own calls stay under 75 ms, so it is browser/GPU side (M10 performance trace;
   judge on the iPhone). (2) In the jetty fight the camera sits under the pondok roof and the frame is mostly dark

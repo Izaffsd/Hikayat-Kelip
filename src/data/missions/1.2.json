@@ -4,6 +4,7 @@
   "chapter": "1",
   "region": "kampung",
   "abilities": "chapter1",
+  "avatar": "bayu",
   "setup": [{ "light": "dusk" }, { "prop": "hikayat_open", "at": "marker:hikayat" }],
   "start": [],
   "steps": [

@@ -4,6 +4,7 @@
   "chapter": "1",
   "region": "kampung",
   "abilities": "chapter1",
+  "avatar": "bayu",
   "setup": [
     { "light": "night" },
     { "darken": [0, -1], "seconds": 0 },

@@ -1,6 +1,7 @@
 import { data, dataKeys, lazyKeys, loadData } from '../core/Data.js';
 import { EV } from '../core/events.js';
 import { log } from '../core/Log.js';
+import { TokBelang } from '../ai/TokBelang.js';
 import { KelipActor } from '../guidance/KelipActor.js';
 import { KelipGuide } from '../guidance/KelipGuide.js';
 import { MissionSystem } from '../missions/MissionSystem.js';
@@ -96,11 +97,20 @@ export class StoryDirector {
     this._tide = null;
     /** @type {Map<string, import('three').Object3D>} story props placed in the current region */
     this._props = new Map();
+    /** @type {TokBelang|null} */
+    this.tiger = null;
+    /** @type {Promise<TokBelang>|null} */
+    this._tigerLoad = null;
     this._off = [
       bus.on(EV.STORY_FLAG, ({ name, value }) => {
         if (name === 'kelip_awake' && this.kelip && !value) this.kelip.setVisible(false);
       }),
       bus.on(EV.REGION_READY, () => this._regionReady()),
+      bus.on(EV.CUTSCENE_ENDED, () => engine.setPose(null)),
+      // Each mission starts defeatable; its setup can say otherwise.
+      bus.on(EV.MISSION_STARTED, () => {
+        engine.combat.minHealth = 0;
+      }),
     ];
   }
 
@@ -145,6 +155,7 @@ export class StoryDirector {
     this.ui.update(dt);
     this.trail.update(now);
     this.kelip?.update(dt, feet, facing, now);
+    this.tiger?.update(dt, feet, this.engine.camera);
     if (this._tide) {
       const t = this._tide;
       t.time += dt;
@@ -161,6 +172,57 @@ export class StoryDirector {
     this.trail.dispose();
     this.kelip?.dispose();
     for (const object of this._props.values()) object.removeFromParent();
+    this._dropTiger();
+  }
+
+  /**
+   * Tok Belang, loaded once per region on first use (`{ "tiger": "load" }` starts the download early without
+   * waiting for it) and compiled before it first appears.
+   * @returns {Promise<TokBelang>}
+   */
+  _tigerActor() {
+    if (this._tigerLoad) return this._tigerLoad;
+    const engine = this.engine;
+    const entry = data('generated/assets').assets['characters/tokbelang'];
+    const load = engine.assets.loadAll([entry]).then(async (loaded) => {
+      const tiger = new TokBelang({
+        gltf: loaded.get(entry.url),
+        parent: engine.scene,
+        tuning: data('tuning/tiger'),
+      });
+      tiger.root.visible = true;
+      await engine.renderer.three.compileAsync(tiger.root, engine.camera, engine.scene);
+      tiger.root.visible = tiger.visible;
+      if (this._tigerLoad !== load) {
+        // The region changed while it loaded.
+        tiger.dispose();
+        engine.assets.release(entry.url);
+        return tiger;
+      }
+      this.tiger = tiger;
+      return tiger;
+    });
+    this._tigerLoad = load;
+    return load;
+  }
+
+  _dropTiger() {
+    this._tigerLoad = null;
+    if (!this.tiger) return;
+    this.tiger.dispose();
+    this.engine.assets.release(data('generated/assets').assets['characters/tokbelang'].url);
+    this.tiger = null;
+  }
+
+  /**
+   * A marker's position and facing.
+   * @param {string} at 'marker:x'
+   * @returns {{ position: { x: number, y: number, z: number }, yaw: number }}
+   */
+  _markerPose(at) {
+    const marker = this.engine.world?.markers[at.replace(/^marker:/, '')];
+    if (!marker) throw new Error(`StoryDirector: no marker "${at}"`);
+    return { position: marker.p, yaw: marker.yaw };
   }
 
   _dayNight() {
@@ -168,9 +230,10 @@ export class StoryDirector {
   }
 
   _regionReady() {
-    // The old region's story props went with it.
+    // The old region's story props and actors went with it.
     for (const object of this._props.values()) object.removeFromParent();
     this._props.clear();
+    this._dropTiger();
     // The new region has a new lamp pool: give Kelip's light to it.
     if (!this.kelip || !this.engine.world) return;
     this.kelip.lamp = this.engine.world.dayNight.addLamp({
@@ -226,6 +289,8 @@ export class StoryDirector {
       },
       ability: (name) => engine.abilities.grant(name),
       abilities: (set) => engine.abilities.useSet(set),
+      /** The player's character model: `{ "avatar": "bayu" }` (young Wan plays the prologue). */
+      avatar: (key) => engine.setPlayerModel(key),
       region: (id, marker) => engine.changeRegion(id, marker),
       /** The fireflies go out row by row: `{ "darken": [x, z], "seconds": s, "to"?: front }` (Fireflies.darken). */
       darken: (dir, action) =>
@@ -243,6 +308,37 @@ export class StoryDirector {
       },
       /** A story prop from props/props_slice set in the world: `{ "prop": "hikayat_open", "at": "marker:hikayat" }`. */
       prop: (name, action) => this._placeProp(name, action.at),
+      /**
+       * Tok Belang: `load` (starts the download, does not wait), `{ "tiger": "chase", "path": "tiger", "end":
+       * "marker:x" }`, `{ "tiger": "standoff", "at": "marker:x" }`, `roar`, `hide`.
+       */
+      tiger: async (command, action) => {
+        if (command === 'load') {
+          this._tigerActor();
+          return;
+        }
+        const tiger = await this._tigerActor();
+        if (command === 'chase') {
+          const path = engine.world?.paths[action.path];
+          if (!path) throw new Error(`StoryDirector: no path "${action.path}"`);
+          tiger.chase(path, action.end ? this._markerPose(action.end) : null);
+        } else if (command === 'standoff') {
+          const pose = this._markerPose(action.at);
+          tiger.standoff(pose.position, pose.yaw);
+        } else if (command === 'roar') tiger.roar();
+        else if (command === 'hide') tiger.hide();
+        else throw new Error(`StoryDirector: unknown tiger command "${command}"`);
+      },
+      /** `{ "undefeatable": true }`: hits land but health never empties (GDD: no failure before minute 8). */
+      undefeatable: (on) => {
+        engine.combat.minHealth = on ? 1 : 0;
+      },
+      /** A close lightning strike (storm only): `{ "lightning": 0.12 }` is the thunder's delay in seconds. */
+      lightning: (delay) => engine.world?.dayNight.strike(Number(delay) || 0.15),
+      /** Camera shake: `{ "shake": 0.4 }` (trauma 0..1; off with the shake setting or reduced motion). */
+      shake: (amount) => engine.cameraSystem.addTrauma(Number(amount) || 0.3),
+      /** Holds the player in an animation state during a scene (`{ "pose": "stance" }`); cleared when it ends. */
+      pose: (state) => engine.setPose(state),
     };
   }
 }

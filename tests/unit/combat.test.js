@@ -278,6 +278,18 @@ describe('langkah (dodge)', () => {
     expect(lab.combat.state === 'hit' || lab.combat.state === 'idle').toBe(true);
   });
 
+  it('with minHealth 1 (the prologue) a hit lands but never defeats', async () => {
+    const lab = await makeLab();
+    lab.combat.minHealth = 1;
+    lab.combat.health = 2;
+    face(lab, 'striker');
+    const impact = impactTick(lab);
+    lab.tick(impact - lab.time.tick + 6);
+    expect(lab.count(EV.PLAYER_HIT)).toBe(1);
+    expect(lab.combat.health).toBe(1);
+    expect(lab.count(EV.PLAYER_DEFEATED)).toBe(0);
+  });
+
   it('never steps off the edge of a narrow deck', async () => {
     const deck = { c: [0, -0.5, 0], h: [1.2, 0.5, 6] }; // 2.4 m wide
     const lab = await makeLab({ boxes: [deck] });

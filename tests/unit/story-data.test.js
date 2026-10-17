@@ -34,9 +34,30 @@ const ACTIONS = new Set([
   'darken',
   'relight',
   'prop',
+  'avatar',
+  'tiger',
+  'pose',
+  'lightning',
+  'shake',
+  'undefeatable',
 ]);
+const TIGER_COMMANDS = new Set(['load', 'chase', 'standoff', 'roar', 'hide']);
+const MODELS = data('generated/assets').assets;
 /** Keys that are arguments of an action, not actions. */
-const ARGUMENTS = new Set(['seconds', 'value', 'by', 'marker', 'text', 'offset', 'yaw', 'to', 't', 'at']);
+const ARGUMENTS = new Set([
+  'seconds',
+  'value',
+  'by',
+  'marker',
+  'text',
+  'offset',
+  'yaw',
+  'to',
+  't',
+  'at',
+  'path',
+  'end',
+]);
 
 const content = await StoryDirector.loadData();
 const scenes = Object.fromEntries(
@@ -104,6 +125,13 @@ function checkAction(action, mission, region, where) {
   }
   if (key === 'teleport' || key === 'kelipWave' || key === 'kelipRise') expectPoint(region, value, where);
   if (key === 'prop') expectPoint(region, action.at, where);
+  if (key === 'tiger') {
+    expect(TIGER_COMMANDS, `${where}: tiger ${value}`).toContain(value);
+    if (action.path) expect(region.paths[action.path], `${where}: path ${action.path}`).toBeDefined();
+    if (action.end) expectPoint(region, action.end, where);
+    if (action.at) expectPoint(region, action.at, where);
+  }
+  if (key === 'pose') expect(data('animation/human').states[value], `${where}: pose ${value}`).toBeDefined();
   if (key === 'prompt' && value !== null) {
     expect(data('input/bindings').keyboard[value], `${where}: prompt action ${value}`).toBeDefined();
     if (action.text) {
@@ -118,6 +146,7 @@ function checkAction(action, mission, region, where) {
     }
   }
   if (key === 'abilities') expect(data('abilities').sets[value]).toBeDefined();
+  if (key === 'avatar') expect(MODELS[`characters/${value}`], `${where}: model ${value}`).toBeDefined();
 }
 
 describe('story data', () => {
@@ -138,6 +167,8 @@ describe('story data', () => {
       const region = regions[mission.region];
       expect(region, `${mission.id} region`).toBeDefined();
       if (mission.abilities) expect(data('abilities').sets[mission.abilities]).toBeDefined();
+      if (mission.avatar)
+        expect(MODELS[`characters/${mission.avatar}`], `${mission.id} avatar`).toBeDefined();
       const stepIds = mission.steps.map((s) => s.id);
       expect(new Set(stepIds).size, `${mission.id} unique steps`).toBe(stepIds.length);
       for (const step of mission.steps) {

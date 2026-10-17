@@ -1,5 +1,6 @@
 import { Color, DirectionalLight, Fog, HemisphereLight, PointLight, Vector3 } from 'three/webgpu';
 import { EV } from '../core/events.js';
+import { PLAYER_RIM } from '../render/rimMaterial.js';
 
 /**
  * Lighting moods (TECHNICAL §4.3). Each preset sets the hemisphere and key light, fog, sky gradient, moon, clouds,
@@ -29,6 +30,7 @@ export const LIGHT_PRESETS = {
     choppiness: 1.6,
     glint: 0,
     exposure: 1.3,
+    playerRim: 0.32,
   },
   dusk: {
     hemiSky: 0xd89a78,
@@ -52,6 +54,7 @@ export const LIGHT_PRESETS = {
     choppiness: 0.8,
     glint: 0.6,
     exposure: 1.0,
+    playerRim: 0.06,
   },
   night: {
     hemiSky: 0x3e5088,
@@ -75,6 +78,7 @@ export const LIGHT_PRESETS = {
     choppiness: 1,
     glint: 1,
     exposure: 1.0,
+    playerRim: 0.26,
   },
 };
 
@@ -101,6 +105,7 @@ const NUMBER_KEYS = [
   'choppiness',
   'glint',
   'exposure',
+  'playerRim',
 ];
 
 export class DayNight {
@@ -196,6 +201,17 @@ export class DayNight {
     }
     this._lightning(dt);
     this._lamps(dt, focus);
+  }
+
+  /**
+   * A lightning strike now (a story near-miss); thunder follows after `delay` seconds (short = close). Storm only.
+   * @param {number} [delay=0.15]
+   */
+  strike(delay = 0.15) {
+    if (!this.storm) return;
+    this._flashTime = 0;
+    this._nextFlash = 7 + Math.random() * 9;
+    this.bus.emit(EV.LIGHTNING, { delay });
   }
 
   _lightning(dt) {
@@ -305,6 +321,7 @@ export class DayNight {
       wu.glint.value = values.glint;
     }
     this.renderer.three.toneMappingExposure = values.exposure;
+    PLAYER_RIM.value = values.playerRim;
   }
 
   dispose() {

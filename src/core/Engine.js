@@ -16,6 +16,7 @@ import { MoteBurst } from '../render/MoteBurst.js';
 import { CombatHud } from '../ui/CombatHud.js';
 import { StoryDirector } from '../narrative/StoryDirector.js';
 import { PostFX } from '../render/PostFX.js';
+import { rimMaterial } from '../render/rimMaterial.js';
 import { QualityManager } from '../render/QualityManager.js';
 import { Renderer } from '../render/Renderer.js';
 import { DebugOverlay } from '../ui/DebugOverlay.js';
@@ -51,6 +52,9 @@ const STILL = Object.freeze({ x: 0, z: 0, magnitude: 0, sprintHeld: false });
  * @returns {number} rounded to centimetres (save positions)
  */
 const round2 = (value) => Math.round(value * 100) / 100;
+
+/** Animator states the traversal sync may leave alone on the ground or in the air. */
+const FREE_ANIM_STATES = ['ground', 'land', 'hardLand', 'air', 'jumpStart'];
 
 /** Gameplay presses swallowed while a cutscene holds control (holding them skips it instead). */
 const CUTSCENE_SWALLOW = [
@@ -105,6 +109,8 @@ export class Engine {
     this.portraitBlocked = false;
     this._feet = new Vector3();
     this._tickFeet = { x: 0, y: 0, z: 0 };
+    /** Animation state a story scene holds the player in (setPose), or null. */
+    this._pose = null;
     this._down = { x: 0, y: -1, z: 0 };
     this._probe = { x: 0, y: 0, z: 0 };
     this.groundY = 0;
@@ -147,11 +153,13 @@ export class Engine {
     const encounterDefs = data('encounters');
     const enemyKeys = enemyModelKeys(encounterDefs, this.sceneId);
     const manifest = data('generated/assets').assets;
+    // The player's model: the mission's (young Wan in the prologue), else Bayu.
+    const playerModel = this._storyStart?.avatar ?? 'bayu';
     const keys = [
       'anim/anim_core',
       'anim/anim_villager',
       'anim/anim_cursed',
-      'characters/bayu',
+      `characters/${playerModel}`,
       ...(this.storyContent ? ['characters/kelip'] : []),
       'props/props_slice',
       ...enemyKeys,
@@ -166,7 +174,6 @@ export class Engine {
     for (const pack of ['anim/anim_core', 'anim/anim_villager', 'anim/anim_cursed']) {
       for (const [name, clip] of prepareClips(byKey(pack).animations)) this.clips.set(name, clip);
     }
-    const bayu = byKey('characters/bayu');
     const props = byKey('props/props_slice');
     onProgress(0.6);
 
@@ -213,20 +220,11 @@ export class Engine {
     });
     this.traversal.facing = this.traversal.prevFacing = facing;
     this.controller = new PlayerController(this.input);
-    this.avatar = new Avatar({
-      gltf: bayu,
-      clips: this.clips,
-      profile: data('animation/human'),
-      name: 'Bayu',
-    });
-    this.avatar.addTo(this.scene);
-    this.avatar.root.rotation.order = 'YXZ';
     this._lean = 0;
     this._pitch = 0;
-    this.wau = new Wau({ gltf: props, avatar: this.avatar, config: data('animation/human').wau });
-    bus.on(EV.PLAYER_GLIDE, ({ open }) => this.wau.setOpen(open));
     this.props = props;
-    this._attachTongkat(props);
+    this._buildAvatar(byKey(`characters/${playerModel}`), playerModel);
+    bus.on(EV.PLAYER_GLIDE, ({ open }) => this.wau.setOpen(open));
 
     // Silat: the enemy director, Bayu's combat, enemy visuals, the region's encounters.
     const combatData = data('combat/moves');
@@ -402,7 +400,7 @@ export class Engine {
    * set, or null when the save names no known mission.
    * @param {URLSearchParams} query
    * @returns {{ id: string|null, step: string|null, region: string, abilities: string|null,
-   *   checkpoint: object|null }|null}
+   *   avatar: string|null, checkpoint: object|null }|null}
    */
   _storyStartPoint(query) {
     const missions = this.storyContent.missions;
@@ -430,6 +428,7 @@ export class Engine {
       step: requested ? query.get('step') : (checkpoint?.step ?? null),
       region: checkpoint?.region ?? mission.region,
       abilities: mission.abilities ?? null,
+      avatar: mission.avatar ?? null,
       checkpoint,
     };
   }
@@ -574,6 +573,57 @@ export class Engine {
   }
 
   /**
+   * Builds the player's avatar from a character GLB, with the wau and the tongkat (replacing any previous one).
+   * @param {{ scene: import('three').Object3D }} gltf
+   * @param {string} key character name, e.g. 'bayu', 'wan_young'
+   */
+  _buildAvatar(gltf, key) {
+    if (this.avatar) {
+      this.wau.dispose();
+      this.avatar.dispose();
+      for (const material of this._avatarMaterials) material.dispose();
+    }
+    this.avatar = new Avatar({ gltf, clips: this.clips, profile: data('animation/human'), name: key });
+    // A moonlight rim keeps the player readable on dark roofs at night (strength from the lighting preset).
+    this._avatarMaterials = [];
+    for (const mesh of [...this.avatar.mainMeshes, ...this.avatar.lodMeshes]) {
+      mesh.material = rimMaterial(mesh.material);
+      this._avatarMaterials.push(mesh.material);
+    }
+    this.avatar.addTo(this.scene);
+    this.avatar.root.rotation.order = 'YXZ';
+    this.wau = new Wau({ gltf: this.props, avatar: this.avatar, config: data('animation/human').wau });
+    this._attachTongkat(this.props);
+    this.playerModel = key;
+  }
+
+  /**
+   * Holds the player's avatar in an animation state (story scenes), or hands it back to the traversal (null).
+   * @param {string|null} state a state of data/animation/human.json, e.g. 'stance'
+   */
+  setPose(state) {
+    if (state === this._pose) return;
+    this._pose = state;
+    if (!state) this.avatar.animator.setState('ground');
+  }
+
+  /**
+   * Changes the player's character model (missions: young Wan in the prologue, Bayu after). Loads it if needed and
+   * releases the previous one; a no-op when it is already in use.
+   * @param {string} key character name under `characters/`
+   */
+  async setPlayerModel(key) {
+    if (key === this.playerModel) return;
+    const manifest = data('generated/assets').assets;
+    const entry = manifest[`characters/${key}`];
+    if (!entry) throw new Error(`Unknown character model "${key}"`);
+    const previous = this.playerModel;
+    const loaded = await this.assets.loadAll([entry]);
+    this._buildAvatar(loaded.get(entry.url), key);
+    if (previous) this.assets.release(manifest[`characters/${previous}`].url);
+  }
+
+  /**
    * Puts Tok Wan's tongkat in Bayu's right hand.
    * @param {{ scene: import('three').Object3D }} props
    */
@@ -613,8 +663,14 @@ export class Engine {
   _syncAnimator(dt) {
     const animator = this.avatar.animator;
     const state = this.traversal.state;
-    const free = ['ground', 'land', 'hardLand', 'air', 'jumpStart'];
+    const free = FREE_ANIM_STATES;
     animator.setSpeed(this.traversal.speed);
+    if (this._pose) {
+      // A story scene holds a pose (Wan raising the tongkat at the standoff).
+      if (animator.state !== this._pose) animator.setState(this._pose);
+      this.wau.update(dt);
+      return;
+    }
     switch (state) {
       case 'air':
         if (animator.state !== 'air' && animator.state !== 'jumpStart') animator.setState('air');
@@ -951,6 +1007,15 @@ export class Engine {
             kelip: story.kelip?.visible ?? false,
           };
         },
+        /** Tok Belang's state (null until a mission loads it). */
+        tiger: () => {
+          const tiger = engine.story?.tiger;
+          if (!tiger) return null;
+          const p = tiger.position;
+          return { mode: tiger.mode, x: p.x, y: p.y, z: p.z, yaw: tiger.yaw, speed: tiger.speed };
+        },
+        /** The player's model and held pose. */
+        playerModel: () => ({ model: engine.playerModel, pose: engine._pose }),
         /** Starts a mission (at a step) as if the story had reached it. */
         mission: (id, step = null) => engine.story.start(id, step),
         /** The saved document as written to storage. */

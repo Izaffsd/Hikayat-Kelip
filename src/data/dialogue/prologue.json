@@ -24,8 +24,8 @@
     },
     "p.villager.2": {
       "speaker": "villager",
-      "bm": "Air makin naik, Wan! Rumah-rumah dah runtuh!",
-      "en": "The water's rising, Wan! The houses are coming down!"
+      "bm": "Jangan biar dia terlepas, Wan! Air dah naik sampai lantai rumah!",
+      "en": "Don't let it get away, Wan! The water's up to the floors!"
     },
     "p.wan.standoff": { "speaker": "wan", "bm": "Cukup. Habis di sini.", "en": "Enough. It ends here." },
     "p.voice.atuk": { "speaker": "voice", "bm": "Atuk?", "en": "Atuk?", "seconds": 2.2 }

@@ -8,7 +8,8 @@ import { insideTrigger } from '../world/triggers.js';
  * `checkpoint` save progress when they begin, so a reload resumes there, and the next mission's first step is the
  * autosave between missions.
  *
- * Starting: the mission's region is entered if play is elsewhere, its ability set applied and its `setup` actions
+ * Starting: the mission's region is entered if play is elsewhere, its ability set and player model (`avatar`)
+ * applied and its `setup` actions
  * run (lighting, tide: the state any of its steps needs); a fresh start then runs `start`, a resume at a step runs
  * that step's `on.resume` instead.
  *
@@ -86,6 +87,7 @@ export class MissionSystem {
       if (this.mission !== mission) return;
     }
     if (mission.abilities) a.abilities?.(mission.abilities);
+    if (mission.avatar) await a.avatar?.(mission.avatar);
     await this.run(mission.setup);
     await this.run(index === 0 ? mission.start : mission.steps[index].on?.resume);
     if (this.mission !== mission) return;
