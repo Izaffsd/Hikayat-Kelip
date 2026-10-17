@@ -66,6 +66,13 @@ body (Data Transfer), paint/bake a painterly atlas, split LODs, export one GLB p
 | `villager_*` | Villagers (adults, elders, children) | Regular / Teen bases | 6 outfits × palette variants; children use the Teen base scaled 0.8 for background roles | locomotion, chores, crowd, flee/thank | P0 (Kampung set) |
 | `cursed_*` | Cursed brawler / hunter / Kelam guard | villager bases + overlay | Ink overlay material, props: fishing net, blunted spear, ink shield | enemy sets | P0 (brawler), P1 (hunter, guard) |
 
+**Built 2026-10-17** (`humans` job, D-027): `bayu` (13.5 k / 5 k), `wan_young` (13.5 k / 5 k, destar), `adi`
+(10 k / 4 k, backwards cap, tied kain over shorts), `maksom` (10 k / 4 k, baju kurung, batik kain, everyday tudung),
+`villager_man`, `villager_elder`, `villager_woman`, `villager_woman_b`, `villager_child` (5 k / 2 k, 512 atlases).
+Method as planned, except: the free UBC tier has only the heroic adult bodies, so builds come from `lib/human.reshape`;
+weights are inherited from the body shells rather than transferred; `cursed_*` and `adi_cursed` reuse these meshes
+with the runtime overlay. Not built yet: `tokwan` (P1), `pakmail`, `pakleman`, `embun` (P1).
+
 ## 3. Non-human characters
 
 | ID | What | Method | Priority |

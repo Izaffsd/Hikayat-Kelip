@@ -211,6 +211,57 @@ def net(size: int = 256, seed: int = 33, cells: int = 8, base: str = "#6c5f43") 
     return _rgba(rgb.astype(np.float32), alpha)
 
 
+def plaid(size: int = 512, seed: int = 121, base: str = "#5a1a24", stripes=(), threads: int = 96) -> np.ndarray:
+    """Woven checks (kain pelikat / sampin cloth): the same stripe sequence in warp (U) and weft (V), interlaced in a
+    2/2 twill so crossings mix the two colours thread by thread. `stripes` = [(start, width, colour)] in 0..1 of the
+    repeat; one repeat per texture, so it tiles. Original colourways only."""
+    coord = (np.arange(size) + 0.5) / size
+    colour_at = np.tile(_hex(base), (size, 1))
+    for start, width, colour in stripes:
+        inside = ((coord - start) % 1.0) < width
+        colour_at[inside] = _hex(colour)
+    warp = colour_at[None, :, :]  # varies with U
+    weft = colour_at[:, None, :]  # varies with V
+    iu = (np.arange(size)[None, :] * threads // size)
+    iv = (np.arange(size)[:, None] * threads // size)
+    warp_on_top = ((iu + iv) % 4) < 2
+    rgb = np.where(warp_on_top[..., None], warp, weft).astype(np.float32)
+    fibre = fbm(size, seed, gx=32, octaves=2)
+    rgb = rgb * (0.9 + 0.16 * fibre)[..., None]
+    return _rgba(_painterly(rgb, seed, 0.04))
+
+
+def batik(size: int = 512, seed: int = 131, ground: str = "#7a3b1e", dye: str = "#e3c58a", accent: str = "#2c3f56",
+          sprigs: int = 4) -> np.ndarray:
+    """Hand-dyed cloth in a batik-like technique, with an original motif: a half-drop lattice of five-petal sprigs
+    with dotted rings, between undulating vines, plus the crackle veins wax-resist dyeing leaves. Generic geometry;
+    no traditional or regional motif is reproduced. Tiles in U and V."""
+    yy, xx = np.mgrid[0:size, 0:size].astype(np.float32) / size
+    rgb = np.zeros((size, size, 3), dtype=np.float32) + _hex(ground)
+    cell = 1.0 / sprigs
+    for row in range(sprigs):
+        for col in range(sprigs):
+            cx = (col + 0.5 + (0.5 if row % 2 else 0.0)) * cell
+            cy = (row + 0.5) * cell
+            dx = ((xx - cx + 0.5) % 1.0) - 0.5
+            dy = ((yy - cy + 0.5) % 1.0) - 0.5
+            r = np.hypot(dx, dy) / cell
+            a = np.arctan2(dy, dx)
+            petal = r < 0.28 * (0.55 + 0.45 * np.abs(np.cos(2.5 * a)))
+            rgb[petal] = _hex(dye)
+            rgb[r < 0.07] = _hex(accent)
+            ring = (np.abs(r - 0.4) < 0.02) & (np.cos(a * 12) > 0.3)
+            rgb[ring] = _hex(dye)
+    vine = np.abs(((yy * sprigs) % 1.0) - 0.5 - 0.12 * np.sin(xx * np.pi * 2 * sprigs)) < 0.018
+    rgb[vine & (rgb[..., 0] == _hex(ground)[0])] = _hex(accent)
+    crackle = fbm(size, seed, gx=12, octaves=3)
+    veins = np.abs(crackle - 0.5) < 0.012
+    rgb[veins] = rgb[veins] * 0.55 + _hex(accent) * 0.45
+    cloth = fbm(size, seed + 1, gx=48, octaves=2)
+    rgb = rgb * (0.9 + 0.14 * cloth)[..., None]
+    return _rgba(_painterly(rgb, seed, 0.05))
+
+
 def paper(size: int = 512, seed: int = 101, lines: int = 14, ink: bool = True, torn: bool = False) -> np.ndarray:
     """Aged hand-written page: cream paper with stains and rows of illegible cursive strokes (generic handwriting,
     deliberately no real script). `torn` gives a ragged alpha edge along the right side."""

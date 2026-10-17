@@ -167,6 +167,46 @@ describe('published assets', () => {
     expect(triangles).toBeLessThanOrEqual(12000);
   });
 
+  it('human characters share the universal rig, fit their budgets and ship one atlas without vertex colours', async () => {
+    const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
+      'meshopt.decoder': NodeMeshoptDecoder,
+    });
+    await NodeMeshoptDecoder.ready;
+    const budgets = {
+      bayu: 14000,
+      wan_young: 14000,
+      adi: 10000,
+      maksom: 10000,
+      villager_man: 5000,
+      villager_elder: 5000,
+      villager_woman: 5000,
+      villager_woman_b: 5000,
+      villager_child: 5000,
+    };
+    const clipBones = ['pelvis', 'spine_03', 'Head', 'upperarm_l', 'hand_r', 'thigh_l', 'foot_r', 'ball_l'];
+    for (const [name, budget] of Object.entries(budgets)) {
+      const document = await io.readBinary(new Uint8Array(file(`characters/${name}`)));
+      const root = document.getRoot();
+      const joints = root
+        .listSkins()[0]
+        .listJoints()
+        .map((joint) => joint.getName());
+      for (const bone of clipBones) expect(joints, `${name} ${bone}`).toContain(bone);
+      const mesh = root.listMeshes().find((m) => m.getName() === name);
+      const lod = root.listMeshes().find((m) => m.getName() === `${name}__lod1`);
+      expect(mesh, name).toBeDefined();
+      expect(lod, `${name} lod`).toBeDefined();
+      const triangles = (m) => m.listPrimitives().reduce((sum, p) => sum + p.getIndices().getCount() / 3, 0);
+      expect(triangles(mesh), name).toBeLessThanOrEqual(budget);
+      expect(triangles(lod), name).toBeLessThan(triangles(mesh) / 2);
+      for (const prim of mesh.listPrimitives()) {
+        expect(prim.getAttribute('COLOR_0'), `${name} vertex colours`).toBeNull();
+        expect(prim.getMaterial().getBaseColorTexture(), `${name} atlas`).not.toBeNull();
+      }
+      expect(root.listTextures()).toHaveLength(1);
+    }
+  });
+
   it('Kelip and the shadow wisp keep their _SWAY attribute for shader animation', async () => {
     const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({
       'meshopt.decoder': NodeMeshoptDecoder,

@@ -37,6 +37,22 @@
         },
         { "file": "anim_cursed.glb", "group": "anim", "pipeline": "gltfpack", "gltfpackArgs": ["-ar", "14"] }
       ]
+    },
+    {
+      "id": "humans",
+      "comment": "Needs build-cache/raw/anim_core.glb (the anim_packs job) as the rest-pose reference, so it runs after it.",
+      "script": "tools/blender/characters/humans.py",
+      "outputs": [
+        { "file": "bayu.glb", "group": "characters", "textureSize": 1024 },
+        { "file": "wan_young.glb", "group": "characters", "textureSize": 1024 },
+        { "file": "adi.glb", "group": "characters", "textureSize": 1024 },
+        { "file": "maksom.glb", "group": "characters", "textureSize": 1024 },
+        { "file": "villager_man.glb", "group": "characters", "textureSize": 512 },
+        { "file": "villager_elder.glb", "group": "characters", "textureSize": 512 },
+        { "file": "villager_woman.glb", "group": "characters", "textureSize": 512 },
+        { "file": "villager_woman_b.glb", "group": "characters", "textureSize": 512 },
+        { "file": "villager_child.glb", "group": "characters", "textureSize": 512 }
+      ]
     }
   ]
 }

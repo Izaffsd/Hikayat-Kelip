@@ -91,6 +91,8 @@ function runBlenderJob(blender, job) {
       RAW_DIR,
       '--previews',
       PREVIEW_DIR,
+      '--raw',
+      RAW_LIBRARY,
     ],
     { encoding: 'utf8', shell: false, maxBuffer: 64 * 1024 * 1024, env: process.env },
   );

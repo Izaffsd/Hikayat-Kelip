@@ -16,27 +16,11 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   window, berembang crowns, grain along beams, stall roof, draped net, three kain colours), Tok Belang v4 (`1c3e298`,
   D-026), Kelip and the wisp (`e2e08ab`). Animation packs: poses checked on the rig; shipped vs raw clips differ by at most
   0.106° (gltfpack `-ar 14`), durations identical.
-- Phase 0 done. Phase 1 built and verified locally (see log below); two phase-end checks wait on Izaf:
-  the Chrome DevTools MCP checks need the VS Code restart, and the Vercel preview needs the first push.
-- **Phase 2 in progress (2026-10-17).** Done and committed: GLB pipeline (`tools/optimize-glb.mjs`,
-  `tools/build-assets.mjs`, hashed publishing, `src/data/generated/assets.json`), Kampung kit with prologue flood
-  pieces, 74-clip animation packs (D-022), Tok Belang, Kelip and the shadow wisp, and the audio pipeline
-  (`tools/audio`: 8 banks, 49 sounds, 876 KB, bit-exact rebuilds, Chrome decode test; D-024).
-  **Resume with:** (1) human characters (Bayu, young Wan, Adi, Mak Som, villagers, cursed brawler). On 2026-10-17
-  I downloaded `Universal Base Characters[Standard].zip` (129 MB, CC0, free tier: 2 base models + 5 hairstyles per the
-  itch.io page) into `D:\dev\raw\quaternius\ubc\` through itch.io's free "No thanks, just take me to the downloads"
-  flow in the installed Chrome. The auto-mode permission check then blocked extracting it as a "real-world
-  transaction", so it stays unopened until Izaf confirms. If only two bodies are included, Teen proportions come from
-  shape keys on the Regular base (the Source tier with all 8 costs $19.99, which is Izaf's call); (2) props for the slice
-  (tongkat, wau, hikayat book, Pelita Air); (3) Phase 2 log entry and checks, then Phase 3. Custom silat clips (langkah, tangkis, kuncian),
-  glide and ledge-hang poses are made in Phase 3 against the combat data.
-- **Phase 1 perf checks (Playwright CDP, both backends, all 6 passed in 21.7 min):** 4× CPU throttle ~100 FPS avg /
-  99 FPS p5 (display-limited); trace: 1 long task (~138 ms, at start-up) during 5 s of play; 10-minute soak: JS heap
-  after GC flat at 11.1 MB, geometry/texture counts unchanged (no leaks). MCP-based checks still to repeat after restart.
-- **After the restart (when Izaf does it):** (VS Code open on `D:\dev\hikayat-kelip`, Blender running), confirm
-  the `blender` and `chrome-devtools` MCP servers are connected and verify tool versions in the fresh process; run the
-  Phase 1 DevTools checks (console, performance trace of the sandbox, 10-minute memory check, 4× CPU throttle) on
-  `npm run preview`; record results here; then start Phase 2 (asset and audio pipeline).
+- **Status (2026-10-17): Phases 0, 1 and 2 done** (see the log). Phase 1's DevTools MCP checks were run after the
+  restart. The only open phase-end item is the Vercel preview, which needs the first push (Izaf).
+- **Resume with:** Phase 3, the vertical slice (prologue + Chapter 1, GDD P0). Custom silat clips (langkah, tangkis,
+  kuncian), glide and ledge-hang poses are made in Phase 3 against the combat data; the cursed ink overlay (cursed
+  brawler, cursed Adi) is a Phase 3 TSL material on the existing meshes.
 
 ## Phase log
 
@@ -90,7 +74,7 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - **Known limitations:** the sandbox stands in for the prologue until Phase 3; Low-preset anti-aliasing to be judged
   on the iPhone; no audio content yet (graph and unlock only).
 
-### Phase 2 — Asset and audio pipeline (in progress; human characters wait on Izaf's OK for the base-character pack)
+### Phase 2 — Asset and audio pipeline (done 2026-10-17; Vercel preview pending the first push)
 - **Pipeline:** `npm run assets` runs Blender jobs headless (`tools/assets.config.json`), optimises with gltf-transform
   (dedup, prune, weld, resample, KTX2 ETC1S/UASTC, Meshopt) or gltfpack (animation), content-hashes into
   `public/assets/<group>/`, writes `src/data/generated/assets.json`, and builds the sound banks (`tools/audio`). All jobs
@@ -105,8 +89,11 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - **Verified:** lint, format, 74 unit tests (manifest hashes and sizes, clip names and rig bones, tiger skeleton and
   budget, `_SWAY`, kit colliders, prop hooks, Ogg headers and loop lengths, CC0-only audio, synthesis determinism);
   Chrome decodes every sound bank with exact loop lengths.
-- **Not done:** human characters (Bayu, young Wan, Adi, Mak Som, villagers, cursed brawler) — the CC0 Universal Base
-  Characters pack is downloaded but unopened until Izaf confirms; Vercel preview (no push yet).
+- **Human characters** (D-027): Bayu, young Wan, Adi, Mak Som and five villagers from the CC0 Universal Base
+  Characters (free tier, unzipped with Izaf's go-ahead), rest pose conformed to the clip rig, reshaped, dressed in
+  original clothing, atlas-baked; previewed in Izaf's Blender in sprint, roll and climb poses (no clipping between
+  layers); every model loads through the game's AssetLoader on WebGPU and WebGL2. Cursed variants reuse these meshes.
+- **Not done:** Vercel preview (no push yet).
 
 ## Setup checklist status
 

@@ -295,6 +295,7 @@ def add_lod(obj, ratio: float, suffix: str = "__lod1") -> bpy.types.Object:
     lod = obj.copy()
     lod.data = obj.data.copy()
     lod.name = obj.name + suffix
+    lod.data.name = obj.data.name + suffix
     for coll in obj.users_collection:
         coll.objects.link(lod)
     mod = lod.modifiers.new("lod", "DECIMATE")
@@ -302,6 +303,7 @@ def add_lod(obj, ratio: float, suffix: str = "__lod1") -> bpy.types.Object:
     bpy.context.view_layer.objects.active = lod
     bpy.ops.object.select_all(action="DESELECT")
     lod.select_set(True)
+    bpy.ops.object.modifier_move_to_index(modifier=mod.name, index=0)  # apply before the armature modifier
     bpy.ops.object.modifier_apply(modifier=mod.name)
     lod["hk_lod_of"] = obj.name
     return lod

@@ -626,14 +626,59 @@
         ]
       }
     },
+    "characters/adi": {
+      "url": "/assets/characters/adi.9be64a7fce.glb",
+      "bytes": 451268,
+      "type": "glb"
+    },
+    "characters/bayu": {
+      "url": "/assets/characters/bayu.6acc08f751.glb",
+      "bytes": 496672,
+      "type": "glb"
+    },
     "characters/kelip": {
       "url": "/assets/characters/kelip.5360b0cdc9.glb",
       "bytes": 35140,
       "type": "glb"
     },
+    "characters/maksom": {
+      "url": "/assets/characters/maksom.12c213600b.glb",
+      "bytes": 467060,
+      "type": "glb"
+    },
     "characters/tokbelang": {
-      "url": "/assets/characters/tokbelang.ffc7b3a8f1.glb",
+      "url": "/assets/characters/tokbelang.8c3fa58e20.glb",
       "bytes": 288756,
+      "type": "glb"
+    },
+    "characters/villager_child": {
+      "url": "/assets/characters/villager_child.81c216d0f4.glb",
+      "bytes": 242812,
+      "type": "glb"
+    },
+    "characters/villager_elder": {
+      "url": "/assets/characters/villager_elder.a3e0fab5a5.glb",
+      "bytes": 247416,
+      "type": "glb"
+    },
+    "characters/villager_man": {
+      "url": "/assets/characters/villager_man.0b6d32a59d.glb",
+      "bytes": 248768,
+      "type": "glb"
+    },
+    "characters/villager_woman": {
+      "url": "/assets/characters/villager_woman.d52ffb4296.glb",
+      "bytes": 246896,
+      "type": "glb"
+    },
+    "characters/villager_woman_b": {
+      "url": "/assets/characters/villager_woman_b.21354359e8.glb",
+      "bytes": 252012,
+      "type": "glb"
+    },
+    "characters/wan_young": {
+      "url": "/assets/characters/wan_young.44599ee0ff.glb",
+      "bytes": 476936,
       "type": "glb"
     },
     "characters/wisp": {
