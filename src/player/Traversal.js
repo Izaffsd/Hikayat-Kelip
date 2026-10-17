@@ -39,6 +39,8 @@ export class Traversal {
     this._jumpTime = 0;
     this._safeTime = 0;
     this.lastSafe = { x: character.position.x, y: character.feetY, z: character.position.z };
+    /** Water surface that respawns the player (GDD: falling into water respawns within 2 s); −∞ when none. */
+    this.hazardWaterLevel = -Infinity;
     this._coyoteTicks = time.secondsToTicks(tuning.jump.coyoteTime);
     this._bufferTicks = time.secondsToTicks(tuning.jump.bufferTime);
     this._jumpVelocity = Math.sqrt(2 * tuning.gravity * tuning.jump.height);
@@ -151,6 +153,7 @@ export class Traversal {
       this._safeTime = 0;
     }
     if (this.cc.feetY < this.tuning.respawn.killHeight) this.respawn('fell');
+    else if (this.cc.feetY < this.hazardWaterLevel - this.tuning.respawn.waterDepth) this.respawn('water');
   }
 
   /**
@@ -163,6 +166,17 @@ export class Traversal {
     this._safeTime = 0;
     this._jumping = false;
     this.bus.emit(EV.PLAYER_RESPAWNED, { reason });
+  }
+
+  /**
+   * Places the character at a point and makes it the safe ground (checkpoints, tests).
+   * @param {{ x: number, y: number, z: number }} feet
+   */
+  respawnAt(feet) {
+    this.lastSafe.x = feet.x;
+    this.lastSafe.y = feet.y;
+    this.lastSafe.z = feet.z;
+    this.respawn('placed');
   }
 
   /**

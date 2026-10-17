@@ -13,7 +13,7 @@ test('running, sprint build-up and a held jump behave as tuned', async ({ page, 
   page.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && problems.push(m.text()));
   page.on('pageerror', (e) => problems.push(e.message));
   await keepFocused(page);
-  await page.goto(`/?${['test=1', testQuery].filter(Boolean).join('&')}`);
+  await page.goto(`/?${['test=1', 'scene=sandbox', testQuery].filter(Boolean).join('&')}`);
   await page.waitForFunction(() => window.__hk?.ready === true, null, { timeout: 90_000 });
   await page.mouse.click(640, 520);
   await page.waitForFunction(() => window.__hk.started && window.__hk.frame > 30);

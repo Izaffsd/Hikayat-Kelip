@@ -34,6 +34,8 @@ export class CameraSystem {
     this._look = { mouseX: 0, mouseY: 0, touchX: 0, touchY: 0 };
     this._ball = new physics.R.Ball(follow.collisionRadius);
     this._idleLook = 0;
+    /** @type {{ position: Vector3, target: Vector3 }|null} fixed shot replacing the follow camera */
+    this.override = null;
     camera.fov = tuning.fov;
     camera.near = tuning.near;
     camera.far = tuning.far;
@@ -48,6 +50,12 @@ export class CameraSystem {
    * @param {number} targetSpeed player horizontal speed (m/s)
    */
   update(dt, targetFeet, targetFacing, targetSpeed) {
+    if (this.override) {
+      // Fixed shot (cutscenes, test screenshots).
+      this.camera.position.copy(this.override.position);
+      this.camera.lookAt(this.override.target);
+      return;
+    }
     const { follow, look } = this.tuning;
     const sensitivity = this.settings.get('camera.sensitivity');
     const invert = this.settings.get('camera.invertY') ? -1 : 1;

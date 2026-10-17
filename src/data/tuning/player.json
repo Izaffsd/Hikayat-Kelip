@@ -35,5 +35,5 @@
   },
   "gravity": 24,
   "hardLandingSpeed": 11,
-  "respawn": { "safeGroundTime": 0.3, "killHeight": -20 }
+  "respawn": { "safeGroundTime": 0.3, "killHeight": -20, "waterDepth": 0.35 }
 }

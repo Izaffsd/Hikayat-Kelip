@@ -10,6 +10,8 @@ blob-report/
 design-system/
 package-lock.json
 src/data/generated/
+# Written by `npm run layouts` (tools/layout); compact on purpose.
+src/data/regions/
 skills-lock.json
 # Docs are prose (BUILD_PROMPT.md must stay verbatim); never reflow them.
 *.md

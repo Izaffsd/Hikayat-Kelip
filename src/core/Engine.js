@@ -12,6 +12,7 @@ import { Renderer } from '../render/Renderer.js';
 import { DebugOverlay } from '../ui/DebugOverlay.js';
 import { TouchControls } from '../ui/touch/TouchControls.js';
 import { SandboxLevel } from '../world/SandboxLevel.js';
+import { World } from '../world/World.js';
 import { AssetLoader } from './AssetLoader.js';
 import { data } from './Data.js';
 import { EV } from './events.js';
@@ -103,9 +104,27 @@ export class Engine {
     this.input.attach({ window, canvas });
     if (platform.isTouch) this.input.device = 'touch';
 
-    const level = new SandboxLevel({ scene: this.scene, physics: this.physics });
-    const { spawn, facing } = level.build();
-    this.level = level;
+    /** Region to play: the prologue by default; `?scene=sandbox` keeps the Phase 1 movement course for tests. */
+    this.sceneId = query.get('scene') ?? 'prologue';
+    let spawn;
+    let facing;
+    if (this.sceneId === 'sandbox') {
+      this.level = new SandboxLevel({ scene: this.scene, physics: this.physics });
+      ({ spawn, facing } = this.level.build());
+    } else {
+      this.world = new World({
+        scene: this.scene,
+        physics: this.physics,
+        assets: this.assets,
+        renderer: this.renderer,
+        bus,
+        preset: this.quality.preset,
+      });
+      await this.world.load(this.sceneId, (fraction) => onProgress(0.6 + fraction * 0.1));
+      const marker = this.world.markers.spawn;
+      spawn = { x: marker.p.x, y: marker.p.y, z: marker.p.z };
+      facing = marker.yaw;
+    }
     this.character = new CharacterController(this.physics, data('tuning/player'), spawn);
     this.traversal = new Traversal({
       character: this.character,
@@ -211,6 +230,7 @@ export class Engine {
   _fixed(dt) {
     this.input.beginTick(this.time.tick);
     const intent = this.controller.update(this.cameraSystem.yaw);
+    if (this.world?.deadlyWater) this.traversal.hazardWaterLevel = this.world.waterLevel;
     this.traversal.fixedUpdate(dt, intent);
     this.physics.step(dt);
     this._probeGround();
@@ -252,6 +272,7 @@ export class Engine {
     this.physics.interpolate(alpha);
     this.cameraSystem.update(dt, this._feet, facing, this.traversal.speed);
     this.avatar.update(dt, this.camera, this.groundY);
+    this.world?.update(dt, this.camera, this._feet);
     this.renderer.render(this.scene, this.camera);
     this.overlay.update(dt);
     this.perf.record(dt);
@@ -306,7 +327,7 @@ export class Engine {
       layout: data('ui/touchLayout'),
       startVisible: this.platform.isTouch,
     });
-    if (this.platform.query.get('scene') !== 'prologue') {
+    if (this.sceneId === 'sandbox') {
       const hint = document.createElement('p');
       hint.className = 'hk-sandbox-hint';
       hint.dataset.i18n = 'sandbox.hint';
@@ -411,6 +432,10 @@ export class Engine {
           return engine.time.frame;
         },
         stats: () => engine._stats(),
+        /** The engine itself, for diagnostics in tests (test hook only). */
+        get engine() {
+          return engine;
+        },
         player: () => ({
           x: engine.character.position.x,
           y: engine.character.feetY,
@@ -420,6 +445,21 @@ export class Engine {
           vy: engine.traversal.velocity.y,
         }),
         errors: () => log.entries.filter((e) => e.level !== 'info').map((e) => `${e.level}: ${e.message}`),
+        /**
+         * Fixed camera shot for screenshots: view([px, py, pz], [tx, ty, tz]); view(null) returns to the follow camera.
+         * @param {number[]|null} position
+         * @param {number[]} [target]
+         */
+        view: (position, target) => {
+          engine.cameraSystem.override = position
+            ? { position: new Vector3(...position), target: new Vector3(...target) }
+            : null;
+        },
+        /**
+         * Teleports the player (feet position) for tests.
+         * @param {number[]} feet
+         */
+        teleport: (feet) => engine.traversal.respawnAt({ x: feet[0], y: feet[1], z: feet[2] }),
         /**
          * Loads manifest entries with the real AssetLoader (KTX2 + Meshopt on this renderer), summarises what came
          * back, then releases everything. Test hook only (`?test=1`).

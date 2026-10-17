@@ -4,8 +4,11 @@ Resume rule: when Izaf says "continue from PROGRESS.md", start at **Resume point
 
 ## Resume point
 Setup done except the items that need Izaf (2026-10-16). The project lives at `D:\dev\hikayat-kelip` (D-001).
-- Push: Izaf said "no need to push yet". Keep committing locally; ask before the first push (make the repo private
-  first, then `gh auth login --web --git-protocol https --scopes workflow`). Vercel previews start after that push.
+- **Push:** Izaf said "push and go ahead" (2026-10-17); `main` is on GitHub. The repo is still **public**; Izaf chose
+  private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
+  fresh `gh auth login --web`). Vercel previews start once he imports the repo on vercel.com (Vite preset).
+- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. **Resume with milestone 3 (traversal)** after
+  writing the kampung layout (`tools/layout/kampung.mjs`).
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
   session `blender` and `chrome-devtools` are connected (the standalone `claude mcp list` still says "pending" because
   the CLI keeps its own approvals). Live previews use `tools/blender/live/hk_preview.py`: everything goes into an
@@ -94,6 +97,28 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   original clothing, atlas-baked; previewed in Izaf's Blender in sprint, roll and climb poses (no clipping between
   layers); every model loads through the game's AssetLoader on WebGPU and WebGL2. Cursed variants reuse these meshes.
 - **Not done:** Vercel preview (no push yet).
+
+### Phase 3 — Vertical slice (in progress since 2026-10-17)
+Milestones: M1 animated Bayu · M2 world rendering + prologue layout · M3 traversal (mantle, wall-run, slide, wau glide)
+· M4 combat (strike, langkah, tangkis, kuncian, lock-on; wisp, cursed brawler, Cursed Adi) · M5 missions, story state,
+dialogue, cutscenes, KelipGuide, autosave · M6 prologue content (young Wan, wisps, tiger chase, standoff) · M7 Chapter 1
+missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghost and medals) · M9 music and runtime audio
+· M10 phase checks, Vercel preview, playtest checklist → **PLAYTEST GATE**.
+- **M1 done** (`6b80dde`, `635cb5f`): `Animator` (shared-phase locomotion blend idle/walk/jog/sprint, pooled action
+  layer, states from `src/data/animation/human.json`, root motion stripped) and `Avatar` (TSL blob shadow, LOD by
+  distance, bone attachments); Bayu runs, jumps and lands animated on both backends.
+- **M2 done:** regions are data (`src/data/regions/<id>.json`, loaded lazily) written by `npm run layouts` from
+  `tools/layout/*.mjs` (house, jetty, boardwalk, tree, marker, path and trigger helpers). `World` builds Sky (gradient,
+  clouds, stars, moon, lightning flash), Water (unlit TSL: ripples, Fresnel sky tint, rain rings, a moon/sun glitter path
+  that never blobs, colour drain), Terrain (noise islands, trimesh collider), the kit as one InstancedMesh per part with
+  box colliders, DayNight (storm/dusk/night presets, blends, lightning, nearest-N lamp pool with pelita flicker), GPU
+  fireflies (synchronized groups, Kelip's call wave, row-by-row darkening) and GPU rain. Deadly flood water respawns
+  the player. Prologue: ridge route of six roofs, lamp-lit arena, chase route (wrecked house, slide gap, wall-run walls,
+  debris), raised jetty, triggers and markers for the beats.
+- **Measured (gaming PC, 1280×720):** prologue WebGPU 65 draw calls / 150 k tris / 92.9 FPS; WebGL2 69 / 137 k / 92.6
+  FPS; 586 colliders; GPU memory estimate 62 MB; no console errors or warnings on either backend.
+- **Notes for M6:** roofs read as near-black silhouettes in the storm; the ridge route needs a readable rim/key on the
+  roofs before the first 30 seconds can be judged.
 
 ## Setup checklist status
 

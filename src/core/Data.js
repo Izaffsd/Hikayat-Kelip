@@ -1,16 +1,17 @@
 /**
  * Read-only access to the JSON data in `src/data` (the ScriptableObject equivalent).
- * Small, always-needed files are bundled eagerly; large per-chapter files (dialogue, missions)
- * are loaded on demand with `loadData`.
+ * Small, always-needed files are bundled eagerly; large per-chapter files (dialogue, missions, region layouts)
+ * are loaded on demand with `loadData`, so the first play only downloads what the prologue needs.
  */
 
-const eagerFiles = import.meta.glob(['../data/**/*.json', '!../data/dialogue/**', '!../data/missions/**'], {
-  eager: true,
-  import: 'default',
-});
-const lazyFiles = import.meta.glob(['../data/dialogue/**/*.json', '../data/missions/**/*.json'], {
-  import: 'default',
-});
+const eagerFiles = import.meta.glob(
+  ['../data/**/*.json', '!../data/dialogue/**', '!../data/missions/**', '!../data/regions/**'],
+  { eager: true, import: 'default' },
+);
+const lazyFiles = import.meta.glob(
+  ['../data/dialogue/**/*.json', '../data/missions/**/*.json', '../data/regions/**/*.json'],
+  { import: 'default' },
+);
 
 /** @type {Map<string, any>} */
 const table = new Map();

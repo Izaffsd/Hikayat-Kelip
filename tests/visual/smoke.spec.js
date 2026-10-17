@@ -16,7 +16,7 @@ test('title paints, the engine boots, a tap starts the game and the sandbox rend
   });
   page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`));
 
-  const query = ['test=1', testQuery].filter(Boolean).join('&');
+  const query = ['test=1', 'scene=sandbox', testQuery].filter(Boolean).join('&');
   await keepFocused(page);
   await page.goto(`/?${query}`);
   await expect(page.locator('#title-name')).toBeVisible();

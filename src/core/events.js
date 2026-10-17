@@ -42,6 +42,9 @@ export const EV = Object.freeze({
   /** { reason: string } */
   PLAYER_RESPAWNED: 'player:respawned',
 
+  /** { delay: number } — a lightning flash; thunder should follow after `delay` seconds */
+  LIGHTNING: 'world:lightning',
+
   /** { schema: number } */
   SAVE_WRITTEN: 'save:written',
   /** { error: string } */
