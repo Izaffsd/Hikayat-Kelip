@@ -14,7 +14,7 @@
     "context": ["KeyE"],
     "kelip": ["KeyR"],
     "lockon": ["Mouse1", "Tab"],
-    "pause": ["Escape", "KeyP"],
+    "pause": ["KeyP"],
     "journal": ["KeyM"]
   },
   "gamepad": {

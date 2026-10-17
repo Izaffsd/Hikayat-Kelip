@@ -134,6 +134,20 @@ export const EV = Object.freeze({
   RACE_STARTED: 'race:started',
   /** { id, seconds, won, best, record, cancelled? } — a race ended */
   RACE_FINISHED: 'race:finished',
+  /** { id: string, best: number|null } — a time trial began (countdown) */
+  TRIAL_STARTED: 'trial:started',
+  /** { n: number } — countdown 3, 2, 1 */
+  TRIAL_COUNTDOWN: 'trial:countdown',
+  /** { id: string } — go */
+  TRIAL_GO: 'trial:go',
+  /** { id, seconds, medal: 'gold'|'silver'|'bronze'|null, best, record, newMedal, medals } */
+  TRIAL_FINISHED: 'trial:finished',
+  /** { id: string } — the trial was left */
+  TRIAL_EXITED: 'trial:exited',
+  /** { id: string } — an achievement was earned */
+  ACHIEVEMENT: 'progress:achievement',
+  /** { title: string, body?: string, kind?: string } — i18n keys of a short notice */
+  TOAST: 'ui:toast',
 
   /** { delay: number } — a lightning flash; thunder should follow after `delay` seconds */
   LIGHTNING: 'world:lightning',

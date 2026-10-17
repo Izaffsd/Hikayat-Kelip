@@ -83,6 +83,7 @@
           { "npc": "adi", "do": "hide" },
           { "journal": "j.tokwan.1" },
           { "cahaya": 1 },
+          { "achievement": "bunyi_pertama" },
           { "flag": "adi_caught" }
         ]
       }

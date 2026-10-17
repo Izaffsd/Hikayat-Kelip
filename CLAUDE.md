@@ -78,9 +78,12 @@ browser on PC and phones in landscape. Three.js WebGPU + Rapier + Vite, deployed
   Start `npm run chrome:test` first: one test Chrome stays open and every test runs as a new tab in it (D-035);
   Izaf does not want a browser window opened and closed per run. Quick live checks: Chrome DevTools MCP tabs.
 - `npm run assets` — regenerates every model, texture and audio file headless (Blender + gltf-transform + ffmpeg).
-- URL options: `?webgl=1` (force WebGL2), `?debug=1` (overlay), `?test=1` (read-only `window.__hk` hook for Playwright).
+- URL options: `?webgl=1` (force WebGL2), `?debug=1` (overlay), `?test=1` (read-only `window.__hk` hook for Playwright),
+  `?mission=<id>[&step=<id>]` (start a mission), `?scene=<region>` (free roam, no story).
 - Shell is PowerShell 5.1 (no `&&`). The ui-ux-pro-max scripts need Python: `uv run --no-project --python 3.13 -- python
   .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain <d>` (no `-I`; the script imports its own modules).
+  First set `$env:UV_CACHE_DIR = 'D:\dev\.cache\uv'; $env:UV_PYTHON_INSTALL_DIR = 'D:\dev\.cache\uv-python'`: the VS Code
+  shell may lack the user variables, and uv then downloads Python to drive C:.
 
 ## Folder layout (keep it)
 ```

@@ -1,0 +1,50 @@
+{
+  "comment": "The pause map of Pulau Seri (GDD: no minimap; the pause menu has a map): an original island outline, the river from Puncak Seri to the sea at Kampung Berembang, and the five regions with their Pelita (lit when the story flag is set). Coordinates in the SVG's 400 × 240 view box. `scenes` are the engine regions that count as being there.",
+  "viewBox": [0, 0, 400, 240],
+  "island": "M 38 150 C 30 110, 70 60, 130 46 C 190 30, 260 28, 318 52 C 366 72, 386 120, 360 160 C 336 196, 280 214, 214 212 C 160 210, 120 222, 82 206 C 54 194, 42 176, 38 150 Z",
+  "river": "M 220 76 C 200 110, 150 128, 122 150 C 106 162, 98 174, 90 196",
+  "mountain": "M 204 80 L 220 52 L 236 80 Z",
+  "regions": [
+    {
+      "id": "kampung",
+      "name": "map.region.kampung",
+      "pelita": "map.pelita.air",
+      "flag": "pelita_air",
+      "x": 88,
+      "y": 178,
+      "scenes": ["kampung", "prologue"]
+    },
+    {
+      "id": "sawah",
+      "name": "map.region.sawah",
+      "pelita": "map.pelita.bumi",
+      "flag": "pelita_bumi",
+      "x": 250,
+      "y": 172
+    },
+    {
+      "id": "hutan",
+      "name": "map.region.hutan",
+      "pelita": "map.pelita.rimba",
+      "flag": "pelita_rimba",
+      "x": 138,
+      "y": 86
+    },
+    {
+      "id": "kota",
+      "name": "map.region.kota",
+      "pelita": "map.pelita.pelabuhan",
+      "flag": "pelita_pelabuhan",
+      "x": 332,
+      "y": 112
+    },
+    {
+      "id": "puncak",
+      "name": "map.region.puncak",
+      "pelita": "map.pelita.puncak",
+      "flag": "pelita_puncak",
+      "x": 220,
+      "y": 96
+    }
+  ]
+}

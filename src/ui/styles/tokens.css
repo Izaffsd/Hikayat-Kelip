@@ -66,6 +66,11 @@
   --color-joystick-base: rgb(7 10 20 / 0.25);
   --color-joystick-ring: rgb(246 238 223 / 0.35);
   --color-joystick-knob: rgb(246 238 223 / 0.75);
+  --color-water: var(--hk-river-500);
+  /* Trial medals: always shown with their name too (colour is never the only cue). */
+  --color-medal-gold: #e9b949;
+  --color-medal-silver: #c9d1dc;
+  --color-medal-bronze: #c27c4a;
 
   /* Type */
   --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;

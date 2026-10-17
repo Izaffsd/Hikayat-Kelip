@@ -48,6 +48,13 @@ export class TouchControls {
       if (path === '*' || path.startsWith('touch.')) this.applySettings();
     });
     bus.on(EV.LANGUAGE_CHANGED, () => this._relabel());
+    // Semangat shows as a ring around Kelip's button (GDD: top-left, "ring shows Semangat").
+    const kelip = this.buttons.find((b) => b.dataset.action === 'kelip');
+    bus.on(EV.SEMANGAT_CHANGED, ({ value, max }) => {
+      if (!kelip) return;
+      kelip.style.setProperty('--semangat', String(Math.min(1, value / max)));
+      kelip.classList.toggle('is-full', value >= max);
+    });
     // Pinch-zoom gestures would fight the controls (iOS ignores user-scalable=no).
     document.addEventListener('gesturestart', (event) => event.preventDefault());
   }

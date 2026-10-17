@@ -1,0 +1,584 @@
+/* Pause menu (design system §4, §7): the frozen frame behind a scrim; a rail of actions | the selected panel. */
+#ui-root > .hk-pause {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--safe-top) + var(--space-4)) calc(var(--safe-right) + var(--gutter-x))
+    calc(var(--safe-bottom) + var(--space-4)) calc(var(--safe-left) + var(--gutter-x));
+  background: var(--color-scrim);
+}
+
+#ui-root > .hk-pause[hidden],
+.hk-pause__section[hidden] {
+  display: none;
+}
+
+.hk-pause__panel {
+  display: grid;
+  grid-template-columns: minmax(190px, 30%) 1fr;
+  gap: var(--space-5);
+  grid-template-rows: minmax(0, 1fr);
+  width: min(100%, 1000px);
+  height: min(100%, 580px);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.hk-pause__rail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.hk-pause__title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.hk-pause__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-1);
+}
+
+.hk-pause__action {
+  min-height: 48px;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-label);
+  font-weight: 600;
+  text-align: left;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+
+.hk-pause__action:hover,
+.hk-pause__action[aria-current='true'] {
+  background: var(--color-surface-raised);
+  border-color: var(--color-border);
+}
+
+.hk-pause__action[data-id='resume'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.hk-pause__action[data-id='resume']:hover {
+  background: var(--color-primary-hover);
+}
+
+.hk-pause__action[data-id='restart'] {
+  margin-top: auto;
+}
+
+.hk-pause__action:active {
+  transform: scale(0.97);
+}
+
+.hk-pause__action:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+.hk-pause__action:focus-visible,
+.hk-setting:focus-visible,
+.hk-settings__reset:focus-visible,
+.hk-trial__start:focus-visible,
+.hk-results__button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.hk-pause__detail {
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-1);
+  scroll-padding: var(--space-4);
+}
+
+/* Settings: one stepper row per setting. */
+.hk-settings {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.hk-settings__heading {
+  margin: var(--space-4) 0 var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.hk-settings__heading:first-child {
+  margin-top: 0;
+}
+
+.hk-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 52px;
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-control-fill);
+  color: var(--color-text);
+  font-size: var(--text-body);
+  text-align: left;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+
+.hk-setting:hover {
+  background: var(--color-surface-raised);
+}
+
+.hk-setting:active {
+  transform: scale(0.99);
+}
+
+.hk-setting__control {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 11em;
+}
+
+.hk-setting__arrow {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-round);
+  color: var(--color-primary);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.hk-setting__value {
+  flex: 1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.hk-settings__reset {
+  justify-self: start;
+  min-height: 48px;
+  margin-top: var(--space-5);
+  padding: 0 var(--space-5);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-label);
+  font-weight: 600;
+}
+
+/* Journal: Tok Wan's hand, the returned pages. */
+.hk-journal__title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  font-weight: 600;
+}
+
+.hk-journal__heading {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.hk-journal__line {
+  max-width: 62ch;
+  margin: 0 0 var(--space-3);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.hk-journal__line--hand {
+  font-family: var(--font-display);
+  font-size: calc(var(--text-body) * 1.3);
+  font-style: italic;
+  color: var(--color-text);
+}
+
+.hk-journal__cahaya {
+  margin: var(--space-5) 0 0;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+/* Map of Pulau Seri. */
+.hk-map__art {
+  display: block;
+  width: 100%;
+  max-height: 58vh;
+}
+
+.hk-map__island {
+  fill: var(--color-surface-raised);
+  stroke: var(--color-border);
+  stroke-width: 2;
+}
+
+.hk-map__river {
+  fill: none;
+  stroke: var(--color-water);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.hk-map__mountain {
+  fill: var(--color-border-strong);
+}
+
+.hk-map__pelita {
+  fill: var(--color-surface);
+  stroke: var(--color-text-muted);
+  stroke-width: 2;
+}
+
+.hk-map__pelita.is-lit {
+  fill: var(--color-accent);
+  stroke: var(--color-accent);
+}
+
+.hk-map__here {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-dasharray: 3 4;
+}
+
+.hk-map__label {
+  fill: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.hk-map__list {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.hk-map__item.is-here {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* Narrow landscape phones (667 × 375): the rail stays, tighter. */
+@media (max-height: 420px) {
+  .hk-pause__panel {
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  /* The panel itself says where you are; the title gives its height to the actions. */
+  .hk-pause__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .hk-pause__action {
+    min-height: 44px;
+    padding: var(--space-1) var(--space-3);
+    line-height: 1.2;
+  }
+
+  .hk-map__art {
+    max-height: 48vh;
+  }
+}
+
+/* Time trials: countdown, clock + ghost delta, results card (design system §7). */
+#ui-root > .hk-trial {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hk-trial__count {
+  position: absolute;
+  top: 30vh;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: 600;
+  color: var(--color-text);
+  text-shadow: 0 2px 12px rgb(7 10 20 / 0.9);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.hk-trial__count.is-visible {
+  opacity: 1;
+}
+
+.hk-trial__bar {
+  position: absolute;
+  top: calc(var(--safe-top) + var(--space-4));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.hk-trial__bar.is-visible,
+.hk-trial__bar .hk-race__clock {
+  opacity: 1;
+}
+
+.hk-trial__delta {
+  min-width: 4.5em;
+  font-size: var(--text-label);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+  text-shadow: 0 1px 4px rgb(7 10 20 / 0.85);
+}
+
+.hk-trial__delta.is-ahead {
+  color: var(--color-accent);
+}
+
+.hk-results {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 420px);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.hk-results[hidden] {
+  display: none;
+}
+
+.hk-results__title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-display);
+  font-size: var(--text-h2);
+  font-weight: 600;
+}
+
+.hk-results__medal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-2);
+  font-weight: 600;
+}
+
+.hk-results__time {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-h2);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hk-results__best {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.hk-results__actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.hk-results__button,
+.hk-trial__start {
+  min-width: 120px;
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--text-label);
+  font-weight: 600;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+
+.hk-results__button--primary,
+.hk-trial__start:not(:disabled) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.hk-results__button:active,
+.hk-trial__start:active {
+  transform: scale(0.96);
+}
+
+.hk-trial__start:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+}
+
+/* Medals: a disc in the medal's colour, always with its name beside it. */
+.hk-medal {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-strong);
+  background: var(--color-control-fill);
+  box-shadow: inset 0 0 0 4px rgb(7 10 20 / 0.25);
+}
+
+.hk-medal--gold {
+  background: var(--color-medal-gold);
+  border-color: var(--color-medal-gold);
+}
+
+.hk-medal--silver {
+  background: var(--color-medal-silver);
+  border-color: var(--color-medal-silver);
+}
+
+.hk-medal--bronze {
+  background: var(--color-medal-bronze);
+  border-color: var(--color-medal-bronze);
+}
+
+/* Trials list in the pause menu. */
+.hk-trials {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.hk-trial-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-control-fill);
+}
+
+.hk-trial-item__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.hk-trial-item__name {
+  margin: 0;
+  font-size: var(--text-label);
+  font-weight: 600;
+}
+
+.hk-trial-item__info {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Toasts: top right under the pause button; never block input. */
+#ui-root > .hk-toast {
+  position: fixed;
+  top: calc(var(--safe-top) + 72px);
+  right: calc(var(--safe-right) + var(--space-4));
+  max-width: min(46vw, 340px);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+
+#ui-root > .hk-toast.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.hk-toast p {
+  margin: 0;
+}
+
+.hk-toast__kicker {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.hk-toast__title {
+  font-size: var(--text-label);
+  font-weight: 600;
+}
+
+.hk-toast__body {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+/* Reduced motion: notices fade only. */
+.hk-reduced-motion #ui-root > .hk-toast {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ui-root > .hk-toast {
+    transform: none;
+  }
+}

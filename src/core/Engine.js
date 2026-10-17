@@ -21,6 +21,16 @@ import { rimMaterial } from '../render/rimMaterial.js';
 import { QualityManager } from '../render/QualityManager.js';
 import { Renderer } from '../render/Renderer.js';
 import { DebugOverlay } from '../ui/DebugOverlay.js';
+import { Trials } from '../competitive/Trials.js';
+import { Achievements } from '../progression/Achievements.js';
+import { Notices } from '../progression/Notices.js';
+import { PauseMenu } from '../ui/PauseMenu.js';
+import { Toast } from '../ui/Toast.js';
+import { TrialHud } from '../ui/TrialHud.js';
+import { TrialsPanel } from '../ui/panels/TrialsPanel.js';
+import { JournalPanel } from '../ui/panels/JournalPanel.js';
+import { MapPanel } from '../ui/panels/MapPanel.js';
+import { SettingsPanel } from '../ui/panels/SettingsPanel.js';
 import { ScreenFade } from '../ui/ScreenFade.js';
 import { TouchControls } from '../ui/touch/TouchControls.js';
 import { SandboxLevel } from '../world/SandboxLevel.js';
@@ -115,6 +125,10 @@ export class Engine {
     this._tickFeet = { x: 0, y: 0, z: 0 };
     /** Animation state a story scene holds the player in (setPose), or null. */
     this._pose = null;
+    /** Whether the pause menu is open (setPaused). */
+    this.paused = false;
+    this._hadPointerLock = false;
+    this._justResumed = false;
     this._down = { x: 0, y: -1, z: 0 };
     this._probe = { x: 0, y: 0, z: 0 };
     this.groundY = 0;
@@ -300,9 +314,12 @@ export class Engine {
     });
     this.cameraSystem.snapBehind(facing);
     this.fade = new ScreenFade({ root: this.uiRoot, bus });
+    this.achievements = new Achievements({ bus, config: data('achievements'), doc: this.saveDoc });
+    this.notices = new Notices({ bus, trials: data('trials') });
     this.story = this.storyContent
       ? new StoryDirector({ engine: this, content: this.storyContent, kelipModel: byKey('characters/kelip') })
       : null;
+    this.trials = this._createTrials();
     this.postfx = new PostFX(this.renderer);
     this.postfx.build(this.scene, this.camera, this.quality.preset);
     onProgress(0.75);
@@ -378,13 +395,20 @@ export class Engine {
    */
   _fixed(dt) {
     this.input.beginTick(this.time.tick);
-    if (this._regionLoading) {
+    // Pause (P, Start, the touch button) toggles the menu; the journal key opens it on the journal.
+    if (this.input.pressed('pause') || this.input.pressed('journal')) {
+      const journal = this.input.pressed('journal');
+      this.input.consume('pause');
+      this.input.consume('journal');
+      this.setPaused(!this.paused, journal ? 'journal' : null);
+    }
+    if (this.paused || this._regionLoading) {
       // The old region is gone and the new one is not built: hold everything still behind the fade.
       this.bus.flush();
       return;
     }
     // A cutscene or a mission's hold (a race's "ready… go") keeps Bayu still and swallows his presses.
-    const still = this.story?.still ?? false;
+    const still = (this.story?.still ?? false) || this.trials.holding;
     if (still) for (const action of CUTSCENE_SWALLOW) this.input.consume(action);
     const intent = still ? STILL : (this._testIntent ?? this.controller.update(this.cameraSystem.yaw));
     if (this.world?.deadlyWater) this.traversal.hazardWaterLevel = this.world.waterLevel;
@@ -394,7 +418,9 @@ export class Engine {
     this.physics.step(dt);
     this.director.fixedUpdate(dt, this._playerAdapter);
     this.encounters.fixedUpdate(dt, this._currentFeet());
-    this.story?.fixedUpdate(dt);
+    // A time trial sets the story aside (missions resume from their checkpoint when it ends).
+    if (this.trials.active) this.trials.fixedUpdate(dt);
+    else this.story?.fixedUpdate(dt);
     this._probeGround();
     this.bus.flush();
   }
@@ -600,6 +626,108 @@ export class Engine {
     this.wau = new Wau({ gltf: this.props, avatar: this.avatar, config: data('animation/human').wau });
     this._attachTongkat(this.props);
     this.playerModel = key;
+    this.playerGltf = gltf;
+  }
+
+  /**
+   * Opens or closes the pause menu. Paused, the simulation, the story's clocks and animation stop while the frame
+   * stays on screen; gameplay input is off (menus use the UI actions), the mouse is released and the touch controls
+   * hide.
+   * @param {boolean} paused
+   * @param {string|null} [panel] the menu panel to show (e.g. 'journal')
+   */
+  setPaused(paused, panel = null) {
+    if (!this.started || paused === this.paused) return;
+    this.paused = paused;
+    this.input.releaseAll();
+    this.input.gameplayEnabled = !paused && !this.portraitBlocked;
+    if (paused) {
+      if (document.pointerLockElement) document.exitPointerLock();
+      this.touch.setVisible(false);
+      this.pauseMenu.show(panel);
+    } else {
+      this.pauseMenu.hide();
+      this._swallowBack();
+      this.touch.setVisible(this.input.device === 'touch');
+      this.canvas.focus({ preventScroll: true });
+    }
+    this.bus.emit(EV.PAUSE_CHANGED, { paused, reason: panel ?? 'menu' });
+  }
+
+  /** The key event that just closed a menu is still being delivered: it must not open the pause menu again. */
+  _swallowBack() {
+    this._justResumed = true;
+    setTimeout(() => {
+      this._justResumed = false;
+    }, 0);
+  }
+
+  /** Time trials (data/trials.json) and their glue: the restart prompt, the gold achievement, leaving a trial. */
+  _createTrials() {
+    const engine = this;
+    const trials = new Trials({
+      bus: this.bus,
+      config: data('trials'),
+      doc: this.saveDoc,
+      host: {
+        world: () => engine.world,
+        region: () => engine.sceneId,
+        feet: () => engine._currentFeet(),
+        facing: () => engine.traversal.facing,
+        place: (p, yaw) => engine.placePlayer(p, yaw),
+        save: () => engine.saves.save(engine.saveDoc),
+        input: this.input,
+        playerGltf: () => engine.playerGltf,
+        clips: this.clips,
+        profile: data('animation/human'),
+        scene: this.scene,
+        camera: this.camera,
+      },
+    });
+    this.bus.on(EV.TRIAL_GO, () =>
+      this.bus.emit(EV.PROMPT, { action: 'context', text: 'trial.restartHint' }),
+    );
+    this.bus.on(EV.TRIAL_FINISHED, ({ medal }) => {
+      this.bus.emit(EV.PROMPT, { action: null, text: null });
+      if (medal === 'gold') this.achievements.unlock('emas_pertama');
+    });
+    // Back to the story where it was saved (free roam simply stays at the finish).
+    this.bus.on(EV.TRIAL_EXITED, () => {
+      if (this.story?.missions.mission) this.restartFromCheckpoint();
+    });
+    return trials;
+  }
+
+  /**
+   * Starts a time trial (pause → Trials): the fight on screen and the story's lines and race stop first.
+   * @param {string} id
+   */
+  startTrial(id) {
+    if (this.story?.blocking || this._regionLoading) return;
+    this.director.stop();
+    this.enemyViews.clear();
+    this.combat.reset();
+    this.story?.dialogue.clear();
+    this.story?.race.cancel();
+    this.trials.start(id);
+  }
+
+  /**
+   * Goes back to the last save point (pause → Restart from checkpoint): the fight on screen ends, Bayu stands where
+   * the checkpoint was saved and the mission resumes at its step. In free roam, back to the region's spawn.
+   */
+  restartFromCheckpoint() {
+    const checkpoint = this.saveDoc.checkpoint;
+    this.director.stop();
+    this.enemyViews.clear();
+    this.combat.reset();
+    if (!this.story || !checkpoint?.mission || checkpoint.region !== this.sceneId) {
+      const marker = this.world?.markers.spawn;
+      if (marker) this.placePlayer(marker.p, marker.yaw);
+      return;
+    }
+    this.placePlayer(checkpoint.position, checkpoint.yaw);
+    this.story.restart(checkpoint.mission, checkpoint.step);
   }
 
   /**
@@ -734,9 +862,11 @@ export class Engine {
   _frame(dt) {
     if (this._resizeQueued) this._resize();
     const alpha = this.time.alpha;
-    // Animation follows game time: frozen in hit-stop, slowed after a perfect langkah.
-    const animDt = this.time.hitStopRemaining > 0 ? 0 : dt * this.time.scale;
-    this.combat.frameUpdate(dt);
+    // Animation follows game time: frozen in hit-stop and while paused, slowed after a perfect langkah.
+    const frozen = this.paused;
+    const animDt = frozen || this.time.hitStopRemaining > 0 ? 0 : dt * this.time.scale;
+    const liveDt = frozen ? 0 : dt;
+    this.combat.frameUpdate(liveDt);
     this.character.interpolatedFeet(alpha, this._feet);
     const facing = this.traversal.interpolatedFacing(alpha);
     this.avatar.root.position.copy(this._feet);
@@ -751,8 +881,8 @@ export class Engine {
       this.cameraSystem.addTrauma(this.combat.trauma);
       this.combat.trauma = 0;
     }
-    // Story first: a cutscene sets this frame's camera shot.
-    this.story?.frameUpdate(dt, this.time.realTime, this._feet, facing);
+    // Story first: a cutscene sets this frame's camera shot. (Its clocks stop while paused.)
+    if (!frozen) this.story?.frameUpdate(dt, this.time.realTime, this._feet, facing);
     // Hard lock-on: the camera settles behind Bayu, looking at the target.
     const target = this.combat.hardLock ? this.combat.target : null;
     const lookYaw = target
@@ -760,7 +890,7 @@ export class Engine {
       : facing;
     const cameraMode = target ? 'lockOn' : this.traversal.state;
     this.cameraSystem.update(
-      dt,
+      liveDt,
       this._feet,
       lookYaw,
       Math.max(this.traversal.speed, target ? 1 : 0),
@@ -772,9 +902,12 @@ export class Engine {
     else SEE_THROUGH_TARGET.value.set(this._feet.x, this._feet.y + SEE_THROUGH_HEIGHT, this._feet.z);
     this.enemyViews.update(animDt, alpha, this.camera, this.time.realTime);
     this.motes.update(this.time.realTime);
-    this.hud.update(dt, this.camera, this.combat.inCombat, this.combat.hardLock);
+    this.hud.update(liveDt, this.camera, this.combat.inCombat, this.combat.hardLock);
+    this.trials.frameUpdate(animDt);
+    this.trialHud.update(liveDt);
+    this.toast.update(dt);
     if (!this._regionLoading) {
-      this.world?.update(dt, this.camera, this._feet);
+      this.world?.update(liveDt, this.camera, this._feet);
       this.renderer.render(this.scene, this.camera);
     }
     this.overlay.update(dt);
@@ -831,6 +964,58 @@ export class Engine {
       layout: data('ui/touchLayout'),
       startVisible: this.platform.isTouch,
     });
+    this.trialHud = new TrialHud({
+      root: this.uiRoot,
+      bus: this.bus,
+      i18n: this.i18n,
+      trials: this.trials,
+      // The results card owns input: Space and Enter are Retry there, not a jump.
+      onResults: (open) => {
+        this.input.gameplayEnabled = !open && !this.paused && !this.portraitBlocked;
+        if (!open) this._swallowBack();
+      },
+    });
+    this.toast = new Toast({ root: this.uiRoot, bus: this.bus, i18n: this.i18n });
+    this.pauseMenu = new PauseMenu({
+      root: this.uiRoot,
+      bus: this.bus,
+      i18n: this.i18n,
+      panels: [
+        new JournalPanel({
+          i18n: this.i18n,
+          source: () => ({
+            doc: this.saveDoc,
+            text: (id) => (this.story?.dialogue.lines[id] ? this.story.dialogue.text(id) : null),
+          }),
+        }),
+        new MapPanel({
+          i18n: this.i18n,
+          map: data('ui/map'),
+          state: () => ({ region: this.sceneId, flags: this.saveDoc.story.flags }),
+        }),
+        new TrialsPanel({
+          i18n: this.i18n,
+          trials: this.trials,
+          config: data('trials'),
+          onStart: (id) => {
+            this.setPaused(false);
+            this.startTrial(id);
+          },
+        }),
+        new SettingsPanel({
+          settings: this.settings,
+          i18n: this.i18n,
+          menu: data('ui/settingsMenu'),
+          touch: this.platform.isTouch,
+        }),
+      ],
+      onResume: () => this.setPaused(false),
+      onRestart: () => {
+        this.setPaused(false);
+        this.restartFromCheckpoint();
+      },
+      canRestart: () => !!this.story && !!this.saveDoc.checkpoint?.mission,
+    });
     if (this.sceneId === 'sandbox') {
       const hint = document.createElement('p');
       hint.className = 'hk-sandbox-hint';
@@ -873,6 +1058,8 @@ export class Engine {
     window.visualViewport?.addEventListener('resize', queueResize);
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
+        // Coming back to a paused game, never into the middle of a fight (phones switch apps often).
+        this.setPaused(true);
         this.loop.stop();
         this.audio.suspend();
         this.settings.persist();
@@ -900,11 +1087,32 @@ export class Engine {
     window.matchMedia('(orientation: portrait)').addEventListener('change', orientation);
     orientation();
     this.canvas.addEventListener('click', () => {
-      if (this.started && this.input.device === 'keyboard') this.input.requestPointerLock();
+      if (this.started && !this.paused && this.input.device === 'keyboard') this.input.requestPointerLock();
+    });
+    // Esc on a keyboard opens the menu (it is the menu's "back" too, so it is not a gameplay binding). Leaving the
+    // mouse lock (the browser takes the first Esc for that) pauses as well.
+    this.bus.on(EV.UI_ACTION, ({ action }) => {
+      // (Not the same Esc that just closed the menu: the menu hears it first.)
+      if (action === 'uiBack' && !this.paused && !this._justResumed && this.input.device === 'keyboard') {
+        if (!this.portraitBlocked) this.setPaused(true);
+      }
+    });
+    document.addEventListener('pointerlockchange', () => {
+      if (document.pointerLockElement === this.canvas) this._hadPointerLock = true;
+      else if (this._hadPointerLock && !this.paused) this.setPaused(true);
     });
   }
 
+  /** High-contrast fireflies (accessibility): Kelip's call and the colonies switch to bright yellow. */
+  _applyKelipContrast() {
+    const on = this.settings.get('accessibility.highContrastKelip') === true ? 1 : 0;
+    const fireflies = this.world?.fireflies;
+    if (fireflies) fireflies.uniforms.highContrast.value = on;
+  }
+
   _bindSettings() {
+    this.bus.on(EV.REGION_READY, () => this._applyKelipContrast());
+    this._applyKelipContrast();
     this.bus.on(EV.SETTINGS_CHANGED, ({ path }) => {
       if (path === '*' || path.startsWith('graphics.')) {
         this.quality.apply();
@@ -912,6 +1120,11 @@ export class Engine {
         this.postfx.build(this.scene, this.camera, this.quality.preset);
       }
       if (path === '*' || path.startsWith('audio.')) this.audio.applyVolumes();
+      if (path === '*' || path === 'accessibility.highContrastKelip') this._applyKelipContrast();
+      if (path === '*' || path === 'assists.difficulty') {
+        this.director.tokens =
+          data('combat/moves').attackTokens[this.settings.get('assists.difficulty')] ?? 2;
+      }
       if (path === '*' || path === 'telemetry') this.telemetry.setEnabled(this.settings.get('telemetry'));
       if (path === '*' || path === 'bindings') this.input.setBindings(this.settings.get('bindings'));
     });

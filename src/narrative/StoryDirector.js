@@ -144,6 +144,22 @@ export class StoryDirector {
   }
 
   /**
+   * Starts a mission again at a step (pause → Restart from checkpoint): the scene, lines and race in progress are
+   * dropped and the mission's setup and the step's resume actions rebuild the state.
+   * @param {string} id
+   * @param {string|null} step
+   * @returns {Promise<void>}
+   */
+  restart(id, step) {
+    this.cutscenes.cancel();
+    this.dialogue.clear();
+    this.race.cancel();
+    this.holding = false;
+    this.engine.setPose(null);
+    return this.start(id, step);
+  }
+
+  /**
    * @param {number} dt
    */
   fixedUpdate(dt) {
@@ -220,6 +236,7 @@ export class StoryDirector {
     const result = this.race.finish(won);
     if (!result) return;
     this.story.set(`race_${result.id}_won`, won);
+    if (won) this.engine.achievements.unlock('lebih_laju');
     const line = won ? action.win : action.lose;
     if (line) this.dialogue.say(line);
   }
@@ -284,6 +301,8 @@ export class StoryDirector {
         else if (command === 'finish') this._finishRace(action);
         else throw new Error(`StoryDirector: unknown race command "${command}"`);
       },
+      /** Earns an achievement (data/achievements.json): `{ "achievement": "bunyi_pertama" }`. */
+      achievement: (id) => engine.achievements.unlock(id),
       /** Ends the fight on screen at once (a scene takes over from the freed boss): `{ "clearEnemies": true }`. */
       clearEnemies: () => {
         engine.director.stop();

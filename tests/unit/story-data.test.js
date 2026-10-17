@@ -47,6 +47,7 @@ const ACTIONS = new Set([
   'lamp',
   'waitFor',
   'clearEnemies',
+  'achievement',
 ]);
 const TIGER_COMMANDS = new Set(['load', 'chase', 'standoff', 'roar', 'hide']);
 const NPC_COMMANDS = new Set(['load', 'place', 'run', 'flee', 'hold', 'face', 'ink', 'hide']);
@@ -171,6 +172,8 @@ function checkAction(action, mission, region, where) {
   }
   if (key === 'lamp') expectPoint(region, action.at, where);
   if (key === 'waitFor') expect(value, `${where}: waitFor`).toBe('dialogue');
+  if (key === 'achievement')
+    expect(data('achievements').achievements[value], `${where}: ${value}`).toBeDefined();
   if (key === 'prompt' && value !== null) {
     expect(data('input/bindings').keyboard[value], `${where}: prompt action ${value}`).toBeDefined();
     if (action.text) {

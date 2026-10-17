@@ -55,6 +55,8 @@ export class MissionSystem {
     this._listening = new Map();
     /** Resolved marker/trigger points of the current world (no allocation per tick). */
     this._points = new Map();
+    /** Bumped by every start: action lists of an earlier start stop between actions (restarts, the next mission). */
+    this._generation = 0;
   }
 
   /** The running step or null. */
@@ -78,21 +80,25 @@ export class MissionSystem {
     if (!mission) throw new Error(`MissionSystem: unknown mission "${id}"`);
     const index = stepId ? mission.steps.findIndex((s) => s.id === stepId) : 0;
     if (index < 0) throw new Error(`MissionSystem: mission "${id}" has no step "${stepId}"`);
+    const gen = ++this._generation;
     this.mission = mission;
     this.stepIndex = -1;
     this._busy = true;
+    // Clears and scene ends of an earlier attempt must not complete this one's steps.
+    this._cleared.clear();
+    this._ended.clear();
     this.bus.emit(EV.MISSION_STARTED, { id });
     const a = this.host.actions;
     if (mission.region && this.host.region?.() !== mission.region) {
       await a.region(mission.region, mission.spawn ?? 'spawn');
-      if (this.mission !== mission) return;
+      if (gen !== this._generation) return;
     }
     if (mission.abilities) a.abilities?.(mission.abilities);
     if (mission.avatar) await a.avatar?.(mission.avatar);
-    await this.run(mission.setup);
-    await this.run(index === 0 ? mission.start : mission.steps[index].on?.resume);
-    if (this.mission !== mission) return;
-    await this._enter(index);
+    await this.run(mission.setup, gen);
+    await this.run(index === 0 ? mission.start : mission.steps[index].on?.resume, gen);
+    if (gen !== this._generation) return;
+    await this._enter(index, gen);
   }
 
   /**
@@ -112,14 +118,18 @@ export class MissionSystem {
   }
 
   /**
-   * Runs actions in order (awaiting cutscenes, region changes and waits).
+   * Runs actions in order (awaiting cutscenes, region changes and waits); stops if a newer start happened.
    * @param {object[]} actions
+   * @param {number} [gen] the start these actions belong to
    */
-  async run(actions) {
-    for (const action of actions ?? []) await this._do(action);
+  async run(actions, gen = this._generation) {
+    for (const action of actions ?? []) {
+      if (gen !== this._generation) return;
+      await this._do(action);
+    }
   }
 
-  async _enter(index) {
+  async _enter(index, gen = this._generation) {
     const mission = this.mission;
     this.stepIndex = index;
     this.stepTime = 0;
@@ -130,26 +140,28 @@ export class MissionSystem {
     this.story.setPosition(mission.chapter, mission.id, step.id);
     this.bus.emit(EV.MISSION_STEP, { mission: mission.id, step: step.id, objective: step.objective ?? null });
     if (step.checkpoint || index === 0) this._checkpoint(step);
-    await this.run(step.on?.start);
-    if (this.mission === mission && this.stepIndex === index) this._busy = false;
+    await this.run(step.on?.start, gen);
+    if (gen === this._generation && this.stepIndex === index) this._busy = false;
   }
 
   async _complete() {
+    const gen = this._generation;
     const mission = this.mission;
     const step = this.step;
     this._busy = true;
-    await this.run(step.on?.done);
-    if (this.mission !== mission) return; // an action started another mission
+    await this.run(step.on?.done, gen);
+    if (gen !== this._generation) return; // an action started a mission (or a restart happened)
     if (this.stepIndex + 1 < mission.steps.length) {
-      await this._enter(this.stepIndex + 1);
+      await this._enter(this.stepIndex + 1, gen);
       return;
     }
     this.stepIndex = mission.steps.length;
     this.story.completeMission(mission.id);
     this.bus.emit(EV.MISSION_COMPLETED, { id: mission.id });
     this.bus.emit(EV.MISSION_STEP, { mission: mission.id, step: null, objective: null });
-    await this.run(mission.end);
-    if (this.mission === mission) this.mission = null;
+    await this.run(mission.end, gen);
+    if (gen !== this._generation) return; // `next` started the following mission
+    this.mission = null;
     this._busy = false;
   }
 

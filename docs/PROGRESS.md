@@ -7,13 +7,16 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - **Push:** Izaf said "push and go ahead" (2026-10-17); `main` is on GitHub. The repo is still **public**; Izaf chose
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
   fresh `gh auth login --web`). Vercel previews start once he imports the repo on vercel.com (Vite preset).
-- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M7 done; the whole slice plays from a new
-  save through P and 1.1–1.4. **Resume with milestone 8 (UI):** pause menu (resume, settings, restart from checkpoint,
-  journal with Tok Wan's line and page 1, language), settings screen (graphics preset, audio, subtitles, camera,
-  assists: ledge magnet, auto-mantle, wider parry, difficulty, touch layout size/opacity/position), the full HUD rules
-  (GDD), the first-achievement toast at 10:00, and the 1.1 race replayable as a trial with Adi's ghost and medals
-  (TECHNICAL §12, Phase 5 builds on it). Every screen runs the ui-ux-pro-max checklist and works with keyboard,
-  gamepad and touch. Still open from M4: dedicated langkah/tangkis clips (library clips stand in).
+- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M8 done; the whole slice plays from a new
+  save through P and 1.1–1.4, with the pause menu, settings, journal, map, the 1.1 trial and achievements. **Resume
+  with milestone 9 (music and runtime audio):** the AudioManager graph exists and 8 sound banks are built
+  (`tools/audio`, Phase 2); M9 plays them: footsteps on wood/thatch/water by surface, jumps, landings, the wau, strikes,
+  parries, langkah, hits, wisps dissolving, the tiger's roar and gallop, Kelip's chime, rain/storm/thunder (the
+  LIGHTNING event has the delay), river and night ambience, UI clicks; then the MusicSystem (TECHNICAL §10: layered
+  stems per region on one tempo, state crossfades on bar lines, gapless loops) with our own CC0-sample loops for the
+  prologue storm, the kampung at dusk/night, combat and the display; ducking under voices; `navigator.audioSession`.
+  Still open from M4: dedicated langkah/tangkis clips (library clips stand in). Then M10 (phase checks, Vercel
+  preview, playtest checklist) → PLAYTEST GATE.
 - **Visual tests:** run `npm run chrome:test` once, then `npx playwright test`: every test is a tab in that one window
   (D-035; Izaf asked for no window per run). Quick live checks go through the Chrome DevTools MCP.
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
@@ -194,6 +197,22 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
   can wait for spoken lines (`waitFor`), garbled comments in `Traversal.js` repaired. Verified: 127 unit tests (path
   follower, race clock, tide-safe respawn, story data for every new action); browser tests for 1.1 (a real race won by
   a sprinting bot in 12.7 s against Adi's 15.7 s, then lost), 1.3 and 1.4 end to end; screenshots inspected.
+- **M8 done (2026-10-18)** (D-041, D-042): pause menu (`ui/PauseMenu.js` + `ui/FocusNavigator.js`: rail and panel,
+  keyboard/gamepad/touch, freezes the game; Esc, P, Start, the touch button, lost mouse lock and hidden app open it),
+  panels for the journal (Tok Wan's lines, returned pages with page 1's text, Cahaya), the map (an original SVG of
+  Pulau Seri from `data/ui/map.json`: regions, Pelita lit or dark, "you are here"), trials and settings
+  (`data/ui/settingsMenu.json`: 30 stepper rows over every setting the game reads; language switches live); Restart
+  from checkpoint (missions restart cleanly: a start generation stops stale action lists; cutscenes can be cancelled);
+  time trials with countdown, ghost, live delta, medals, instant restart and results (`competitive/Trials.js`,
+  `Ghost.js`, `GhostRunner.js`, `ui/TrialHud.js`); achievements and toasts (`progression/Achievements.js`,
+  `Notices.js`, `ui/Toast.js`; the first one at 10:00); the Semangat ring on the touch Kelip button.
+  ui-ux-pro-max checklist (MASTER §9) on every new screen: targets ≥ 44 px with ≥ 8 px gaps (checked at 844×390 and
+  667×375), press feedback by transform, focus rings on every control, keyboard/gamepad/touch, tokens only, medals
+  and deltas never colour-only, reduced motion (toasts fade only), BM and EN both fit. Verified: 133 unit tests (ghost
+  recording and playback, trial timing/medals/records/restart, achievements, the settings data against the defaults
+  and both languages); browser tests: the pause flow (opens on Esc, frozen game, keyboard walk, live language change,
+  focus kept, layout at both phone sizes), restart from checkpoint, and a trial from the pause menu (a gold run in
+  12.65 s, the toast, Retry against the ghost with a live delta, Exit back to the story).
 
 ## Setup checklist status
 

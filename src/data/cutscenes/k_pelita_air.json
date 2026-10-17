@@ -26,6 +26,7 @@
     { "t": 1.2, "shake": 0.25 },
     { "t": 2.0, "relight": 8 },
     { "t": 2.0, "flag": "pelita_air" },
-    { "t": 8.5, "page": 1 }
+    { "t": 8.5, "page": 1 },
+    { "t": 10, "achievement": "pelita_air" }
   ]
 }

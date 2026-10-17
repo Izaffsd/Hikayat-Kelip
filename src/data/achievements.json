@@ -1,0 +1,9 @@
+{
+  "comment": "Achievements in the vertical slice (GDD 10:00: the first achievement comes with the first reward). Each has a title and a line (i18n keys); missions award them with { \"achievement\": id }, the game with its own rules (beating Adi, a gold medal). Kept in the save under progression.achievements with the time earned.",
+  "achievements": {
+    "bunyi_pertama": { "title": "achievement.bunyi_pertama.title", "body": "achievement.bunyi_pertama.body" },
+    "lebih_laju": { "title": "achievement.lebih_laju.title", "body": "achievement.lebih_laju.body" },
+    "pelita_air": { "title": "achievement.pelita_air.title", "body": "achievement.pelita_air.body" },
+    "emas_pertama": { "title": "achievement.emas_pertama.title", "body": "achievement.emas_pertama.body" }
+  }
+}

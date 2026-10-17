@@ -398,7 +398,9 @@ export class Input {
     const code = event.code;
     const game = this._keyToGame.get(code);
     const ui = this._keyToUi.get(code);
-    if (game || ui) event.preventDefault();
+    // Menu keys never reach the browser; gameplay-only keys (Tab = lock-on) keep their default while a menu is
+    // open, so Tab still moves focus there.
+    if (ui || (game && this.gameplayEnabled)) event.preventDefault();
     this._setDevice('keyboard');
     if (event.repeat) return;
     if (game) for (const action of game) this._applySource(action, `k:${code}`, down);

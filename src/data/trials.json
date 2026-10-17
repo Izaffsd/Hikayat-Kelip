@@ -1,0 +1,16 @@
+{
+  "comment": "Time trials (GDD pillar 5: instant restart, ghosts, medals; TECHNICAL §12 builds leaderboards on this in Phase 6). A trial unlocks when its mission is completed and runs in its region: the player is placed at `start`, a countdown holds him still, the clock runs until he is inside the `finish` trigger. `line` is the layout path used to compare progress with the best run's ghost. Medal times in seconds (a clean sprint of the race line takes 12.7 s; Adi runs it in 15.7 s).",
+  "ghostHz": 20,
+  "countdown": 3,
+  "trials": {
+    "race_1.1": {
+      "name": "trial.race_1_1",
+      "region": "kampung",
+      "unlock": "1.1",
+      "start": "marker:race_start",
+      "finish": "k_finish",
+      "line": "race_adi",
+      "medals": { "gold": 13.5, "silver": 15.5, "bronze": 19 }
+    }
+  }
+}

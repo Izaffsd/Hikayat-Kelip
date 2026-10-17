@@ -3,6 +3,7 @@ import './ui/styles/base.css';
 import './ui/styles/overlay.css';
 import './ui/styles/touch.css';
 import './ui/styles/screens.css';
+import './ui/styles/menus.css';
 import { AudioManager } from './audio/AudioManager.js';
 import { data } from './core/Data.js';
 import { EV } from './core/events.js';

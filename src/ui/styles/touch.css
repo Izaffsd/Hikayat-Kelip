@@ -101,7 +101,24 @@
 }
 
 .hk-touch__btn--kelip {
+  --semangat: 0;
   color: var(--color-accent);
+}
+
+/* The Semangat meter as a ring around Kelip's button (GDD touch layout); full = the finisher is ready. */
+.hk-touch__btn--kelip::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(var(--color-accent) calc(var(--semangat) * 360deg), transparent 0);
+  mask: radial-gradient(circle, transparent 62%, #000 64%);
+  -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%);
+  pointer-events: none;
+}
+
+.hk-touch__btn--kelip.is-full::after {
+  box-shadow: 0 0 12px var(--color-accent);
 }
 
 /* Anchors: centres measured from the named corner, inside the safe areas. */

@@ -1,0 +1,142 @@
+{
+  "comment": "The settings screen (pause → Tetapan/Settings), as data. Each row edits one setting path with a stepper: `options` are [value, label key] pairs, `range` is [min, max, step] shown as a percentage or a number. Only settings the game reads are listed (TECHNICAL §2.6). Touch rows show on touch devices only.",
+  "sections": [
+    {
+      "id": "general",
+      "label": "settings.section.general",
+      "rows": [
+        {
+          "path": "language",
+          "label": "settings.language",
+          "options": [
+            ["auto", "settings.value.auto"],
+            ["bm", "settings.value.bm"],
+            ["en", "settings.value.en"]
+          ]
+        },
+        { "path": "subtitles", "label": "settings.subtitles", "options": "onOff" },
+        {
+          "path": "accessibility.subtitleSize",
+          "label": "settings.subtitleSize",
+          "range": [0.8, 1.4, 0.1],
+          "format": "percent"
+        },
+        {
+          "path": "accessibility.uiScale",
+          "label": "settings.uiScale",
+          "range": [0.9, 1.3, 0.1],
+          "format": "percent"
+        },
+        { "path": "accessibility.reducedMotion", "label": "settings.reducedMotion", "options": "autoOnOff" },
+        { "path": "accessibility.highContrastUI", "label": "settings.highContrastUI", "options": "onOff" },
+        {
+          "path": "accessibility.highContrastKelip",
+          "label": "settings.highContrastKelip",
+          "options": "onOff"
+        }
+      ]
+    },
+    {
+      "id": "assists",
+      "label": "settings.section.assists",
+      "rows": [
+        {
+          "path": "assists.difficulty",
+          "label": "settings.difficulty",
+          "options": [
+            ["cerita", "settings.value.cerita"],
+            ["normal", "settings.value.normal"],
+            ["pendekar", "settings.value.pendekar"]
+          ]
+        },
+        { "path": "assists.widerParry", "label": "settings.widerParry", "options": "autoOnOff" },
+        { "path": "assists.autoLockOn", "label": "settings.autoLockOn", "options": "autoOnOff" },
+        {
+          "path": "assists.ledgeMagnet",
+          "label": "settings.ledgeMagnet",
+          "options": [
+            ["auto", "settings.value.auto"],
+            [0.8, "settings.value.strong"],
+            [0.5, "settings.value.normal"],
+            [false, "settings.value.off"]
+          ]
+        },
+        { "path": "assists.autoMantle", "label": "settings.autoMantle", "options": "onOff" }
+      ]
+    },
+    {
+      "id": "controls",
+      "label": "settings.section.controls",
+      "rows": [
+        {
+          "path": "camera.sensitivity",
+          "label": "settings.sensitivity",
+          "range": [0.5, 2, 0.1],
+          "format": "number"
+        },
+        { "path": "camera.invertY", "label": "settings.invertY", "options": "onOff" },
+        { "path": "camera.autoCamera", "label": "settings.autoCamera", "options": "autoOnOff" },
+        { "path": "camera.shake", "label": "settings.shake", "options": "onOff" },
+        {
+          "path": "touch.size",
+          "label": "settings.touchSize",
+          "range": [0.8, 1.3, 0.05],
+          "format": "percent",
+          "touch": true
+        },
+        {
+          "path": "touch.opacity",
+          "label": "settings.touchOpacity",
+          "range": [0.3, 1, 0.05],
+          "format": "percent",
+          "touch": true
+        }
+      ]
+    },
+    {
+      "id": "graphics",
+      "label": "settings.section.graphics",
+      "rows": [
+        {
+          "path": "graphics.preset",
+          "label": "settings.preset",
+          "options": [
+            ["auto", "settings.value.auto"],
+            ["low", "settings.value.low"],
+            ["medium", "settings.value.medium"],
+            ["high", "settings.value.high"]
+          ]
+        },
+        { "path": "graphics.fpsCap30", "label": "settings.fpsCap30", "options": "autoOnOff" },
+        { "path": "graphics.batterySaver", "label": "settings.batterySaver", "options": "onOff" },
+        { "path": "graphics.dynamicResolution", "label": "settings.dynamicResolution", "options": "onOff" },
+        {
+          "path": "audio.master",
+          "label": "settings.volumeMaster",
+          "range": [0, 1, 0.1],
+          "format": "percent"
+        },
+        { "path": "audio.music", "label": "settings.volumeMusic", "range": [0, 1, 0.1], "format": "percent" },
+        { "path": "audio.sfx", "label": "settings.volumeSfx", "range": [0, 1, 0.1], "format": "percent" },
+        { "path": "audio.voice", "label": "settings.volumeVoice", "range": [0, 1, 0.1], "format": "percent" },
+        {
+          "path": "audio.ambience",
+          "label": "settings.volumeAmbience",
+          "range": [0, 1, 0.1],
+          "format": "percent"
+        }
+      ]
+    }
+  ],
+  "optionSets": {
+    "onOff": [
+      [true, "settings.value.on"],
+      [false, "settings.value.off"]
+    ],
+    "autoOnOff": [
+      ["auto", "settings.value.auto"],
+      [true, "settings.value.on"],
+      [false, "settings.value.off"]
+    ]
+  }
+}

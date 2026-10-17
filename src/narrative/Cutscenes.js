@@ -6,7 +6,8 @@ export const SKIP_HOLD_SECONDS = 0.6;
 
 /**
  * Short authored scenes (TECHNICAL §9, "Timeline equivalent"): camera shots (cuts or moves between two framings),
- * dialogue lines and events at times, on real time. Hold jump, strike or pause for 0.6 s to skip; skipping still
+ * dialogue lines and events at times, on real time. Hold jump or strike for 0.6 s to skip (pause opens the menu and
+ * freezes the scene); skipping still
  * applies every remaining event, so nothing a mission needs is missed. Scenes stay short (data tests: < 20 s in the
  * first ten minutes, < 30 s elsewhere).
  *
@@ -69,13 +70,27 @@ export class Cutscenes {
     while (c.line < c.lines.length && c.lines[c.line].t <= c.t) this.dialogue.say(c.lines[c.line++].id);
     while (c.event < c.events.length && c.events[c.event].t <= c.t) this._fire(c.events[c.event++]);
     this._apply();
-    const holding = this.input.held('jump') || this.input.held('strike') || this.input.held('pause');
+    const holding = this.input.held('jump') || this.input.held('strike');
     const previous = c.hold;
     c.hold = holding ? c.hold + dt : 0;
     if (c.hold !== previous)
       this.bus.emit(EV.CUTSCENE_SKIP_PROGRESS, { progress: Math.min(1, c.hold / SKIP_HOLD_SECONDS) });
     if (c.hold >= SKIP_HOLD_SECONDS) this._end(true);
     else if (c.t >= c.def.duration) this._end(false);
+  }
+
+  /**
+   * Drops the running scene without applying its remaining events (a restart from a checkpoint replays it).
+   */
+  cancel() {
+    const c = this.active;
+    if (!c) return;
+    this.active = null;
+    this.dialogue.clear();
+    this.camera.override = null;
+    this.bus.emit(EV.CUTSCENE_SKIP_PROGRESS, { progress: 0 });
+    this.bus.emit(EV.CUTSCENE_ENDED, { id: c.def.id, skipped: true });
+    c.done({ skipped: true });
   }
 
   _fire(event) {
