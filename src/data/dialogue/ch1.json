@@ -19,7 +19,17 @@
       "en": "Oi, Bayu! Race you to your mum's stall. Loser buys the sugarcane juice!"
     },
     "k.bayu.dare": { "speaker": "bayu", "bm": "Kau nak kalah lagi ke?", "en": "You want to lose again?" },
-    "k.adi.go": { "speaker": "adi", "bm": "Sedia... lari!", "en": "Ready... go!" },
+    "k.adi.go": { "speaker": "adi", "bm": "Sedia... lari!", "en": "Ready... go!", "seconds": 1.6 },
+    "k.adi.win": {
+      "speaker": "adi",
+      "bm": "Ha! Air tebu, kau yang belanja!",
+      "en": "Ha! Sugarcane juice is on you!"
+    },
+    "k.adi.lose": {
+      "speaker": "adi",
+      "bm": "Tak aci! Kau potong ikut bumbung!",
+      "en": "Not fair! You cut across the roofs!"
+    },
     "k.maksom.finish": {
       "speaker": "maksom",
       "bm": "Berlumba lagi? Hati-hati, papan jeti tu dah reput.",
@@ -99,6 +109,21 @@
       "en": "The Pelita Air... at the top of the tallest berembang."
     },
     "k.bayu.relit": { "speaker": "bayu", "bm": "Satu halaman... kembali.", "en": "A page... it came back." },
+    "k.bayu.tide": {
+      "speaker": "bayu",
+      "bm": "Air pasang naik... jangan jatuh, Bayu.",
+      "en": "The tide's coming in... don't fall, Bayu."
+    },
+    "k.adi.thanks": {
+      "speaker": "adi",
+      "bm": "Gelap tu... macam suara orang berbisik. Terima kasih, Bayu.",
+      "en": "That darkness... it was like people whispering. Thank you, Bayu."
+    },
+    "k.bayu.ebb": {
+      "speaker": "bayu",
+      "bm": "Air dah surut. Berembang tu... sekarang.",
+      "en": "The tide's going out. The berembang... now."
+    },
     "j.tokwan.1": {
       "speaker": "tokwan",
       "bm": "Cerita yang benar mesti dibacakan, walaupun suara kita bergetar.",

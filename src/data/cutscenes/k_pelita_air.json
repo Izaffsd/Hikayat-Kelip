@@ -1,0 +1,31 @@
+{
+  "comment": "1.4 (GDD: relight the first Pelita, page 1 returns): Bayu lights the Pelita Air at the top of the tallest berembang; its teal water-glass light returns, the fireflies come back over the whole kampung (the dark sweeps back the way it came) and the first torn page returns to the hikayat. Under 30 s.",
+  "id": "k_pelita_air",
+  "duration": 13,
+  "shots": [
+    {
+      "t": 0,
+      "duration": 4,
+      "from": { "at": "marker:pelita_air", "offset": [-0.4, 1.2, 2.8] },
+      "to": { "at": "marker:pelita_air", "offset": [-0.6, 1.0, 2.2] },
+      "look": { "at": "marker:pelita_air", "offset": [-0.4, 0.6, 0] }
+    },
+    {
+      "t": 4,
+      "duration": 9,
+      "from": { "at": "marker:pelita_air", "offset": [-6, 4, 9] },
+      "to": { "at": "marker:pelita_air", "offset": [-14, 9, 22] },
+      "look": { "at": "marker:pelita_air", "offset": [0, 0, 0] },
+      "lookTo": { "at": "marker:display_view", "offset": [0, 4, -20] }
+    }
+  ],
+  "lines": [{ "t": 9.5, "id": "k.bayu.relit" }],
+  "events": [
+    { "t": 0, "teleport": "marker:pelita_air", "offset": [-1.1, 0.05, 0] },
+    { "t": 1.2, "lamp": "pelita_air", "at": "marker:pelita_air", "offset": [0, 0.6, 0] },
+    { "t": 1.2, "shake": 0.25 },
+    { "t": 2.0, "relight": 8 },
+    { "t": 2.0, "flag": "pelita_air" },
+    { "t": 8.5, "page": 1 }
+  ]
+}

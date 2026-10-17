@@ -88,6 +88,7 @@ export class World {
     this.builder = new LevelBuilder({
       physics: this.physics,
       noCameraBlock: new Set(region.noCameraBlock ?? DEFAULT_NO_CAMERA_BLOCK),
+      cameraPass: region.cameraPass ?? [],
     });
     const { root, lights } = this.builder.buildPlacements(pieces, region.placements);
     this.root.add(root);

@@ -82,6 +82,13 @@ export const LIGHT_PRESETS = {
   },
 };
 
+/** Light colour and strength per lamp kind (pelita flames, Kelip, the great Pelita Air's teal water-glass). */
+const LAMP_LOOKS = {
+  pelita: { color: 0xffa04a, intensity: 14 },
+  kelip: { color: 0xd8f06a, intensity: 6 },
+  pelita_air: { color: 0x5fe3d2, intensity: 30 },
+};
+
 const COLOR_KEYS = [
   'hemiSky',
   'hemiGround',
@@ -264,8 +271,9 @@ export class DayNight {
         lamp.kind === 'pelita'
           ? 0.85 + 0.15 * Math.sin(this._time * 13 + lamp.phase) * Math.sin(this._time * 7.3)
           : 1;
-      light.color.setHex(lamp.kind === 'kelip' ? 0xd8f06a : 0xffa04a);
-      light.intensity = (lamp.kind === 'kelip' ? 6 : 14) * flicker * (lamp.intensity ?? 1);
+      const look = LAMP_LOOKS[lamp.kind] ?? LAMP_LOOKS.pelita;
+      light.color.setHex(look.color);
+      light.intensity = look.intensity * flicker * (lamp.intensity ?? 1);
     }
   }
 

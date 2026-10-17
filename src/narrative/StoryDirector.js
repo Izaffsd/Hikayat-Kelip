@@ -1,14 +1,17 @@
 import { data, dataKeys, lazyKeys, loadData } from '../core/Data.js';
 import { EV } from '../core/events.js';
 import { log } from '../core/Log.js';
-import { TokBelang } from '../ai/TokBelang.js';
+import { Vector3 } from 'three/webgpu';
+import { RaceTimer } from '../competitive/RaceTimer.js';
 import { KelipActor } from '../guidance/KelipActor.js';
 import { KelipGuide } from '../guidance/KelipGuide.js';
 import { MissionSystem } from '../missions/MissionSystem.js';
 import { GuideTrail } from '../render/GuideTrail.js';
+import { RaceHud } from '../ui/RaceHud.js';
 import { StoryUi } from '../ui/StoryUi.js';
 import { Cutscenes } from './Cutscenes.js';
 import { Dialogue } from './Dialogue.js';
+import { StoryActors } from './StoryActors.js';
 import { StoryState } from './StoryState.js';
 
 /** Longest frame the story's clocks count (seconds). */
@@ -94,29 +97,37 @@ export class StoryDirector {
       tuning: data('tuning/guide'),
     });
     this.ui = new StoryUi({ root: engine.uiRoot, bus, i18n, input, settings });
+    this.actors = new StoryActors({
+      engine,
+      point: (at, offset) => this.missions._point({ at, offset }),
+    });
+    this.race = new RaceTimer({ bus, doc: engine.saveDoc });
+    this.raceHud = new RaceHud({ root: engine.uiRoot, bus, i18n, timer: this.race });
+    /** Whether a mission holds Bayu still (`hold` action: a race's "ready… go"). */
+    this.holding = false;
     this._tide = null;
-    /** @type {Map<string, import('three').Object3D>} story props placed in the current region */
-    this._props = new Map();
-    /** @type {TokBelang|null} */
-    this.tiger = null;
-    /** @type {Promise<TokBelang>|null} */
-    this._tigerLoad = null;
     this._off = [
       bus.on(EV.STORY_FLAG, ({ name, value }) => {
         if (name === 'kelip_awake' && this.kelip && !value) this.kelip.setVisible(false);
       }),
       bus.on(EV.REGION_READY, () => this._regionReady()),
       bus.on(EV.CUTSCENE_ENDED, () => engine.setPose(null)),
-      // Each mission starts defeatable; its setup can say otherwise.
+      // Each mission starts defeatable and free to move; its setup can say otherwise.
       bus.on(EV.MISSION_STARTED, () => {
         engine.combat.minHealth = 0;
+        this.holding = false;
       }),
     ];
   }
 
-  /** Whether a cutscene holds control (the engine keeps Bayu still). */
+  /** Whether a cutscene holds control (the engine keeps Bayu still and swallows presses). */
   get blocking() {
     return this.cutscenes.active !== null;
+  }
+
+  /** Whether Bayu must stand still: a cutscene or a mission's hold. */
+  get still() {
+    return this.holding || this.blocking;
   }
 
   /**
@@ -137,6 +148,7 @@ export class StoryDirector {
    */
   fixedUpdate(dt) {
     if (this.blocking) return;
+    this.race.fixedUpdate(dt);
     this.missions.fixedUpdate(dt);
     this.guide.fixedUpdate(dt);
   }
@@ -155,7 +167,8 @@ export class StoryDirector {
     this.ui.update(dt);
     this.trail.update(now);
     this.kelip?.update(dt, feet, facing, now);
-    this.tiger?.update(dt, feet, this.engine.camera);
+    this.actors.update(dt, feet);
+    this.raceHud.update(dt);
     if (this._tide) {
       const t = this._tide;
       t.time += dt;
@@ -171,58 +184,13 @@ export class StoryDirector {
     this.ui.dispose();
     this.trail.dispose();
     this.kelip?.dispose();
-    for (const object of this._props.values()) object.removeFromParent();
-    this._dropTiger();
+    this.actors.dispose();
+    this.raceHud.dispose();
   }
 
-  /**
-   * Tok Belang, loaded once per region on first use (`{ "tiger": "load" }` starts the download early without
-   * waiting for it) and compiled before it first appears.
-   * @returns {Promise<TokBelang>}
-   */
-  _tigerActor() {
-    if (this._tigerLoad) return this._tigerLoad;
-    const engine = this.engine;
-    const entry = data('generated/assets').assets['characters/tokbelang'];
-    const load = engine.assets.loadAll([entry]).then(async (loaded) => {
-      const tiger = new TokBelang({
-        gltf: loaded.get(entry.url),
-        parent: engine.scene,
-        tuning: data('tuning/tiger'),
-      });
-      tiger.root.visible = true;
-      await engine.renderer.three.compileAsync(tiger.root, engine.camera, engine.scene);
-      tiger.root.visible = tiger.visible;
-      if (this._tigerLoad !== load) {
-        // The region changed while it loaded.
-        tiger.dispose();
-        engine.assets.release(entry.url);
-        return tiger;
-      }
-      this.tiger = tiger;
-      return tiger;
-    });
-    this._tigerLoad = load;
-    return load;
-  }
-
-  _dropTiger() {
-    this._tigerLoad = null;
-    if (!this.tiger) return;
-    this.tiger.dispose();
-    this.engine.assets.release(data('generated/assets').assets['characters/tokbelang'].url);
-    this.tiger = null;
-  }
-
-  /**
-   * A marker's position and facing.
-   * @param {string} at 'marker:x'
-   * @returns {{ position: { x: number, y: number, z: number }, yaw: number }}
-   */
-  _markerPose(at) {
-    const marker = this.engine.world?.markers[at.replace(/^marker:/, '')];
-    if (!marker) throw new Error(`StoryDirector: no marker "${at}"`);
-    return { position: marker.p, yaw: marker.yaw };
+  /** Tok Belang when loaded (tests, diagnostics). */
+  get tiger() {
+    return this.actors.tiger;
   }
 
   _dayNight() {
@@ -230,10 +198,9 @@ export class StoryDirector {
   }
 
   _regionReady() {
-    // The old region's story props and actors went with it.
-    for (const object of this._props.values()) object.removeFromParent();
-    this._props.clear();
-    this._dropTiger();
+    // The old region's cast, props and effects went with it; a race cannot continue across regions.
+    this.actors.clearRegion();
+    this.race.cancel();
     // The new region has a new lamp pool: give Kelip's light to it.
     if (!this.kelip || !this.engine.world) return;
     this.kelip.lamp = this.engine.world.dayNight.addLamp({
@@ -244,26 +211,17 @@ export class StoryDirector {
   }
 
   /**
-   * Sets a prop from props/props_slice (found by node name) at a marker, facing the marker's way. Placing the same
-   * prop at the same point again does nothing, so mission setups can repeat it.
-   * @param {string} name e.g. 'hikayat_open'
-   * @param {string} at 'marker:x'
+   * The end of a race: Bayu won if the rival has not reached the end of its path; the rival says the matching line.
+   * @param {{ rival?: string, win?: string, lose?: string }} action
    */
-  _placeProp(name, at) {
-    const key = `${name}@${at}`;
-    if (this._props.has(key)) return;
-    const source = this.engine.props?.scene.getObjectByName(name);
-    if (!source) throw new Error(`StoryDirector: no prop "${name}"`);
-    const object = source.clone(true);
-    const p = this.missions._point({ at });
-    object.position.set(p.x, p.y, p.z);
-    const marker = at.startsWith('marker:') ? this.engine.world?.markers[at.slice(7)] : null;
-    object.rotation.set(0, marker?.yaw ?? 0, 0);
-    object.traverse((node) => {
-      if (node.isMesh) node.frustumCulled = false;
-    });
-    this.engine.scene.add(object);
-    this._props.set(key, object);
+  _finishRace(action) {
+    const rival = action.rival ? this.actors.npc(action.rival) : null;
+    const won = !rival || !rival.arrived;
+    const result = this.race.finish(won);
+    if (!result) return;
+    this.story.set(`race_${result.id}_won`, won);
+    const line = won ? action.win : action.lose;
+    if (line) this.dialogue.say(line);
   }
 
   /** Engine-side effects for mission actions. */
@@ -307,27 +265,38 @@ export class StoryDirector {
         this.kelip?.rise(this.missions._point({ at: marker }), 2.6);
       },
       /** A story prop from props/props_slice set in the world: `{ "prop": "hikayat_open", "at": "marker:hikayat" }`. */
-      prop: (name, action) => this._placeProp(name, action.at),
+      prop: (name, action) => this.actors.prop(name, action.at),
       /**
        * Tok Belang: `load` (starts the download, does not wait), `{ "tiger": "chase", "path": "tiger", "end":
        * "marker:x" }`, `{ "tiger": "standoff", "at": "marker:x" }`, `roar`, `hide`.
        */
-      tiger: async (command, action) => {
-        if (command === 'load') {
-          this._tigerActor();
-          return;
-        }
-        const tiger = await this._tigerActor();
-        if (command === 'chase') {
-          const path = engine.world?.paths[action.path];
-          if (!path) throw new Error(`StoryDirector: no path "${action.path}"`);
-          tiger.chase(path, action.end ? this._markerPose(action.end) : null);
-        } else if (command === 'standoff') {
-          const pose = this._markerPose(action.at);
-          tiger.standoff(pose.position, pose.yaw);
-        } else if (command === 'roar') tiger.roar();
-        else if (command === 'hide') tiger.hide();
-        else throw new Error(`StoryDirector: unknown tiger command "${command}"`);
+      tiger: (command, action) => this.actors.tigerCommand(command, action),
+      /** A villager: `{ "npc": "adi", "do": "place"|"run"|"flee"|"hold"|"face"|"ink"|"hide"|"load", … }`. */
+      npc: (id, action) => this.actors.npcCommand(id, action),
+      /** Kelam's tendrils: `{ "tendrils": "rise", "path": "tendrils_jetty" }` or `{ "tendrils": "sink" }`. */
+      tendrils: (command, action) => this.actors.tendrilsCommand(command, action),
+      /**
+       * The race clock: `{ "race": "start" }` (the current mission's race) or `{ "race": "finish", "rival": "adi",
+       * "win": line, "lose": line }`.
+       */
+      race: (command, action) => {
+        if (command === 'start') this.race.start(this.missions.mission?.id ?? 'race');
+        else if (command === 'finish') this._finishRace(action);
+        else throw new Error(`StoryDirector: unknown race command "${command}"`);
+      },
+      /** Ends the fight on screen at once (a scene takes over from the freed boss): `{ "clearEnemies": true }`. */
+      clearEnemies: () => {
+        engine.director.stop();
+        engine.enemyViews.clear();
+      },
+      /** `{ "hold": true }` keeps Bayu standing still (a race's "ready… go"); `false` lets him go. */
+      hold: (on) => {
+        this.holding = !!on;
+      },
+      /** A story light in the lamp pool: `{ "lamp": "pelita_air", "at": "marker:x", "offset"?: [x, y, z] }`. */
+      lamp: (kind, action) => {
+        const p = this.missions._point({ at: action.at, offset: action.offset });
+        engine.world?.dayNight.addLamp({ position: new Vector3(p.x, p.y, p.z), kind, intensity: 1 });
       },
       /** `{ "undefeatable": true }`: hits land but health never empties (GDD: no failure before minute 8). */
       undefeatable: (on) => {

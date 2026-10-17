@@ -7,14 +7,13 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - **Push:** Izaf said "push and go ahead" (2026-10-17); `main` is on GitHub. The repo is still **public**; Izaf chose
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
   fresh `gh auth login --web`). Vercel previews start once he imports the repo on vercel.com (Vite preset).
-- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M6 done. **Resume with milestone 7
-  (Chapter 1 missions 1.1–1.4):** 1.1 — Adi as the rival runner on `paths.race_adi` with the visible timer and the
-  result (the race takes a bot 12.6 s; the mission wants ~4 min with the dare and banter); 1.2 — Adi's actor at the
-  display, Kelam's tendrils rising on `paths.tendrils_jetty`, Adi caught and fleeing on `paths.adi_flee`, and the jetty
-  fight moved where the camera is not under the pondok roof; 1.3 — Adi fleeing ahead on `paths.adi_rooftops`, the ink
-  trail, the tide flooding the boardwalks with safe ground kept above it; 1.4 — the freeing scene, the climb, the Pelita
-  Air's light and page 1. The missions, lines, cutscenes and data tests exist (`src/data/missions/1.*.json`); M7 adds
-  actors and beats on them. Still open from M4: dedicated langkah/tangkis clips (library clips stand in).
+- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M7 done; the whole slice plays from a new
+  save through P and 1.1–1.4. **Resume with milestone 8 (UI):** pause menu (resume, settings, restart from checkpoint,
+  journal with Tok Wan's line and page 1, language), settings screen (graphics preset, audio, subtitles, camera,
+  assists: ledge magnet, auto-mantle, wider parry, difficulty, touch layout size/opacity/position), the full HUD rules
+  (GDD), the first-achievement toast at 10:00, and the 1.1 race replayable as a trial with Adi's ghost and medals
+  (TECHNICAL §12, Phase 5 builds on it). Every screen runs the ui-ux-pro-max checklist and works with keyboard,
+  gamepad and touch. Still open from M4: dedicated langkah/tangkis clips (library clips stand in).
 - **Visual tests:** run `npm run chrome:test` once, then `npx playwright test`: every test is a tab in that one window
   (D-035; Izaf asked for no window per run). Quick live checks go through the Chrome DevTools MCP.
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
@@ -180,10 +179,21 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
   the chase lead and the standoff, the model swap and pose in the story test); screenshots inspected.
 - **Open, for later milestones:** (1) a 1.5–1.9 s stall on the first frames after the start tap on this PC, both
   backends, story or not; the engine's own calls stay under 75 ms, so it is browser/GPU side (M10 performance trace;
-  judge on the iPhone). (2) In the jetty fight the camera sits under the pondok roof and the frame is mostly dark
-  (M7: fight on the open deck or fade the roof). (3) Izaf's native-speaker read of the BM lines before the playtest
-  gate (CULTURE §4). (4) The three chunk is 338 KB gzipped (282 KB at Phase 1); check the prologue download budget in
-  M10.
+  judge on the iPhone). (2) ~~The jetty fight camera under the pondok roof~~ — fixed in M7 (D-040). (3) Izaf's
+  native-speaker read of the BM lines before the playtest gate (CULTURE §4). (4) The three chunk is 338 KB gzipped
+  (282 KB at Phase 1); check the prologue download budget in M10.
+- **M7 done (2026-10-18)** (D-039, D-040): villagers as scripted actors (`ai/NpcActor.js` with Kelam's ink that creeps
+  and drains, `ai/PathMover.js` shared with Tok Belang, `narrative/StoryActors.js` owning the cast per region); 1.1 —
+  Mak Som at her stall, Adi's dare, a held "Ready… go!", the race clock on game time (`competitive/RaceTimer.js`,
+  `ui/RaceHud.js`), Adi on his line, the result, his matching line and the best time in the save; 1.2 — Adi beside
+  Bayu at the display, Kelam's tendrils (`render/Tendrils.js`, one draw call) rising from the water, Adi half-inked
+  and fleeing into the mangrove after the fight; 1.3 — Adi keeping ahead over the night roofs (6–10 m in the browser
+  test) while the tide floods the boardwalks; respawns use only spots above the water; 1.4 — the boss, the freeing
+  scene (ink drains, Adi's thanks, the tide goes out), the climb, the Pelita Air's teal light, the fireflies returning
+  and page 1. The camera keeps its distance at the pondok and kit between it and Bayu turns see-through. Also: missions
+  can wait for spoken lines (`waitFor`), garbled comments in `Traversal.js` repaired. Verified: 127 unit tests (path
+  follower, race clock, tide-safe respawn, story data for every new action); browser tests for 1.1 (a real race won by
+  a sprinting bot in 12.7 s against Adi's 15.7 s, then lost), 1.3 and 1.4 end to end; screenshots inspected.
 
 ## Setup checklist status
 

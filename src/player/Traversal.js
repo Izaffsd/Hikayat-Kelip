@@ -4,6 +4,11 @@ import { LedgeProbe } from './LedgeProbe.js';
 const TWO_PI = Math.PI * 2;
 const DEG = Math.PI / 180;
 
+/** Safe spots remembered for respawns, and how far above deadly water a spot must be to count as safe (m). */
+const SAFE_HISTORY = 8;
+const SAFE_HISTORY_TICKS = 60;
+const SAFE_ABOVE_WATER = 0.25;
+
 /** Everything allowed (tests and the sandbox when no Abilities are given). */
 const ALL_MOVES = { has: () => true };
 
@@ -17,7 +22,7 @@ const FOOTPRINT = [
 ];
 
 /**
- * Movement state machine for Bayu (TECHNICAL Ã‚Â§5.3).
+ * Movement state machine for Bayu (TECHNICAL §5.3).
  *
  * States: `ground`, `air`, scripted climbs (`step` up a short edge, `mantle` onto a waist-high one, `climb` from a
  * hang), `hang` (on a ledge), `wallRun`, `slide` and `glide` (the wau). The GDD feel rules are explicit: coyote time,
@@ -63,7 +68,7 @@ export class Traversal {
     /** Current horizontal speed (m/s). */
     this.speed = 0;
     this.sprinting = false;
-    /** Wall side during a wall-run: Ã¢Ë†â€™1 wall on the left, +1 on the right, 0 none (avatar lean). */
+    /** Wall side during a wall-run: −1 wall on the left, +1 on the right, 0 none (avatar lean). */
     this.wallSide = 0;
     this._fullTiltTime = 0;
     this._lastGroundedTick = -1e9;
@@ -74,8 +79,12 @@ export class Traversal {
     this._grabCooldown = 0;
     this._wallCooldown = 0;
     this.lastSafe = { x: character.position.x, y: character.feetY, z: character.position.z };
-    /** Water surface that respawns the player (GDD: falling into water respawns within 2 s); Ã¢Ë†â€™Ã¢Ë†Å¾ when none. */
+    /** Water surface that respawns the player (GDD: falling into water respawns within 2 s); −∞ when none. */
     this.hazardWaterLevel = -Infinity;
+    /** Recent safe spots (ring), so a respawn never lands under a risen tide. */
+    this._safeHistory = Array.from({ length: SAFE_HISTORY }, () => ({ x: 0, y: 0, z: 0, used: false }));
+    this._safeNext = 0;
+    this._safeStamp = -1e9;
     this._coyoteTicks = time.secondsToTicks(tuning.jump.coyoteTime);
     this._bufferTicks = time.secondsToTicks(tuning.jump.bufferTime);
     this._jumpVelocity = Math.sqrt(2 * tuning.gravity * tuning.jump.height);
@@ -839,14 +848,46 @@ export class Traversal {
       this.cc.groundNormalY > 0.85
     ) {
       this._safeTime += dt;
-      if (this._safeTime >= this.tuning.respawn.safeGroundTime && this._supported()) {
+      const dry = this.cc.feetY > this.hazardWaterLevel + SAFE_ABOVE_WATER;
+      if (this._safeTime >= this.tuning.respawn.safeGroundTime && dry && this._supported()) {
         this.lastSafe.x = this.cc.position.x;
         this.lastSafe.y = this.cc.feetY;
         this.lastSafe.z = this.cc.position.z;
+        this._rememberSafe();
       }
     } else {
       this._safeTime = 0;
     }
+  }
+
+  /** Keeps a short history of safe spots, one per second at most (the newest dry one is used if the tide rises). */
+  _rememberSafe() {
+    const now = this.time.tick;
+    if (now - this._safeStamp < SAFE_HISTORY_TICKS) {
+      const last = this._safeHistory[(this._safeNext + SAFE_HISTORY - 1) % SAFE_HISTORY];
+      last.x = this.lastSafe.x;
+      last.y = this.lastSafe.y;
+      last.z = this.lastSafe.z;
+      return;
+    }
+    this._safeStamp = now;
+    const slot = this._safeHistory[this._safeNext];
+    slot.x = this.lastSafe.x;
+    slot.y = this.lastSafe.y;
+    slot.z = this.lastSafe.z;
+    slot.used = true;
+    this._safeNext = (this._safeNext + 1) % SAFE_HISTORY;
+  }
+
+  /** If the water has risen over the last safe spot (the tide in 1.3), the newest remembered spot still above it. */
+  _drySafe() {
+    const limit = this.hazardWaterLevel + SAFE_ABOVE_WATER;
+    if (this.lastSafe.y > limit) return this.lastSafe;
+    for (let k = 1; k <= SAFE_HISTORY; k++) {
+      const spot = this._safeHistory[(this._safeNext + SAFE_HISTORY - k) % SAFE_HISTORY];
+      if (spot.used && spot.y > limit) return spot;
+    }
+    return this.lastSafe;
   }
 
   /** Whether the whole footprint stands on ground (not perched on an edge), so a respawn there is stable. */
@@ -869,6 +910,12 @@ export class Traversal {
     if (this.state === 'glide') this.bus.emit(EV.PLAYER_GLIDE, { open: false });
     if (this.state === 'wallRun') this.bus.emit(EV.PLAYER_WALLRUN, { started: false, side: this.wall.side });
     if (this.cc.crouched) this._standUp();
+    const spot = this._drySafe();
+    if (spot !== this.lastSafe) {
+      this.lastSafe.x = spot.x;
+      this.lastSafe.y = spot.y;
+      this.lastSafe.z = spot.z;
+    }
     this.cc.teleport(this.lastSafe);
     this.velocity.x = this.velocity.y = this.velocity.z = 0;
     this.speed = 0;
@@ -921,7 +968,7 @@ export function moveTowards2D(v, tx, tz, maxDelta) {
 }
 
 /**
- * Wraps an angle to [Ã¢Ë†â€™Ãâ‚¬, Ãâ‚¬).
+ * Wraps an angle to [−π, π).
  * @param {number} a
  * @returns {number}
  */

@@ -1,5 +1,5 @@
 {
-  "comment": "Chapter 1, 7:00 (GDD wow moment 2, then dread): at dusk the berembang across the river blaze with synchronized fireflies; mid-display they go dark row by row, far rows first, and night falls. Under 20 s. Phase 3 M7 adds Kelam's tendrils rising from the water (paths.tendrils_jetty) and the music sting.",
+  "comment": "Chapter 1, 7:00 (GDD wow moment 2, then dread): at dusk the berembang across the river blaze with synchronized fireflies; mid-display they go dark row by row, far rows first, night falls and Kelam's tendrils rise from the water around the jetty head (paths.tendrils_jetty). Under 20 s. The music sting comes with M9.",
   "id": "k_display",
   "duration": 15,
   "shots": [
@@ -34,6 +34,7 @@
   "events": [
     { "t": 6.5, "darken": [0, -1], "seconds": 5, "to": 96 },
     { "t": 7.0, "light": "night", "seconds": 7 },
-    { "t": 11.5, "darken": [0, -1], "seconds": 2.5 }
+    { "t": 11.5, "darken": [0, -1], "seconds": 2.5 },
+    { "t": 11.8, "tendrils": "rise", "path": "tendrils_jetty", "seconds": 3 }
   ]
 }

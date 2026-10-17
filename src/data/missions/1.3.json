@@ -1,5 +1,5 @@
 {
-  "comment": "1.3, Jejak Adi (GDD): track cursed Adi across the night rooftops to the old jetty. This is the route skeleton; Phase 3 M7 adds Adi fleeing ahead (paths.adi_rooftops), the ink trail and the tide flooding the boardwalks with safe ground kept above it.",
+  "comment": "1.3, Jejak Adi (GDD): track cursed Adi across the night rooftops as the tide floods the boardwalks. Adi, half-inked, flees along paths.adi_rooftops keeping ahead of Bayu (bolts when he closes in, waits when he falls behind) and drops to the old jetty. The tide rises to 1.3 (D-032: walkways and decks flood, floors, roofs and the old jetty stay dry); a fall respawns on the newest spot still above the water.",
   "id": "1.3",
   "chapter": "1",
   "region": "kampung",
@@ -8,7 +8,8 @@
   "setup": [
     { "light": "night" },
     { "prop": "hikayat_open", "at": "marker:hikayat" },
-    { "darken": [0, -1], "seconds": 0 }
+    { "darken": [0, -1], "seconds": 0 },
+    { "npc": "adi", "do": "load" }
   ],
   "start": [],
   "steps": [
@@ -17,7 +18,15 @@
       "objective": "objective.1.3.rooftops",
       "guide": "trigger:k_rooftops",
       "until": { "trigger": "k_rooftops" },
-      "on": { "start": [{ "say": "k.bayu.track" }] }
+      "on": {
+        "start": [{ "say": "k.bayu.track" }],
+        "done": [
+          { "npc": "adi", "do": "ink", "to": 0.6 },
+          { "npc": "adi", "do": "flee", "path": "adi_rooftops" },
+          { "water": 1.3, "seconds": 40 },
+          { "say": "k.bayu.tide" }
+        ]
+      }
     },
     {
       "id": "oldJetty",
@@ -25,7 +34,10 @@
       "objective": "objective.1.3.oldJetty",
       "guide": "trigger:k_old_jetty",
       "until": { "trigger": "k_old_jetty" },
-      "on": { "done": [{ "say": "k.bayu.oldJetty" }] }
+      "on": {
+        "resume": [{ "water": 1.3 }],
+        "done": [{ "npc": "adi", "do": "hide" }, { "say": "k.bayu.oldJetty" }]
+      }
     }
   ],
   "end": [{ "next": "1.4" }]

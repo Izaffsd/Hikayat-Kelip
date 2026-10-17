@@ -360,3 +360,32 @@ describe('glide (the wau)', () => {
     expect(lab.count(EV.PLAYER_GLIDE)).toBe(0);
   });
 });
+
+describe('respawn and the tide', () => {
+  it('never respawns under a risen tide: the newest remembered spot above the water is used', async () => {
+    // A raised platform (top 2.0) beside low ground (top 0).
+    const PLATFORM = { c: [0, 1.5, 0], h: [2, 0.5, 2] };
+    const LOW = { c: [8, -0.5, 0], h: [4, 0.5, 4] };
+    const lab = await makeLab([PLATFORM, LOW], [0, 2.05, 0]);
+    lab.tick(120); // safe on the platform
+    lab.stick(1, 0);
+    lab.until(() => lab.feet.x > 7 && lab.feet.y < 0.2, 300);
+    lab.stick(0, 0);
+    lab.tick(120); // safe on the low ground too
+    expect(lab.traversal.lastSafe.y).toBeLessThan(0.2);
+    // The tide rises over the low ground; a fall must bring Bayu back to the dry platform, not under the water.
+    lab.traversal.hazardWaterLevel = 0.6;
+    lab.traversal.respawn('water');
+    lab.tick(30);
+    expect(lab.feet.y).toBeGreaterThan(1.9);
+    expect(Math.abs(lab.feet.x)).toBeLessThan(2.1);
+  });
+
+  it('does not record ground under deadly water as safe', async () => {
+    const lab = await makeLab([FLOOR], [0, 0.05, 0]);
+    lab.traversal.hazardWaterLevel = 0.3;
+    lab.traversal.lastSafe.y = 5;
+    lab.tick(120);
+    expect(lab.traversal.lastSafe.y).toBe(5);
+  });
+});

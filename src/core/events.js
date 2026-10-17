@@ -130,6 +130,10 @@ export const EV = Object.freeze({
   SCREEN_FADE: 'ui:fade',
   /** { kicker: string, title: string } — i18n keys of a chapter title card */
   TITLE_CARD: 'ui:titleCard',
+  /** { id: string } — a race clock started */
+  RACE_STARTED: 'race:started',
+  /** { id, seconds, won, best, record, cancelled? } — a race ended */
+  RACE_FINISHED: 'race:finished',
 
   /** { delay: number } — a lightning flash; thunder should follow after `delay` seconds */
   LIGHTNING: 'world:lightning',

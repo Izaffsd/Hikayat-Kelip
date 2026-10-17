@@ -16,6 +16,7 @@ import { MoteBurst } from '../render/MoteBurst.js';
 import { CombatHud } from '../ui/CombatHud.js';
 import { StoryDirector } from '../narrative/StoryDirector.js';
 import { PostFX } from '../render/PostFX.js';
+import { SEE_THROUGH_TARGET } from '../render/occlusion.js';
 import { rimMaterial } from '../render/rimMaterial.js';
 import { QualityManager } from '../render/QualityManager.js';
 import { Renderer } from '../render/Renderer.js';
@@ -43,6 +44,9 @@ const ENEMY_MODELS = { wisp: 'characters/wisp', brawler: 'characters/villager_ma
 
 /** Milliseconds for the screen to go dark before a region is swapped (the fade's fast duration, rounded up). */
 const REGION_FADE_MS = 260;
+
+/** Height above the feet the see-through window centres on (chest). */
+const SEE_THROUGH_HEIGHT = 1.1;
 
 /** Intent of a player standing still (cutscenes). */
 const STILL = Object.freeze({ x: 0, z: 0, magnitude: 0, sprintHeld: false });
@@ -379,12 +383,13 @@ export class Engine {
       this.bus.flush();
       return;
     }
-    const cutscene = this.story?.blocking ?? false;
-    if (cutscene) for (const action of CUTSCENE_SWALLOW) this.input.consume(action);
-    const intent = cutscene ? STILL : (this._testIntent ?? this.controller.update(this.cameraSystem.yaw));
+    // A cutscene or a mission's hold (a race's "ready… go") keeps Bayu still and swallows his presses.
+    const still = this.story?.still ?? false;
+    if (still) for (const action of CUTSCENE_SWALLOW) this.input.consume(action);
+    const intent = still ? STILL : (this._testIntent ?? this.controller.update(this.cameraSystem.yaw));
     if (this.world?.deadlyWater) this.traversal.hazardWaterLevel = this.world.waterLevel;
     this._updateAssists();
-    if (!cutscene) this.combat.fixedUpdate(dt, intent);
+    if (!still) this.combat.fixedUpdate(dt, intent);
     this.traversal.fixedUpdate(dt, intent);
     this.physics.step(dt);
     this.director.fixedUpdate(dt, this._playerAdapter);
@@ -762,6 +767,9 @@ export class Engine {
       cameraMode,
     );
     this.avatar.update(animDt, this.camera, this.groundY);
+    // Kit between the follow camera and Bayu turns see-through; scripted shots frame things themselves.
+    if (this.cameraSystem.override) SEE_THROUGH_TARGET.value.set(0, -1e4, 0);
+    else SEE_THROUGH_TARGET.value.set(this._feet.x, this._feet.y + SEE_THROUGH_HEIGHT, this._feet.z);
     this.enemyViews.update(animDt, alpha, this.camera, this.time.realTime);
     this.motes.update(this.time.realTime);
     this.hud.update(dt, this.camera, this.combat.inCombat, this.combat.hardLock);
@@ -1014,6 +1022,31 @@ export class Engine {
           const p = tiger.position;
           return { mode: tiger.mode, x: p.x, y: p.y, z: p.z, yaw: tiger.yaw, speed: tiger.speed };
         },
+        /** The story's villagers: id → { mode, position, speed, ink, arrived }. */
+        npcs: () => {
+          const out = {};
+          for (const [id, npc] of engine.story?.actors.npcs ?? []) {
+            const p = npc.position;
+            out[id] = {
+              mode: npc.mode,
+              x: p.x,
+              y: p.y,
+              z: p.z,
+              speed: npc.speed,
+              ink: npc.inkAmount.value,
+              arrived: npc.arrived,
+            };
+          }
+          return out;
+        },
+        /** The race clock: { running, seconds, best }. */
+        race: () => {
+          const race = engine.story?.race;
+          if (!race) return null;
+          return { running: race.running, seconds: race.seconds, best: engine.saveDoc.missions.best };
+        },
+        /** Current water level (the tide). */
+        water: () => engine.world?.waterLevel ?? null,
         /** The player's model and held pose. */
         playerModel: () => ({ model: engine.playerModel, pose: engine._pose }),
         /** Starts a mission (at a step) as if the story had reached it. */

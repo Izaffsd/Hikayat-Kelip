@@ -1,0 +1,11 @@
+{
+  "comment": "Story villagers (Adi, Mak Som) as scripted actors: which character model each uses, their paces along layout paths (m/s), the lead Adi keeps when he flees over the roofs in 1.3 (like Tok Belang's chase), leaps where a path steps up or down, and how fast Kelam's ink creeps over or drains away.",
+  "models": { "adi": "adi", "maksom": "maksom" },
+  "paces": { "walk": 1.4, "jog": 3.6, "race": 6.3, "flee": 6.0 },
+  "flee": { "lead": 9, "leadMax": 18, "runSpeed": 6.4, "catchUpSpeed": 8.6 },
+  "accel": 10,
+  "turnRate": 9,
+  "leapHeight": 0.9,
+  "leapMinRise": 0.6,
+  "faceDistance": 6
+}

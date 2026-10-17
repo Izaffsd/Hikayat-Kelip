@@ -1,5 +1,6 @@
 import { Group, Quaternion, Vector3 } from 'three/webgpu';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import { PathMover, wrapAngle } from './PathMover.js';
 
 const AXIS_X = new Vector3(1, 0, 0);
 const AXIS_Z = new Vector3(0, 0, 1);
@@ -71,12 +72,7 @@ export class TokBelang {
     this._time = 0;
     this._crouch = 0;
     this._roar = 0;
-    /** @type {Vector3[]|null} */
-    this._path = null;
-    /** Cumulative horizontal length at each path point. */
-    this._cum = [];
-    this._s = 0;
-    this._leapLift = 0;
+    this._mover = new PathMover(tuning.chase);
     this._standoff = null;
     this._q = new Quaternion();
     this._v = new Vector3();
@@ -98,17 +94,10 @@ export class TokBelang {
    * @param {{ position: { x: number, y: number, z: number }, yaw: number }|null} [end]
    */
   chase(points, end = null) {
-    this._path = points;
-    this._cum = [0];
-    for (let i = 1; i < points.length; i++) {
-      const a = points[i - 1];
-      const b = points[i];
-      this._cum.push(this._cum[i - 1] + Math.hypot(b.x - a.x, b.z - a.z));
-    }
-    this._s = 0;
+    this._mover.setPath(points);
     this._standoff = end;
     this.root.position.copy(points[0]);
-    this.yaw = Math.atan2(points[1].x - points[0].x, points[1].z - points[0].z);
+    this.yaw = this._mover.heading;
     this.speed = this.tuning.chase.runSpeed;
     this._crouch = 0;
     this._show('chase');
@@ -191,20 +180,13 @@ export class TokBelang {
 
   _updateChase(dt, player) {
     const c = this.tuning.chase;
-    const total = this._cum[this._cum.length - 1];
-    const lead = this._s - this._project(player);
     // Close the lead → bolt; comfortable → run; too far ahead → slow down and wait, looking back.
-    let target = c.runSpeed;
-    if (lead < c.lead * 0.5) target = c.catchUpSpeed;
-    else if (lead > c.lead) target = c.runSpeed * clamp01(1 - (lead - c.lead) / (c.leadMax - c.lead));
+    const target = this._mover.leadSpeed(player, c);
     const step = c.accel * dt;
     this.speed += Math.max(-step, Math.min(step, target - this.speed));
-    this._s = Math.min(total, this._s + this.speed * dt);
-    this._placeOnPath(dt);
-    if (this._s >= total) {
-      if (this._standoff) this.mode = 'toStandoff';
-      else this.mode = 'standoff';
-    }
+    this._mover.advance(this.speed * dt, this.root.position);
+    this._turnTo(this._mover.heading, dt);
+    if (this._mover.done) this.mode = this._standoff ? 'toStandoff' : 'standoff';
   }
 
   _updateToStandoff(dt) {
@@ -217,7 +199,7 @@ export class TokBelang {
     if (d < 0.15) {
       this._turnTo(this._standoff.yaw, dt);
       this.speed = Math.max(0, this.speed - c.accel * dt);
-      if (Math.abs(wrap(this._standoff.yaw - this.yaw)) < 0.05) this.mode = 'standoff';
+      if (Math.abs(wrapAngle(this._standoff.yaw - this.yaw)) < 0.05) this.mode = 'standoff';
       return;
     }
     const target = Math.min(c.runSpeed, Math.max(c.standoffWalk, d * 1.5));
@@ -230,48 +212,8 @@ export class TokBelang {
     this._turnTo(Math.atan2(dx, dz), dt);
   }
 
-  /** Distance along the path of the point on it nearest to `q` (horizontal). */
-  _project(q) {
-    const pts = this._path;
-    let best = Infinity;
-    let at = 0;
-    for (let i = 1; i < pts.length; i++) {
-      const a = pts[i - 1];
-      const b = pts[i];
-      const ex = b.x - a.x;
-      const ez = b.z - a.z;
-      const len2 = ex * ex + ez * ez || 1;
-      const t = clamp01(((q.x - a.x) * ex + (q.z - a.z) * ez) / len2);
-      const px = a.x + ex * t - q.x;
-      const pz = a.z + ez * t - q.z;
-      const d = px * px + pz * pz;
-      if (d < best) {
-        best = d;
-        at = this._cum[i - 1] + t * (this._cum[i] - this._cum[i - 1]);
-      }
-    }
-    return at;
-  }
-
-  _placeOnPath(dt) {
-    const c = this.tuning.chase;
-    const pts = this._path;
-    let i = 1;
-    while (i < pts.length - 1 && this._cum[i] < this._s) i++;
-    const a = pts[i - 1];
-    const b = pts[i];
-    const span = this._cum[i] - this._cum[i - 1] || 1;
-    const u = clamp01((this._s - this._cum[i - 1]) / span);
-    const rise = b.y - a.y;
-    // Steps up or down the path are leaps: an arc over the segment.
-    const leap = Math.abs(rise) > c.leapMinRise ? c.leapHeight * 4 * u * (1 - u) : 0;
-    this._leapLift = leap;
-    this.root.position.set(a.x + (b.x - a.x) * u, a.y + rise * u + leap, a.z + (b.z - a.z) * u);
-    this._turnTo(Math.atan2(b.x - a.x, b.z - a.z), dt);
-  }
-
   _turnTo(yaw, dt) {
-    this.yaw += wrap(yaw - this.yaw) * Math.min(1, dt * this.tuning.chase.turnRate);
+    this.yaw += wrapAngle(yaw - this.yaw) * Math.min(1, dt * this.tuning.chase.turnRate);
   }
 
   /** Sets a bone to its rest rotation turned by `ax` about its X axis and `az` about its Z axis. */
@@ -291,7 +233,7 @@ export class TokBelang {
     const stride = g.walkStride + (g.gallopStride - g.walkStride) * gallop;
     this.phase = (this.phase + (dt * speed) / stride) % 1;
     const c = this._crouch;
-    const airborne = this._leapLift > 0.2 ? 1 : 0;
+    const airborne = this.mode === 'chase' && this._mover.lift > 0.2 ? 1 : 0;
     for (let l = 0; l < LEGS.length; l++) {
       const { leg, upper, lower, paw, fore } = LEGS[l];
       const kind = fore ? 'fore' : 'hind';
@@ -338,12 +280,4 @@ export class TokBelang {
     for (const mesh of this.mainMeshes) mesh.visible = !far || this.lodMeshes.length === 0;
     for (const mesh of this.lodMeshes) mesh.visible = far;
   }
-}
-
-/**
- * @param {number} a radians
- * @returns {number} in [-π, π]
- */
-function wrap(a) {
-  return Math.atan2(Math.sin(a), Math.cos(a));
 }

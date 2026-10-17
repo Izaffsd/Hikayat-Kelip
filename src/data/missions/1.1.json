@@ -1,11 +1,16 @@
 {
-  "comment": "1.1, Lumba ke Jeti (GDD 3:15–5:00): Bayu wakes in his room, Mak Som calls, Adi dares him to race to her stall. Teaches movement. Phase 3 M7 adds Adi as the rival runner, the visible timer and the race result on the race step.",
+  "comment": "1.1, Lumba ke Jeti (GDD 3:15–5:00): Bayu wakes in his room, Mak Som calls from her stall, Adi dares him to race to it. A visible clock and Adi as the rival runner teach the competitive loop (GDD 3:30); Bayu is held still for 'Ready… go!' so the start is fair. Adi runs paths.race_adi at the race pace (data/tuning/npc.json); the best time is kept.",
   "id": "1.1",
   "chapter": "1",
   "region": "kampung",
   "abilities": "chapter1",
   "avatar": "bayu",
-  "setup": [{ "light": "dusk" }, { "prop": "hikayat_open", "at": "marker:hikayat" }],
+  "setup": [
+    { "light": "dusk" },
+    { "prop": "hikayat_open", "at": "marker:hikayat" },
+    { "npc": "maksom", "do": "place", "at": "marker:mak_som" },
+    { "npc": "adi", "do": "load" }
+  ],
   "start": [],
   "steps": [
     {
@@ -20,7 +25,7 @@
       "objective": "objective.1.1.dare",
       "guide": "marker:adi_dare",
       "until": { "trigger": "k_race_ready" },
-      "on": { "start": [{ "say": "k.adi.dare" }] }
+      "on": { "start": [{ "npc": "adi", "do": "place", "at": "marker:adi_dare" }, { "say": "k.adi.dare" }] }
     },
     {
       "id": "race",
@@ -28,12 +33,24 @@
       "objective": "objective.1.1.race",
       "guide": "trigger:k_finish",
       "until": { "trigger": "k_finish" },
-      "on": { "start": [{ "conversation": ["k.bayu.dare", "k.adi.go"] }] }
+      "on": {
+        "start": [
+          { "hold": true },
+          { "teleport": "marker:race_start" },
+          { "npc": "adi", "do": "place", "at": "marker:race_adi" },
+          { "say": ["k.bayu.dare", "k.adi.go"] },
+          { "waitFor": "dialogue" },
+          { "hold": false },
+          { "race": "start" },
+          { "npc": "adi", "do": "run", "path": "race_adi", "pace": "race" }
+        ],
+        "done": [{ "race": "finish", "rival": "adi", "win": "k.adi.lose", "lose": "k.adi.win" }]
+      }
     },
     {
       "id": "stall",
       "objective": "objective.1.1.race",
-      "until": { "dialogue": "done" },
+      "until": { "all": [{ "seconds": 3 }, { "dialogue": "done" }] },
       "on": { "start": [{ "say": ["k.maksom.finish", "k.maksom.pondok"] }] }
     }
   ],

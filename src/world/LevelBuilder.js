@@ -1,5 +1,6 @@
 import { Euler, Group, InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three/webgpu';
 import { GROUP, interactionGroups } from '../physics/PhysicsWorld.js';
+import { seeThrough } from '../render/occlusion.js';
 
 const DEG = Math.PI / 180;
 
@@ -77,10 +78,13 @@ export class LevelBuilder {
    * @param {object} options
    * @param {import('../physics/PhysicsWorld.js').PhysicsWorld} options.physics
    * @param {Set<string>} [options.noCameraBlock] piece names whose colliders the camera passes through
+   * @param {Array<{ c: number[], h: number[] }>} [options.cameraPass] boxes inside which kit colliders do not block
+   *   the camera (the pondok roof over the jetty fight: the camera keeps its distance and the roof turns see-through)
    */
-  constructor({ physics, noCameraBlock = new Set() }) {
+  constructor({ physics, noCameraBlock = new Set(), cameraPass = [] }) {
     this.physics = physics;
     this.noCameraBlock = noCameraBlock;
+    this.cameraPass = cameraPass;
     /** collider handle → tags of the piece it belongs to */
     this.colliderTags = new Map();
     /** @type {any[]} */
@@ -124,7 +128,7 @@ export class LevelBuilder {
       const piece = pieces.get(name);
       counts[name] = matrices.length;
       for (const part of piece.parts) {
-        const mesh = new InstancedMesh(part.geometry, part.material, matrices.length);
+        const mesh = new InstancedMesh(part.geometry, seeThrough(part.material), matrices.length);
         mesh.name = `${name}:${part.material.name ?? 'part'}`;
         matrices.forEach((placement, i) => {
           this._matrix.multiplyMatrices(placement, part.matrix);
@@ -192,7 +196,8 @@ export class LevelBuilder {
     this._matrix.premultiply(placement);
     this._matrix.decompose(this._position, this._quaternion, this._scale);
     const half = box.half;
-    const filter = blocksCamera ? GROUP.ALL : GROUP.ALL & ~GROUP.CAMERA;
+    const camera = blocksCamera && !this._inCameraPass(this._position);
+    const filter = camera ? GROUP.ALL : GROUP.ALL & ~GROUP.CAMERA;
     const collider = this.physics.addStaticBox(
       { x: this._position.x, y: this._position.y, z: this._position.z },
       { x: half.x * this._scale.x, y: half.y * this._scale.y, z: half.z * this._scale.z },
@@ -208,5 +213,13 @@ export class LevelBuilder {
     );
     this.colliders.push(collider);
     if (tags.length) this.colliderTags.set(collider.handle, tags);
+  }
+
+  _inCameraPass(p) {
+    for (const { c, h } of this.cameraPass) {
+      if (Math.abs(p.x - c[0]) <= h[0] && Math.abs(p.y - c[1]) <= h[1] && Math.abs(p.z - c[2]) <= h[2])
+        return true;
+    }
+    return false;
   }
 }

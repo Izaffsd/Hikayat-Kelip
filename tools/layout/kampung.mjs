@@ -160,6 +160,8 @@ export function kampung() {
   L.jetty(2, WATER, -28, 180, 11, { pelita: 3 });
   L.deck(-2.5, -70, 3, 3, DECK, { ground: MUD });
   L.pondok(2, -65.5, DECK, 90);
+  // The jetty fight (1.2) circles the pondok: its roof must not pull the camera in under it (see-through instead).
+  L.passCamera([2, DECK + 3.2, -65.5], [2.6, 2, 2.6]);
   L.put('crate', 2, DECK, -65.5);
   L.put('pelita_post', -2.1, DECK, -69.6, 30);
   L.put('pelita_post', 6.1, DECK, -69.6, 200);

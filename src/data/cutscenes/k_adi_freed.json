@@ -1,0 +1,44 @@
+{
+  "comment": "1.4 (GDD: free Adi; D-033): on the old jetty the last of Kelam's ink drains from Adi, he comes back to himself and thanks Bayu, and the tide goes out as Kelam's hold weakens. The cursed boss's own view is cleared first, so one Adi stands there. Under 30 s.",
+  "id": "k_adi_freed",
+  "duration": 12,
+  "shots": [
+    {
+      "t": 0,
+      "duration": 5,
+      "from": { "at": "marker:boss_adi", "offset": [2.6, 1.3, 2.4] },
+      "to": { "at": "marker:boss_adi", "offset": [1.8, 1.2, 1.7] },
+      "look": { "at": "marker:boss_adi", "offset": [0, 1.0, 0] }
+    },
+    {
+      "t": 5,
+      "duration": 4,
+      "from": { "at": "marker:boss_center", "offset": [-2.4, 1.7, 1.2] },
+      "to": { "at": "marker:boss_center", "offset": [-2.8, 1.9, 0.4] },
+      "look": { "at": "marker:boss_adi", "offset": [0, 1.2, 0] }
+    },
+    {
+      "t": 9,
+      "duration": 3,
+      "from": { "at": "marker:boss_center", "offset": [4, 3.2, 6] },
+      "to": { "at": "marker:boss_center", "offset": [6, 4.5, 8] },
+      "look": { "at": "marker:tree_base", "offset": [0, 6, 0] }
+    }
+  ],
+  "lines": [
+    { "t": 3.6, "id": "k.adi.freed" },
+    { "t": 6.2, "id": "k.bayu.freed" },
+    { "t": 8.4, "id": "k.adi.thanks" }
+  ],
+  "events": [
+    { "t": 0, "clearEnemies": true },
+    { "t": 0, "teleport": "marker:boss_center" },
+    { "t": 0, "npc": "adi", "do": "place", "at": "marker:boss_adi" },
+    { "t": 0, "npc": "adi", "do": "ink", "to": 0.85 },
+    { "t": 0, "npc": "adi", "do": "hold", "state": "cursedIdle" },
+    { "t": 0.6, "npc": "adi", "do": "ink", "to": 0, "seconds": 3 },
+    { "t": 3.4, "npc": "adi", "do": "hold", "state": null },
+    { "t": 9, "water": 0, "seconds": 9 },
+    { "t": 10.5, "say": "k.bayu.ebb" }
+  ]
+}

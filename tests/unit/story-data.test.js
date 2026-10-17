@@ -40,8 +40,17 @@ const ACTIONS = new Set([
   'lightning',
   'shake',
   'undefeatable',
+  'npc',
+  'tendrils',
+  'race',
+  'hold',
+  'lamp',
+  'waitFor',
+  'clearEnemies',
 ]);
 const TIGER_COMMANDS = new Set(['load', 'chase', 'standoff', 'roar', 'hide']);
+const NPC_COMMANDS = new Set(['load', 'place', 'run', 'flee', 'hold', 'face', 'ink', 'hide']);
+const NPC = data('tuning/npc');
 const MODELS = data('generated/assets').assets;
 /** Keys that are arguments of an action, not actions. */
 const ARGUMENTS = new Set([
@@ -57,6 +66,13 @@ const ARGUMENTS = new Set([
   'at',
   'path',
   'end',
+  'do',
+  'state',
+  'on',
+  'pace',
+  'rival',
+  'win',
+  'lose',
 ]);
 
 const content = await StoryDirector.loadData();
@@ -132,6 +148,29 @@ function checkAction(action, mission, region, where) {
     if (action.at) expectPoint(region, action.at, where);
   }
   if (key === 'pose') expect(data('animation/human').states[value], `${where}: pose ${value}`).toBeDefined();
+  if (key === 'npc') {
+    expect(NPC.models[value], `${where}: villager ${value}`).toBeDefined();
+    expect(MODELS[`characters/${NPC.models[value]}`], `${where}: model of ${value}`).toBeDefined();
+    expect(NPC_COMMANDS, `${where}: npc do ${action.do}`).toContain(action.do);
+    if (action.at) expectPoint(region, action.at, where);
+    if (action.path) expect(region.paths[action.path], `${where}: path ${action.path}`).toBeDefined();
+    if (action.do === 'run') expect(NPC.paces[action.pace], `${where}: pace ${action.pace}`).toBeDefined();
+    if (action.do === 'hold' && action.state) {
+      expect(data('animation/human').states[action.state], `${where}: state ${action.state}`).toBeDefined();
+    }
+  }
+  if (key === 'tendrils') {
+    expect(['rise', 'sink'], `${where}: tendrils ${value}`).toContain(value);
+    if (value === 'rise') expect(region.paths[action.path], `${where}: path ${action.path}`).toBeDefined();
+  }
+  if (key === 'race') {
+    expect(['start', 'finish'], `${where}: race ${value}`).toContain(value);
+    for (const line of [action.win, action.lose].filter(Boolean)) {
+      expect(content.dialogue.lines[line], `${where}: line ${line}`).toBeDefined();
+    }
+  }
+  if (key === 'lamp') expectPoint(region, action.at, where);
+  if (key === 'waitFor') expect(value, `${where}: waitFor`).toBe('dialogue');
   if (key === 'prompt' && value !== null) {
     expect(data('input/bindings').keyboard[value], `${where}: prompt action ${value}`).toBeDefined();
     if (action.text) {

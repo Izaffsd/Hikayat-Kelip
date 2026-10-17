@@ -304,6 +304,59 @@
   mask: radial-gradient(circle, transparent 55%, #000 57%);
 }
 
+/* Race clock and result (1.1, GDD 3:30): top centre, never blocks input. */
+#ui-root > .hk-race {
+  position: fixed;
+  top: calc(var(--safe-top) + var(--space-4));
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  pointer-events: none;
+  color: var(--color-text);
+  text-shadow: 0 1px 4px rgb(7 10 20 / 0.85);
+}
+
+.hk-race__clock,
+.hk-race__result {
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.hk-race__clock.is-visible,
+.hk-race__result.is-visible {
+  opacity: 1;
+}
+
+.hk-race__clock {
+  margin: 0;
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-round);
+  background: var(--color-scrim);
+  font: 700 var(--text-h2) var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.hk-race__result {
+  text-align: center;
+}
+
+.hk-race__verdict {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  color: var(--color-primary);
+}
+
+.hk-race__times {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
 /* Respawn fade (TECHNICAL 5.3): never blocks input; quick to black, a little slower back. */
 #ui-root > .hk-fade {
   position: fixed;

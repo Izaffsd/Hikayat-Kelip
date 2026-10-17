@@ -1,11 +1,16 @@
 {
-  "comment": "1.2, Cahaya dari Hikayat (GDD 5:00–10:00): Kelip rises from Tok Wan's hikayat, the player learns Kelip's call, the berembang display goes dark row by row, the first real fight on the jetty, Adi is caught by Kelam and the chapter title appears; the journal opens with Tok Wan's line and the first Cahaya. Phase 3 M7 adds Adi's actor, Kelam's tendrils and the music cues.",
+  "comment": "1.2, Cahaya dari Hikayat (GDD 5:00–10:00): Kelip rises from Tok Wan's hikayat, the player learns Kelip's call, Adi watches the berembang display with Bayu until it goes dark row by row and Kelam's tendrils rise from the water; the first real fight on the jetty head; Adi, half-changed by the ink, runs into the mangrove; the chapter title; the journal opens with Tok Wan's line and the first Cahaya.",
   "id": "1.2",
   "chapter": "1",
   "region": "kampung",
   "abilities": "chapter1",
   "avatar": "bayu",
-  "setup": [{ "light": "dusk" }, { "prop": "hikayat_open", "at": "marker:hikayat" }],
+  "setup": [
+    { "light": "dusk" },
+    { "prop": "hikayat_open", "at": "marker:hikayat" },
+    { "npc": "maksom", "do": "place", "at": "marker:mak_som" },
+    { "npc": "adi", "do": "load" }
+  ],
   "start": [],
   "steps": [
     {
@@ -33,7 +38,10 @@
       "guide": "marker:display_view",
       "until": { "event": "guide:kelip" },
       "on": {
-        "start": [{ "prompt": "kelip", "text": "prompt.kelip" }],
+        "start": [
+          { "prompt": "kelip", "text": "prompt.kelip" },
+          { "npc": "adi", "do": "place", "at": "marker:display_view", "offset": [3.6, 0, -0.2] }
+        ],
         "done": [{ "say": "k.bayu.call" }]
       }
     },
@@ -48,16 +56,35 @@
       "objective": "objective.1.2.fight",
       "until": { "encounter": "kampung_jetty" },
       "on": {
-        "resume": [{ "light": "night" }, { "darken": [0, -1], "seconds": 0 }],
-        "start": [{ "say": "k.bayu.fight" }, { "encounter": "kampung_jetty" }]
+        "resume": [
+          { "light": "night" },
+          { "darken": [0, -1], "seconds": 0 },
+          { "tendrils": "rise", "path": "tendrils_jetty", "seconds": 0 }
+        ],
+        "start": [{ "npc": "adi", "do": "hide" }, { "say": "k.bayu.fight" }, { "encounter": "kampung_jetty" }]
       }
     },
     {
       "id": "adi",
       "until": { "all": [{ "seconds": 4 }, { "dialogue": "done" }] },
       "on": {
-        "start": [{ "say": ["k.adi.caught", "k.bayu.adi"] }, { "title": "chapter.1" }],
-        "done": [{ "journal": "j.tokwan.1" }, { "cahaya": 1 }, { "flag": "adi_caught" }]
+        "start": [
+          { "npc": "adi", "do": "place", "at": "marker:display_view", "offset": [3.6, 0, -0.2] },
+          { "npc": "adi", "do": "hold", "state": "cursedIdle" },
+          { "npc": "adi", "do": "ink", "to": 0.55, "seconds": 1.5 },
+          { "say": ["k.adi.caught", "k.bayu.adi"] },
+          { "wait": 2.4 },
+          { "npc": "adi", "do": "hold", "state": null },
+          { "npc": "adi", "do": "run", "path": "adi_flee", "pace": "flee" },
+          { "tendrils": "sink", "seconds": 3 },
+          { "title": "chapter.1" }
+        ],
+        "done": [
+          { "npc": "adi", "do": "hide" },
+          { "journal": "j.tokwan.1" },
+          { "cahaya": 1 },
+          { "flag": "adi_caught" }
+        ]
       }
     }
   ],

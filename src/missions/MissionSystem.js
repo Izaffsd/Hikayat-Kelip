@@ -18,7 +18,8 @@ import { insideTrigger } from '../world/triggers.js';
  * { any: [...] }.
  *
  * Actions (run in order; a cutscene or a region change is awaited): say, conversation, cutscene, encounter, flag,
- * add, journal, page, cahaya, ability, light, water, teleport, region, kelipWave, prompt, autosave, next, wait.
+ * add, journal, page, cahaya, ability, light, water, teleport, region, kelipWave, prompt, autosave, next, wait,
+ * waitFor ('dialogue': until the queued lines have been spoken).
  * Engine-side effects go through `host.actions`; any other key names a host action, called as (value, action).
  */
 export class MissionSystem {
@@ -209,6 +210,18 @@ export class MissionSystem {
   }
 
   /**
+   * Resolves once `predicate` holds (checked every 50 ms; `waitFor` actions).
+   * @param {() => boolean} predicate
+   * @returns {Promise<void>}
+   */
+  _until(predicate) {
+    return new Promise((resolve) => {
+      const check = () => (predicate() ? resolve() : setTimeout(check, 50));
+      check();
+    });
+  }
+
+  /**
    * A fixed marker or trigger point of the current world, resolved once.
    * @param {string} at 'marker:x' | 'trigger:x'
    * @returns {{ x: number, y: number, z: number }}
@@ -290,6 +303,7 @@ export class MissionSystem {
       a.autosave?.({ mission: this.mission?.id ?? null, step: this.step?.id ?? null });
     else if (action.next) await this.start(action.next);
     else if (action.wait) await new Promise((resolve) => setTimeout(resolve, action.wait * 1000));
+    else if (action.waitFor === 'dialogue') await this._until(() => !this.dialogue.busy);
     else {
       // Engine-specific actions (Kelip rising, a rival's race, the tide…) are host actions named by their key.
       const key = Object.keys(action).find((name) => typeof a[name] === 'function');

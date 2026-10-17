@@ -83,6 +83,7 @@ Communications and Multimedia Act 1998 (GDD, [FMT](https://www.freemalaysiatoday
 | Pondok | Hut, open shelter | Tok Wan's open hut on the long jetty, where his hikayat lies on a low table | Everyday structure |
 | Jeti, titian, gerai | Jetty; narrow plank walkway; stall | Kampung places in Chapter 1 dialogue and objectives | Natural kampung words (Phase 3 M5 dialogue) |
 | Air tebu | Sugarcane juice | Adi's stake in the race ("loser buys") | Everyday drink |
+| Air pasang, air surut | High tide, ebbing tide | 1.3's flood over the boardwalks; the tide going out after Adi is freed | Everyday words for the tide in coastal kampung |
 
 ## 4. Language guide
 

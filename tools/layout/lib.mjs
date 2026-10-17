@@ -43,6 +43,8 @@ export class Layout {
     this.fireflies = [];
     this.lamps = [];
     this.groups = {};
+    /** Boxes inside which kit colliders do not block the camera (it keeps its distance; the kit turns see-through). */
+    this.cameraPass = [];
   }
 
   /** Places one kit piece. */
@@ -334,6 +336,15 @@ export class Layout {
   }
 
   /** Invisible collider box (world limits, extra steps): centre and half extents. */
+  /**
+   * A volume whose kit colliders the camera passes through (e.g. an open hut's roof over a fight).
+   * @param {number[]} c centre
+   * @param {number[]} h half sizes
+   */
+  passCamera(c, h) {
+    this.cameraPass.push({ c: c.map(round), h: h.map(round) });
+  }
+
   box(c, h, { yaw = 0, tags, camera = true } = {}) {
     this.boxes.push({
       c: c.map(round),
@@ -372,6 +383,7 @@ export class Layout {
       triggers: this.triggers,
       fireflies: this.fireflies,
       lamps: this.lamps,
+      ...(this.cameraPass.length ? { cameraPass: this.cameraPass } : {}),
     };
   }
 }
