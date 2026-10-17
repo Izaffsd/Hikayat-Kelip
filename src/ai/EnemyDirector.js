@@ -117,6 +117,11 @@ export class EnemyDirector {
    *   dodgeOrigin?: { x: number, z: number }|null,
    *   receiveStrike(enemy: Enemy): 'perfectParry'|'block'|'perfectDodge'|'dodge'|'hit'|null }} player
    */
+  /** Whether an encounter is running and not yet cleared (combat music). */
+  get fighting() {
+    return !!this.encounter && !this._cleared;
+  }
+
   fixedUpdate(dt, player) {
     if (!this.encounter) return;
     const feet = player.feet;

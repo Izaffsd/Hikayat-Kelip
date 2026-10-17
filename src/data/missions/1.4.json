@@ -10,7 +10,8 @@
     { "darken": [0, -1], "seconds": 0 },
     { "prop": "hikayat_open", "at": "marker:hikayat" },
     { "prop": "pelita_air", "at": "marker:pelita_air" },
-    { "npc": "adi", "do": "load" }
+    { "npc": "adi", "do": "load" },
+    { "music": "night" }
   ],
   "start": [{ "water": 1.3 }],
   "steps": [
@@ -54,5 +55,5 @@
       }
     }
   ],
-  "end": [{ "autosave": true }]
+  "end": [{ "music": null }, { "autosave": true }]
 }

@@ -2,6 +2,9 @@ import { Group, Quaternion, Vector3 } from 'three/webgpu';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { PathMover, wrapAngle } from './PathMover.js';
 
+/** Gait phases where paws land: a gallop lands in pairs, a walk one foot at a time. */
+const PAW_MARKS_GALLOP = [0, 0.5];
+const PAW_MARKS_WALK = [0, 0.25, 0.5, 0.75];
 const AXIS_X = new Vector3(1, 0, 0);
 const AXIS_Z = new Vector3(0, 0, 1);
 const TAU = Math.PI * 2;
@@ -72,6 +75,11 @@ export class TokBelang {
     this._time = 0;
     this._crouch = 0;
     this._roar = 0;
+    /**
+     * Sound hook (StoryActors wires it to the bus): `(id, gain)` for the roar, the standoff growl and paw falls.
+     * @type {(id: string, gain: number) => void}
+     */
+    this.onSound = () => {};
     this._mover = new PathMover(tuning.chase);
     this._standoff = null;
     this._q = new Quaternion();
@@ -117,6 +125,7 @@ export class TokBelang {
       this.yaw = yaw;
       this.speed = 0;
       this._show('standoff');
+      this.onSound('tiger_growl', -2);
     } else {
       this.mode = 'toStandoff';
     }
@@ -137,9 +146,10 @@ export class TokBelang {
     this._show(crouch ? 'standoff' : 'preview');
   }
 
-  /** Lifts its head and roars (story beat; the sound comes with the audio pass). */
+  /** Lifts its head and roars (story beat). */
   roar() {
     this._roar = 1;
+    this.onSound('tiger_roar', 0);
   }
 
   /** Leaves the world. */
@@ -199,7 +209,10 @@ export class TokBelang {
     if (d < 0.15) {
       this._turnTo(this._standoff.yaw, dt);
       this.speed = Math.max(0, this.speed - c.accel * dt);
-      if (Math.abs(wrapAngle(this._standoff.yaw - this.yaw)) < 0.05) this.mode = 'standoff';
+      if (Math.abs(wrapAngle(this._standoff.yaw - this.yaw)) < 0.05) {
+        this.mode = 'standoff';
+        this.onSound('tiger_growl', -2);
+      }
       return;
     }
     const target = Math.min(c.runSpeed, Math.max(c.standoffWalk, d * 1.5));
@@ -214,6 +227,22 @@ export class TokBelang {
 
   _turnTo(yaw, dt) {
     this.yaw += wrapAngle(yaw - this.yaw) * Math.min(1, dt * this.tuning.chase.turnRate);
+  }
+
+  /**
+   * Paw falls between two gait phases: in a gallop the hind pair lands as the cycle turns over and the fore pair half a
+   * cycle later; in a walk each foot lands in turn.
+   * @param {number} before phase 0..1
+   * @param {number} after phase 0..1
+   * @param {number} gallop 0..1
+   * @param {number} moving 0..1
+   */
+  _pawFalls(before, after, gallop, moving) {
+    const marks = gallop > 0.5 ? PAW_MARKS_GALLOP : PAW_MARKS_WALK;
+    for (const mark of marks) {
+      const crossed = before <= after ? before < mark && after >= mark : before < mark || after >= mark;
+      if (crossed) this.onSound('paw', -14 + 10 * moving * (0.5 + 0.5 * gallop));
+    }
   }
 
   /** Sets a bone to its rest rotation turned by `ax` about its X axis and `az` about its Z axis. */
@@ -231,9 +260,11 @@ export class TokBelang {
     const gallop = smooth(g.gallopFrom - 1, g.gallopFrom + 1, speed);
     const moving = clamp01(speed / 1.5);
     const stride = g.walkStride + (g.gallopStride - g.walkStride) * gallop;
+    const before = this.phase;
     this.phase = (this.phase + (dt * speed) / stride) % 1;
     const c = this._crouch;
     const airborne = this.mode === 'chase' && this._mover.lift > 0.2 ? 1 : 0;
+    if (moving > 0.3 && !airborne) this._pawFalls(before, this.phase, gallop, moving);
     for (let l = 0; l < LEGS.length; l++) {
       const { leg, upper, lower, paw, fore } = LEGS[l];
       const kind = fore ? 'fore' : 'hind';

@@ -327,6 +327,22 @@ export class StoryDirector {
       shake: (amount) => engine.cameraSystem.addTrauma(Number(amount) || 0.3),
       /** Holds the player in an animation state during a scene (`{ "pose": "stance" }`); cleared when it ends. */
       pose: (state) => engine.setPose(state),
+      /**
+       * Music state: `{ "music": "danger" }` holds it for the mission (null = the region's default); inside a cutscene
+       * it lasts until the scene ends.
+       */
+      music: (state) => this.bus.emit(EV.MUSIC, { state: state ?? null, scene: !!this.cutscenes.active }),
+      /** A music stinger on the next beat: `{ "sting": "sting_kelam" }`. */
+      sting: (id) => this.bus.emit(EV.MUSIC_STING, { id }),
+      /** A one-shot: `{ "sound": "pondok_awaken", "at"?: "marker:x", "gain"?: dB }`. */
+      sound: (id, action) =>
+        this.bus.emit(EV.SOUND, {
+          id,
+          at: action.at ? this.missions._point({ at: action.at, offset: action.offset }) : null,
+          gain: action.gain ?? 0,
+          ref: action.ref,
+          priority: 3,
+        }),
     };
   }
 }

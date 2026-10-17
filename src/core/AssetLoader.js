@@ -31,8 +31,8 @@ export class AssetLoader {
     this.gltf.setMeshoptDecoder(MeshoptDecoder);
     /** @type {Map<string, { value: any, refs: number }>} */
     this._cache = new Map();
-    /** @type {AudioContext|null} */
-    this.audioContext = null;
+    /** @type {((bytes: ArrayBuffer) => Promise<AudioBuffer>)|null} decodes sound banks (set by the engine) */
+    this.decodeAudio = null;
   }
 
   /**
@@ -126,8 +126,7 @@ export class AssetLoader {
       case 'json':
         return JSON.parse(new TextDecoder().decode(buffer));
       case 'audio':
-        if (!this.audioContext) return buffer; // decoded later, once audio is unlocked
-        return this.audioContext.decodeAudioData(buffer);
+        return this.decodeAudio ? this.decodeAudio(buffer) : buffer;
       default:
         return buffer;
     }

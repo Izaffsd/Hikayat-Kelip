@@ -22,6 +22,8 @@
   "lines": [{ "t": 5.4, "id": "k.bayu.kelip" }],
   "events": [
     { "t": 0, "teleport": "marker:hikayat", "offset": [0, -0.55, 1.5] },
-    { "t": 1.4, "kelipRise": "marker:hikayat" }
+    { "t": 0, "music": "story" },
+    { "t": 1.4, "kelipRise": "marker:hikayat" },
+    { "t": 1.4, "sound": "pondok_awaken" }
   ]
 }

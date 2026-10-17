@@ -1,6 +1,6 @@
 import { formatRaceTime } from '../competitive/RaceTimer.js';
 import { EV } from '../core/events.js';
-import { FocusNavigator } from './FocusNavigator.js';
+import { FocusNavigator, clickFeedback } from './FocusNavigator.js';
 
 /**
  * A time trial on screen (design system §7: Timer/ghost delta, Results card): the 3-2-1 countdown, the clock with
@@ -50,6 +50,7 @@ export class TrialHud {
     this._best = $('.hk-results__best');
     this._retry = $('[data-action="retry"]');
     this._exit = $('[data-action="exit"]');
+    clickFeedback(this._results, bus);
     this._retry.addEventListener('click', () => this._close(() => this.trials.restart()));
     this._exit.addEventListener('click', () => this._close(() => this.trials.exit()));
     this.navigator = new FocusNavigator({

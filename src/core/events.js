@@ -24,6 +24,8 @@ export const EV = Object.freeze({
   INPUT_DEVICE_CHANGED: 'input:device',
   /** { action: string } — a UI navigation action fired (menus) */
   UI_ACTION: 'input:ui',
+  /** { kind: 'move'|'select'|'back'|'step' } — a menu responded (focus moved, a button pressed, back, a value changed) */
+  UI_FEEDBACK: 'ui:feedback',
 
   /** { path: string, value: unknown } */
   SETTINGS_CHANGED: 'settings:changed',
@@ -151,6 +153,13 @@ export const EV = Object.freeze({
 
   /** { delay: number } — a lightning flash; thunder should follow after `delay` seconds */
   LIGHTNING: 'world:lightning',
+
+  /** { id: string, at?: {x,y,z}, gain?: dB, rate?: number, delay?: s, priority?: number, ref?: m } — play a sound */
+  SOUND: 'audio:sound',
+  /** { state: string|null, scene: boolean } — music state for the mission (scene false) or the cutscene (true) */
+  MUSIC: 'audio:music',
+  /** { id: string } — a music stinger on the next beat */
+  MUSIC_STING: 'audio:sting',
 
   /** { schema: number } */
   SAVE_WRITTEN: 'save:written',

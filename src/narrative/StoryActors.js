@@ -1,6 +1,7 @@
 import { NpcActor } from '../ai/NpcActor.js';
 import { TokBelang } from '../ai/TokBelang.js';
 import { data } from '../core/Data.js';
+import { EV } from '../core/events.js';
 import { Tendrils } from '../render/Tendrils.js';
 
 const DEG = Math.PI / 180;
@@ -131,6 +132,8 @@ export class StoryActors {
         this.engine.scene.add(this.tendrils.mesh);
       }
       this.tendrils.rise(action.seconds ?? 2.5);
+      if ((action.seconds ?? 2.5) > 0)
+        this.engine.bus.emit(EV.SOUND, { id: 'kelam_rise', gain: -2, priority: 3 });
     } else if (command === 'sink') this.tendrils?.sink(action.seconds ?? 2);
     else throw new Error(`StoryActors: unknown tendrils command "${command}"`);
   }
@@ -194,6 +197,8 @@ export class StoryActors {
     const generation = this._generation;
     this._tigerLoad = this._model('characters/tokbelang').then(async (gltf) => {
       const tiger = new TokBelang({ gltf, parent: this.engine.scene, tuning: data('tuning/tiger') });
+      tiger.onSound = (id, gain) =>
+        this.engine.bus.emit(EV.SOUND, { id, at: tiger.position, gain, ref: 8, priority: 3 });
       if (!(await this._prepare(tiger.root, generation))) {
         tiger.dispose();
         return tiger;

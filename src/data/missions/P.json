@@ -5,7 +5,7 @@
   "region": "prologue",
   "abilities": "borrowed",
   "avatar": "wan_young",
-  "setup": [{ "light": "storm" }, { "tiger": "load" }, { "undefeatable": true }],
+  "setup": [{ "light": "storm" }, { "tiger": "load" }, { "undefeatable": true }, { "music": null }],
   "start": [],
   "steps": [
     {
@@ -47,7 +47,8 @@
       "on": {
         "start": [
           { "tiger": "chase", "path": "tiger", "end": "marker:standoff_tiger" },
-          { "say": "p.villager.2" }
+          { "say": "p.villager.2" },
+          { "music": "danger" }
         ],
         "done": [{ "lightning": 0.12 }, { "shake": 0.45 }]
       }

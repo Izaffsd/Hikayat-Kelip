@@ -1,5 +1,5 @@
 {
-  "comment": "Chapter 1, 7:00 (GDD wow moment 2, then dread): at dusk the berembang across the river blaze with synchronized fireflies; mid-display they go dark row by row, far rows first, night falls and Kelam's tendrils rise from the water around the jetty head (paths.tendrils_jetty). Under 20 s. The music sting comes with M9.",
+  "comment": "Chapter 1, 7:00 (GDD wow moment 2, then dread): at dusk the berembang across the river blaze with synchronized fireflies; mid-display they go dark row by row, far rows first, night falls and Kelam's tendrils rise from the water around the jetty head (paths.tendrils_jetty). Under 20 s. Music: the theme on the seruling and a wonder stinger as the trees blaze, then silence and the Kelam stinger as the rows go dark.",
   "id": "k_display",
   "duration": 15,
   "shots": [
@@ -32,7 +32,11 @@
     { "t": 8.4, "id": "k.adi.dark" }
   ],
   "events": [
+    { "t": 0, "music": "story" },
+    { "t": 0.4, "sting": "sting_wonder" },
     { "t": 6.5, "darken": [0, -1], "seconds": 5, "to": 96 },
+    { "t": 6.5, "music": "silence" },
+    { "t": 6.6, "sting": "sting_kelam" },
     { "t": 7.0, "light": "night", "seconds": 7 },
     { "t": 11.5, "darken": [0, -1], "seconds": 2.5 },
     { "t": 11.8, "tendrils": "rise", "path": "tendrils_jetty", "seconds": 3 }

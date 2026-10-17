@@ -1,5 +1,5 @@
 import { EV } from '../core/events.js';
-import { FocusNavigator } from './FocusNavigator.js';
+import { FocusNavigator, clickFeedback } from './FocusNavigator.js';
 
 /** Seconds a destructive button waits for its confirming second press. */
 const CONFIRM_SECONDS = 3;
@@ -43,6 +43,7 @@ export class PauseMenu {
         <section class="hk-pause__detail" aria-live="polite"></section>
       </div>`;
     root.appendChild(this.element);
+    clickFeedback(this.element, bus);
     this._title = this.element.querySelector('.hk-pause__title');
     this._rail = this.element.querySelector('.hk-pause__actions');
     this._detail = this.element.querySelector('.hk-pause__detail');

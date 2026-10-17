@@ -73,6 +73,10 @@ Communications and Multimedia Act 1998 (GDD, [FMT](https://www.freemalaysiatoday
 | Belang, Pak/Tok Belang | Stripes; folk nickname for a tiger | Tok Belang | |
 | Gambus | Malay lute | Kampung music voice, side story | Instrument timbre and original melodies only |
 | Rebana | Frame drum | Kampung percussion | Rhythms only; no religious song forms |
+| Tetawak (gong) | Hanging bossed gong of Malay ensembles | Marks the start of each music cycle (score, M9) | Instrument timbre only; no ritual or court ceremony depicted |
+| Seruling | Bamboo flute | Carries Tok Wan's theme in story music (M9) | Original melody only |
+| Gambang | Wooden-bar xylophone of the gamelan Melayu | Race countdown, combat ostinato, stingers (M9) | Timbre only |
+| Zapin feel | The lilt of gambus-and-rebana dance music | The combat percussion's syncopation (M9) | Our own patterns; no traditional piece quoted |
 | Gamelan Melayu | Malay gamelan ensemble | Sawah Emas music voice | |
 | Semangat | Spirit, morale (also a folk term for vital force) | Combat meter | Used in the modern sense of fighting spirit; no rice-spirit rituals |
 | Cahaya | Light | Skill-point orbs | |

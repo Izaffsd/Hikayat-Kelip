@@ -1,0 +1,93 @@
+{
+  "comment": "Runtime sound map (TECHNICAL §10; src/audio/AudioDirector.js). `voices`: the one-shot voice limit and positional falloff (inverse distance, culled past maxDistance). `foley`: footsteps paced by distance and landings by impact speed (Foley.js). `events`: bus event → sounds. A rule plays `sound` when every `if` field matches the payload (a value, a list of values, or { \"min\": n }); `at` places it in the world ('enemy' = the payload's enemy id, 'tiger', 'kelip'); `gain` dB; `rate` a number or [min, max]; `delay` seconds; `priority` (voice stealing); `duck` lowers the music by that many dB for the sound's length.",
+  "voices": { "max": 24, "maxDistance": 45, "refDistance": 3, "rolloff": 1 },
+  "foley": {
+    "minSpeed": 0.8,
+    "walkSpeed": 2.2,
+    "runSpeed": 7.6,
+    "strideWalk": 0.68,
+    "strideRun": 1.3,
+    "wallRunStride": 0.7,
+    "firstStep": 0.65,
+    "stepGain": { "walk": -10, "run": -3 },
+    "steps": { "wood": "step_wood", "thatch": "step_thatch", "mud": "step_mud", "water": "step_water" },
+    "landMinSpeed": 2.5,
+    "landHeavySpeed": 11,
+    "landGain": { "soft": -10, "hard": -2 },
+    "land": { "wood": "land_wood", "thatch": "step_thatch", "mud": "land_mud", "water": "splash" },
+    "landHeavy": "land_heavy",
+    "probe": 0.7,
+    "wadeDepth": 0.05
+  },
+  "glide": {
+    "sound": "glide_wind",
+    "open": "whoosh_light",
+    "minSpeed": 6,
+    "maxSpeed": 14,
+    "gain": [-16, -3],
+    "rate": [0.92, 1.15]
+  },
+  "thunder": { "sound": "thunder", "gain": 0, "priority": 3 },
+  "kelip": { "sound": "kelip_twinkle", "every": [7, 15], "gain": -14 },
+  "events": {
+    "game:start": [{ "sound": "ui_confirm", "gain": -4 }],
+    "ui:feedback": [
+      { "sound": "ui_hover", "if": { "kind": "move" }, "gain": -6 },
+      { "sound": "ui_select", "if": { "kind": "select" }, "gain": -4 },
+      { "sound": "ui_back", "if": { "kind": "back" }, "gain": -4 },
+      { "sound": "ui_toggle", "if": { "kind": "step" }, "gain": -6 }
+    ],
+    "player:jumped": [{ "sound": "jump", "gain": -4, "rate": [0.95, 1.06] }],
+    "player:mantle": [{ "sound": "climb", "if": { "kind": ["mantle", "climb"] }, "gain": -3 }],
+    "player:ledge": [{ "sound": "climb", "if": { "grabbed": true }, "gain": -5 }],
+    "player:slide": [{ "sound": "slide", "if": { "started": true }, "gain": -2 }],
+    "player:wallrun": [{ "sound": "jump", "if": { "started": true }, "gain": -8, "rate": 1.1 }],
+    "player:fell": [{ "sound": "splash", "if": { "reason": "water" } }],
+    "player:attack": [
+      {
+        "sound": "whoosh_light",
+        "if": { "move": ["strike_1", "strike_2", "strike_3", "counter"] },
+        "rate": [0.95, 1.08]
+      },
+      { "sound": "whoosh_heavy", "if": { "move": ["heavy", "finisher"] } }
+    ],
+    "player:parry": [
+      { "sound": "block_staff", "priority": 2 },
+      { "sound": "parry_perfect", "if": { "perfect": true }, "priority": 3 }
+    ],
+    "player:dodge": [
+      { "sound": "whoosh_light", "gain": -5, "rate": 0.85 },
+      { "sound": "parry_perfect", "if": { "perfect": true }, "rate": 1.12, "gain": -2, "priority": 3 }
+    ],
+    "player:hit": [{ "sound": "hit_heavy", "gain": -4, "priority": 2 }],
+    "player:defeated": [{ "sound": "body_fall", "priority": 2 }],
+    "enemy:telegraph": [{ "sound": "tell", "at": "enemy", "priority": 3 }],
+    "enemy:hit": [
+      { "sound": "hit_staff", "at": "enemy", "priority": 2, "rate": [0.94, 1.06] },
+      { "sound": "hit_heavy", "at": "enemy", "if": { "damage": { "min": 20 } }, "priority": 2 }
+    ],
+    "enemy:staggered": [{ "sound": "block_hand", "at": "enemy", "gain": -2 }],
+    "enemy:defeated": [
+      { "sound": "wisp_dissolve", "at": "enemy", "if": { "kind": "wisp" }, "priority": 2 },
+      { "sound": "freed", "if": { "kind": ["cursed", "boss"] }, "priority": 3, "duck": -6 }
+    ],
+    "encounter:cleared": [{ "sound": "kelip_twinkle", "gain": -6, "delay": 0.4 }],
+    "guide:kelip": [{ "sound": "kelip_call", "priority": 3, "duck": -5 }],
+    "story:page": [
+      { "sound": "book_open", "priority": 2 },
+      { "sound": "page_flip", "delay": 0.3 }
+    ],
+    "story:journal": [{ "sound": "page_flip", "gain": -8 }],
+    "race:started": [{ "sound": "count_go", "priority": 3 }],
+    "trial:countdown": [{ "sound": "count_tick", "priority": 3 }],
+    "trial:go": [{ "sound": "count_go", "priority": 3 }],
+    "progress:achievement": [
+      { "sound": "kelip_twinkle", "gain": -4, "priority": 2 },
+      { "sound": "ui_confirm", "gain": -6, "delay": 0.15 }
+    ],
+    "game:pause": [
+      { "sound": "book_open", "if": { "paused": true }, "gain": -6 },
+      { "sound": "book_close", "if": { "paused": false }, "gain": -6 }
+    ]
+  }
+}

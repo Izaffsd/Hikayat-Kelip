@@ -22,10 +22,13 @@
   "lines": [{ "t": 9.5, "id": "k.bayu.relit" }],
   "events": [
     { "t": 0, "teleport": "marker:pelita_air", "offset": [-1.1, 0.05, 0] },
+    { "t": 0, "music": "silence" },
     { "t": 1.2, "lamp": "pelita_air", "at": "marker:pelita_air", "offset": [0, 0.6, 0] },
     { "t": 1.2, "shake": 0.25 },
+    { "t": 1.2, "sound": "pelita_relight" },
     { "t": 2.0, "relight": 8 },
     { "t": 2.0, "flag": "pelita_air" },
+    { "t": 2.0, "music": "story" },
     { "t": 8.5, "page": 1 },
     { "t": 10, "achievement": "pelita_air" }
   ]

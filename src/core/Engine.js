@@ -1,4 +1,5 @@
 import { PerspectiveCamera, Scene, Vector3 } from 'three/webgpu';
+import { AudioDirector } from '../audio/AudioDirector.js';
 import { CameraSystem } from '../camera/CameraSystem.js';
 import { CharacterController } from '../physics/CharacterController.js';
 import { PhysicsWorld } from '../physics/PhysicsWorld.js';
@@ -54,6 +55,9 @@ const ENEMY_MODELS = { wisp: 'characters/wisp', brawler: 'characters/villager_ma
 
 /** Milliseconds for the screen to go dark before a region is swapped (the fade's fast duration, rounded up). */
 const REGION_FADE_MS = 260;
+
+/** Height above the feet the player hears from (positional sound). */
+const LISTENER_HEIGHT = 1.5;
 
 /** Height above the feet the see-through window centres on (chest). */
 const SEE_THROUGH_HEIGHT = 1.1;
@@ -135,6 +139,21 @@ export class Engine {
     this._frameStartMs = 0;
     this._fpsTimer = 0;
     this._resizeQueued = false;
+    this._listener = new Vector3();
+    this._listenerForward = new Vector3();
+    /** What the sound needs from this frame (reused). */
+    this._audioView = {
+      listener: this._listener,
+      forward: this._listenerForward,
+      preset: /** @type {string|null} */ (null),
+      fighting: false,
+      glideSpeed: 0,
+      paused: false,
+    };
+    /** @type {Map<string, string>} sound bank id → url, loaded or loading */
+    this._audioUrls = new Map();
+    /** @type {'wood'|'thatch'|'mud'|'water'} last surface underfoot (kept when the probe slips past an edge) */
+    this._surface = 'wood';
   }
 
   /**
@@ -157,6 +176,7 @@ export class Engine {
       renderer: this.renderer.three,
       basisPath: `/vendor/three-${__THREE_VERSION__}/basis/`,
     });
+    this.assets.decodeAudio = (bytes) => this.audio.decode(bytes);
     // Where play starts: `?mission=<id>` starts a mission; `?scene=<id>` loads a region with no story (tests, free
     // roam, `sandbox` = the Phase 1 movement course); otherwise the save resumes (a new save starts the prologue).
     this.saves = new SaveManager({ storage: this.storage, bus });
@@ -320,6 +340,22 @@ export class Engine {
       ? new StoryDirector({ engine: this, content: this.storyContent, kelipModel: byKey('characters/kelip') })
       : null;
     this.trials = this._createTrials();
+    this.audioDirector = new AudioDirector({
+      audio: this.audio,
+      bus,
+      sounds: data('audio/sounds'),
+      regions: data('audio/regions'),
+      locate: {
+        enemy: (id) => this.director.enemies.find((enemy) => enemy.id === id)?.position ?? null,
+        kelip: () => (this.story?.kelip?.visible ? this.story.kelip.position : null),
+      },
+      surfaceAt: () => this._surfaceAt(),
+    });
+    this.audioDirector.sfx.hrtf = this.quality.presetName === 'high';
+    bus.on(EV.QUALITY_CHANGED, ({ preset }) => (this.audioDirector.sfx.hrtf = preset === 'high'));
+    this.audioDirector.setRegion(this.sceneId);
+    // Sound banks download and decode behind the title and never hold it up; the first sounds play once they land.
+    this._loadAudio(this.sceneId);
     this.postfx = new PostFX(this.renderer);
     this.postfx.build(this.scene, this.camera, this.quality.preset);
     onProgress(0.75);
@@ -422,6 +458,7 @@ export class Engine {
     if (this.trials.active) this.trials.fixedUpdate(dt);
     else this.story?.fixedUpdate(dt);
     this._probeGround();
+    this.audioDirector.fixedUpdate(dt, this.traversal.state, this.traversal.speed);
     this.bus.flush();
   }
 
@@ -530,6 +567,8 @@ export class Engine {
     this.placePlayer(marker.p, marker.yaw);
     await this.renderer.three.compileAsync(this.scene, this.camera);
     this._regionLoading = false;
+    this._loadAudio(id);
+    this.audioDirector.setRegion(id);
     this.bus.emit(EV.REGION_READY, { id });
   }
 
@@ -841,6 +880,56 @@ export class Engine {
     this.wau.update(dt);
   }
 
+  /**
+   * Loads the sound banks a region needs in the background (never holding up play) and drops the ones it does not.
+   * @param {string} regionId
+   * @returns {Promise<void>}
+   */
+  async _loadAudio(regionId) {
+    const manifest = data('generated/assets').assets;
+    const wanted = this.audioDirector.banksFor(regionId).filter((id) => manifest[`audio/${id}`]);
+    for (const [id, url] of [...this._audioUrls]) {
+      if (wanted.includes(id)) continue;
+      this.audioDirector.removeBank(id);
+      this.assets.release(url);
+      this._audioUrls.delete(id);
+    }
+    const missing = wanted.filter((id) => !this._audioUrls.has(id));
+    for (const id of missing) this._audioUrls.set(id, manifest[`audio/${id}`].url);
+    await Promise.all(
+      missing.map(async (id) => {
+        const entry = manifest[`audio/${id}`];
+        try {
+          const loaded = await this.assets.loadAll([entry]);
+          // The region changed while it loaded and no longer needs it.
+          if (this._audioUrls.get(id) !== entry.url) this.assets.release(entry.url);
+          else this.audioDirector.addBank(id, entry, loaded.get(entry.url));
+        } catch (error) {
+          this._audioUrls.delete(id);
+          log.add('warn', `Sound bank "${id}" could not load`, error);
+        }
+      }),
+    );
+  }
+
+  /**
+   * What Bayu stands on, for footsteps: wood (kit pieces), thatch (attap roofs), mud (the ground) or water (wading).
+   * @returns {'wood'|'thatch'|'mud'|'water'}
+   */
+  _surfaceAt() {
+    const cc = this.character;
+    const foley = data('audio/sounds').foley;
+    if (this.world && cc.feetY < this.world.waterLevel + foley.wadeDepth) return 'water';
+    this._probe.x = cc.position.x;
+    this._probe.y = cc.feetY + 0.3;
+    this._probe.z = cc.position.z;
+    const hit = this.physics.castRay(this._probe, this._down, foley.probe);
+    if (!hit.hit) return this._surface;
+    const tags = this.world ? this.world.tagsOf(hit.collider) : [];
+    this._surface = tags.includes('roof') ? 'thatch' : tags.length ? 'wood' : 'mud';
+    return this._surface;
+  }
+
   /** Height of the ground under the player (for the blob shadow); one short ray per tick while airborne. */
   _probeGround() {
     const cc = this.character;
@@ -897,6 +986,14 @@ export class Engine {
       cameraMode,
     );
     this.avatar.update(animDt, this.camera, this.groundY);
+    this._listener.set(this._feet.x, this._feet.y + LISTENER_HEIGHT, this._feet.z);
+    this.camera.getWorldDirection(this._listenerForward);
+    const view = this._audioView;
+    view.preset = this.world?.dayNight?.preset ?? null;
+    view.fighting = this.director.fighting;
+    view.glideSpeed = this.traversal.state === 'glide' ? this.traversal.speed : 0;
+    view.paused = this.paused;
+    this.audioDirector.frameUpdate(dt, view);
     // Kit between the follow camera and Bayu turns see-through; scripted shots frame things themselves.
     if (this.cameraSystem.override) SEE_THROUGH_TARGET.value.set(0, -1e4, 0);
     else SEE_THROUGH_TARGET.value.set(this._feet.x, this._feet.y + SEE_THROUGH_HEIGHT, this._feet.z);
@@ -1045,7 +1142,7 @@ export class Engine {
       'Ticks/frame': `${this.loop.lastSteps} (dropped ${this.loop.droppedFrames})`,
       Player: `${this.traversal.state} ${this.traversal.speed.toFixed(2)} m/s${this.traversal.sprinting ? ' sprint' : ''}`,
       Input: this.input.device,
-      Audio: this.audio.state,
+      Audio: `${this.audio.state}, ${this.audioDirector.sfx.active} voices, music ${this.audioDirector.music.state ?? '-'}`,
     };
   }
 
@@ -1207,6 +1304,8 @@ export class Engine {
           inCombat: engine.combat.inCombat,
           timeScale: engine.time.scale,
         }),
+        /** Sound: context state, decoded banks, plays per sound, music state and stem levels, ambience beds. */
+        audio: () => engine.audioDirector.stats(),
         /** Where the story stands (null in free roam). */
         story: () => {
           const story = engine.story;

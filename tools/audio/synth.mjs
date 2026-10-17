@@ -95,7 +95,7 @@ export class Biquad {
 }
 
 /** Pink noise generator (Paul Kellet's refined filter). */
-function pinkNoise(random) {
+export function pinkNoise(random) {
   let b0 = 0;
   let b1 = 0;
   let b2 = 0;
@@ -170,7 +170,7 @@ export function seamless(render, seconds, fade = 1) {
   return out;
 }
 
-const env = (t, attack, decay) => (t < attack ? t / attack : Math.exp(-(t - attack) / decay));
+export const env = (t, attack, decay) => (t < attack ? t / attack : Math.exp(-(t - attack) / decay));
 
 /** Night in a mangrove kampung: cricket chirps, a soft cicada bed and occasional frogs (loop). */
 function nightInsects(seed) {
@@ -307,7 +307,7 @@ function thunder(seed) {
 }
 
 /** Inharmonic bell partials (small chimes). */
-function bell(n, frequency, decay, gain, out, startSample = 0) {
+export function bell(n, frequency, decay, gain, out, startSample = 0) {
   const partials = [
     [1, 1],
     [2.76, 0.45],
@@ -591,7 +591,7 @@ function pondokAwaken(seed) {
 }
 
 /** Wooden bar (gambang-like) mallet tone: bar modes at 1, 3.93 and 9.5 times the fundamental. */
-function mallet(n, frequency, gain, out, startSample = 0) {
+export function mallet(n, frequency, gain, out, startSample = 0) {
   const modes = [
     [1, 1, 0.5],
     [3.93, 0.35, 0.12],
@@ -630,6 +630,142 @@ function gambangGo(seed) {
   return reverb(out, 0.3);
 }
 
+/** A foot on attap thatch: a dry, crackling rustle over a soft thump. */
+function stepThatch(seed) {
+  const random = rng(seed);
+  const n = Math.round(0.28 * SAMPLE_RATE);
+  const out = new Float32Array(n);
+  const pink = pinkNoise(random);
+  const crackle = new Biquad('highpass', 1600 + random() * 600, 0.8);
+  const body = new Biquad('lowpass', 380, 0.8);
+  let grain = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SAMPLE_RATE;
+    // Sparse brittle snaps: fibres giving way.
+    if (random() < 0.012) grain = 0.6 + random() * 0.6;
+    grain *= 0.992;
+    const p = pink();
+    out[i] =
+      crackle.process(p) * (0.35 + grain) * env(t, 0.004, 0.07) * 2.4 +
+      body.process(p) * env(t, 0.003, 0.03) * 1.6;
+  }
+  return out;
+}
+
+/** A big cat's paw on planks: a soft, heavy pad thump with a short wooden knock. */
+function pawThud(seed) {
+  const random = rng(seed);
+  const n = Math.round(0.3 * SAMPLE_RATE);
+  const out = new Float32Array(n);
+  const pink = pinkNoise(random);
+  const pad = new Biquad('lowpass', 260, 0.8);
+  const knock = new Biquad('bandpass', 320 + random() * 120, 3);
+  const f0 = 55 + random() * 12;
+  for (let i = 0; i < n; i++) {
+    const t = i / SAMPLE_RATE;
+    const p = pink();
+    out[i] =
+      Math.sin(2 * Math.PI * f0 * t) * env(t, 0.006, 0.07) * 0.8 +
+      pad.process(p) * env(t, 0.004, 0.04) * 3 +
+      knock.process(p) * env(t, 0.002, 0.03) * 2.2;
+  }
+  return out;
+}
+
+/**
+ * Tiger voice: a pulsed low source with subharmonic roughness and breath, shaped by long-throat formants.
+ * @param {number} seed
+ * @param {{ seconds: number, f0: number[], noise: number, attack: number, release: number, pulse: number }} shape
+ *   f0: [start, peak, end] Hz; pulse: amplitude flutter rate (Hz) for a growl's rattle (0 = none)
+ */
+function bigCatVoice(seed, shape) {
+  const random = rng(seed);
+  const n = Math.round(shape.seconds * SAMPLE_RATE);
+  const out = new Float32Array(n);
+  const pink = pinkNoise(random);
+  const formants = [
+    [260, 2.5, 1],
+    [640, 3.5, 0.7],
+    [1250, 4.5, 0.4],
+    [2300, 5, 0.18],
+  ].map(([f, q, g]) => ({ filter: new Biquad('bandpass', f, q), gain: g }));
+  const air = new Biquad('lowpass', 2600, 0.7);
+  const [fStart, fPeak, fEnd] = shape.f0;
+  let phase = 0;
+  let sub = 0;
+  let jitter = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / SAMPLE_RATE;
+    const u = t / shape.seconds;
+    // Pitch rises into the roar, then falls away.
+    const f =
+      u < 0.3
+        ? fStart + (fPeak - fStart) * Math.sin((u / 0.3) * Math.PI * 0.5)
+        : fPeak + (fEnd - fPeak) * ((u - 0.3) / 0.7) ** 1.3;
+    if (i % 441 === 0) jitter = (random() - 0.5) * 0.06;
+    phase += (f * (1 + jitter)) / SAMPLE_RATE;
+    sub += (f * 0.5 * (1 + jitter)) / SAMPLE_RATE;
+    const pulseTrain = (phase % 1) * 2 - 1;
+    const rough = 0.6 + 0.4 * Math.sin(2 * Math.PI * sub);
+    const flutter = shape.pulse
+      ? 0.65 + 0.35 * Math.sin(2 * Math.PI * shape.pulse * t + Math.sin(13 * t))
+      : 1;
+    const source = pulseTrain * rough * flutter + pink() * shape.noise;
+    let v = 0;
+    for (const formant of formants) v += formant.filter.process(source) * formant.gain;
+    const amp = Math.min(1, t / shape.attack) ** 2 * Math.min(1, (shape.seconds - t) / shape.release);
+    out[i] = air.process(v) * amp * 3;
+  }
+  return reverb(out, 0.22);
+}
+
+/** Tok Belang's roar on the jetty (prologue standoff). */
+function tigerRoar(seed) {
+  return bigCatVoice(seed, {
+    seconds: 2.6,
+    f0: [72, 150, 58],
+    noise: 0.55,
+    attack: 0.22,
+    release: 0.7,
+    pulse: 0,
+  });
+}
+
+/** A low warning growl with a rattle. */
+function tigerGrowl(seed) {
+  return bigCatVoice(seed, {
+    seconds: 1.6,
+    f0: [52, 64, 48],
+    noise: 0.75,
+    attack: 0.18,
+    release: 0.5,
+    pulse: 9,
+  });
+}
+
+/** Kelam's tendrils rising: a sinking dissonant swell with colour draining out of a noise band. */
+function kelamRise(seed) {
+  const random = rng(seed);
+  const n = Math.round(4.2 * SAMPLE_RATE);
+  const out = new Float32Array(n);
+  const pink = pinkNoise(random);
+  const band = new Biquad('bandpass', 2000, 2.5);
+  const lowTone = new Biquad('lowpass', 300, 0.8);
+  const lowNoise = new Biquad('lowpass', 300, 0.8);
+  for (let i = 0; i < n; i++) {
+    const t = i / SAMPLE_RATE;
+    if (i % 64 === 0) band.set('bandpass', 2200 * 2 ** (-t / 1.4), 2.5);
+    const swell = Math.sin(Math.min(1, t / 2.2) * Math.PI * 0.5) * Math.min(1, (4.2 - t) / 1.4);
+    const tone =
+      Math.sin(2 * Math.PI * 73.4 * t) +
+      Math.sin(2 * Math.PI * 77.8 * t) * 0.8 +
+      Math.sin(2 * Math.PI * 36.7 * t) * 0.5;
+    const p = pink();
+    out[i] = (lowTone.process(tone * 0.5) + band.process(p) * 2.2 + lowNoise.process(p) * 0.3) * swell;
+  }
+  return reverb(out, 0.35);
+}
+
 /** Registry of generators by name: (seed) => Float32Array. */
 export const GENERATORS = Object.freeze({
   nightInsects,
@@ -653,6 +789,11 @@ export const GENERATORS = Object.freeze({
   pondokAwaken,
   gambangTick,
   gambangGo,
+  stepThatch,
+  pawThud,
+  tigerRoar,
+  tigerGrowl,
+  kelamRise,
 });
 
 /** Generators that produce seamless loops (exact length; the pipeline must not trim, fade or filter them). */

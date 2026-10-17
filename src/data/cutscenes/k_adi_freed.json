@@ -32,6 +32,7 @@
   ],
   "events": [
     { "t": 0, "clearEnemies": true },
+    { "t": 0, "music": "story" },
     { "t": 0, "teleport": "marker:boss_center" },
     { "t": 0, "npc": "adi", "do": "place", "at": "marker:boss_adi" },
     { "t": 0, "npc": "adi", "do": "ink", "to": 0.85 },

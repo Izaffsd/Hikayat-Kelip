@@ -1,0 +1,54 @@
+{
+  "comment": "Audio per region (TECHNICAL §10, GDD 'Art and audio direction'). `global` banks load once at boot; a region's `banks` load with it and are released when it goes. `ambience`: light preset → bed → dB (beds are mono loop banks, played as two copies half a loop apart panned to ±`wide`; `default` when the preset is not listed). `music`: the region's stem bank, its default state, the states as stem mixes (linear 0..1) and stem pan. `musicSystem`: crossfade seconds per state, which states change on the next beat instead of the next bar, the start delay, the fade when a region's score stops, and how far stingers duck the stems.",
+  "global": ["ui", "sfx", "glide_wind"],
+  "ambience": { "fade": 4, "stopFade": 1.5, "wide": 0.65 },
+  "musicSystem": {
+    "fade": { "default": 2.5, "combat": 0.6, "danger": 1.5, "story": 1.5, "silence": 2 },
+    "quantize": { "default": "bar", "combat": "beat" },
+    "startDelay": 0.15,
+    "stopFade": 1.5,
+    "stingDuckDb": -9
+  },
+  "regions": {
+    "prologue": {
+      "banks": ["storm", "tiger"],
+      "ambience": {
+        "default": { "amb_rain": -1, "amb_wind": -4, "amb_water": -9 }
+      },
+      "music": {
+        "bank": "music_prologue",
+        "default": "explore",
+        "states": {
+          "explore": { "explore": 0.75 },
+          "danger": { "explore": 1, "combat": 0.5 },
+          "combat": { "combat": 1, "explore": 0.35 },
+          "story": { "story": 0.9 },
+          "silence": {}
+        },
+        "pan": { "story": 0.12 }
+      }
+    },
+    "kampung": {
+      "banks": [],
+      "ambience": {
+        "dusk": { "amb_water": -4, "amb_night": -14 },
+        "night": { "amb_water": -7, "amb_night": -3 },
+        "default": { "amb_water": -5, "amb_night": -8 }
+      },
+      "music": {
+        "bank": "music_kampung",
+        "default": "explore",
+        "states": {
+          "explore": { "explore": 0.8 },
+          "night": { "explore": 0.55, "danger": 0.4 },
+          "race": { "explore": 0.75, "combat": 0.45 },
+          "danger": { "danger": 0.9, "explore": 0.2 },
+          "combat": { "combat": 1, "danger": 0.35 },
+          "story": { "story": 0.9 },
+          "silence": {}
+        },
+        "pan": { "explore": -0.12, "story": 0.12 }
+      }
+    }
+  }
+}

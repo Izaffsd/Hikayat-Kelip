@@ -424,6 +424,9 @@ Perfect windows by difficulty and assist: Cerita 0.25 s, Normal 0.15 s, Pendekar
   length; states crossfade on bar boundaries; loops are gapless (`AudioBufferSourceNode` with loop points, scheduled
   on the audio clock). Tok Wan's theme returns in each region's instruments and in full in Ending B.
 - Formats: OGG Vorbis only (Safari 18.4+ plays it); SFX mono; music 96–128 kbps; prologue audio < 2 MB.
+- As built (Phase 3 M9, D-043–D-045): `src/audio` (AudioManager, AudioDirector, Sfx, SoundBank, Foley, Ambience,
+  MusicSystem), data in `src/data/audio`; the score is synthesised in `tools/audio` as mono stems (Vorbis q4, about
+  64–80 kbps mono) at 80 BPM; combat enters on the next beat, other states on the next bar.
 
 ---
 

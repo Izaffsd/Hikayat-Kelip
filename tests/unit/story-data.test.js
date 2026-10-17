@@ -48,6 +48,9 @@ const ACTIONS = new Set([
   'waitFor',
   'clearEnemies',
   'achievement',
+  'music',
+  'sting',
+  'sound',
 ]);
 const TIGER_COMMANDS = new Set(['load', 'chase', 'standoff', 'roar', 'hide']);
 const NPC_COMMANDS = new Set(['load', 'place', 'run', 'flee', 'hold', 'face', 'ink', 'hide']);
@@ -74,6 +77,8 @@ const ARGUMENTS = new Set([
   'rival',
   'win',
   'lose',
+  'gain',
+  'ref',
 ]);
 
 const content = await StoryDirector.loadData();
@@ -88,6 +93,13 @@ const en = data('i18n/en');
 const bm = data('i18n/bm');
 const encounters = data('encounters');
 const events = new Set(Object.values(EV));
+const AUDIO = data('audio/regions');
+/** Every sound in the built banks. */
+const SOUNDS = new Set(
+  Object.entries(MODELS)
+    .filter(([key]) => key.startsWith('audio/'))
+    .flatMap(([, entry]) => Object.keys(entry.sounds)),
+);
 
 /** Every action list of a mission, with where it is. */
 function actionLists(mission) {
@@ -131,6 +143,11 @@ function checkAction(action, mission, region, where) {
   }
   if (key === 'journal') expect(content.dialogue.lines[value], `${where}: journal ${value}`).toBeDefined();
   if (key === 'cutscene') expect(scenes[value], `${where}: cutscene ${value}`).toBeDefined();
+  if (key === 'music' && value !== null) {
+    const states = Object.keys(AUDIO.regions[region.id]?.music?.states ?? {});
+    expect(states, `${where}: music state ${value} in ${region.id}`).toContain(value);
+  }
+  if (key === 'sting' || key === 'sound') expect(SOUNDS.has(value), `${where}: sound ${value}`).toBe(true);
   if (key === 'encounter') {
     expect(encounters[value], `${where}: encounter ${value}`).toBeDefined();
     expect(encounters[value].region, `${where}: encounter ${value} region`).toBe(region.id);

@@ -156,6 +156,8 @@ export class DayNight {
     });
     this._lampTimer = 0;
     this._time = 0;
+    /** @type {string|null} name of the preset shown (or blending in) */
+    this.preset = null;
   }
 
   /**
@@ -164,6 +166,7 @@ export class DayNight {
    */
   set(name) {
     const preset = LIGHT_PRESETS[name];
+    this.preset = name;
     this._from = this._to = this._snapshot(preset);
     this._blend = 1;
     this.storm = name === 'storm';
@@ -176,6 +179,7 @@ export class DayNight {
    * @param {number} seconds
    */
   blendTo(name, seconds) {
+    this.preset = name;
     this._from = this._snapshot(this.current);
     this._to = this._snapshot(LIGHT_PRESETS[name]);
     this._blend = 0;

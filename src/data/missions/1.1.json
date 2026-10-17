@@ -9,7 +9,8 @@
     { "light": "dusk" },
     { "prop": "hikayat_open", "at": "marker:hikayat" },
     { "npc": "maksom", "do": "place", "at": "marker:mak_som" },
-    { "npc": "adi", "do": "load" }
+    { "npc": "adi", "do": "load" },
+    { "music": null }
   ],
   "start": [],
   "steps": [
@@ -42,9 +43,13 @@
           { "waitFor": "dialogue" },
           { "hold": false },
           { "race": "start" },
+          { "music": "race" },
           { "npc": "adi", "do": "run", "path": "race_adi", "pace": "race" }
         ],
-        "done": [{ "race": "finish", "rival": "adi", "win": "k.adi.lose", "lose": "k.adi.win" }]
+        "done": [
+          { "music": null },
+          { "race": "finish", "rival": "adi", "win": "k.adi.lose", "lose": "k.adi.win" }
+        ]
       }
     },
     {

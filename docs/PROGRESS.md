@@ -7,16 +7,13 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - **Push:** Izaf said "push and go ahead" (2026-10-17); `main` is on GitHub. The repo is still **public**; Izaf chose
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
   fresh `gh auth login --web`). Vercel previews start once he imports the repo on vercel.com (Vite preset).
-- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M8 done; the whole slice plays from a new
-  save through P and 1.1–1.4, with the pause menu, settings, journal, map, the 1.1 trial and achievements. **Resume
-  with milestone 9 (music and runtime audio):** the AudioManager graph exists and 8 sound banks are built
-  (`tools/audio`, Phase 2); M9 plays them: footsteps on wood/thatch/water by surface, jumps, landings, the wau, strikes,
-  parries, langkah, hits, wisps dissolving, the tiger's roar and gallop, Kelip's chime, rain/storm/thunder (the
-  LIGHTNING event has the delay), river and night ambience, UI clicks; then the MusicSystem (TECHNICAL §10: layered
-  stems per region on one tempo, state crossfades on bar lines, gapless loops) with our own CC0-sample loops for the
-  prologue storm, the kampung at dusk/night, combat and the display; ducking under voices; `navigator.audioSession`.
-  Still open from M4: dedicated langkah/tangkis clips (library clips stand in). Then M10 (phase checks, Vercel
-  preview, playtest checklist) → PLAYTEST GATE.
+- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M9 done; the whole slice plays from a new
+  save through P and 1.1–1.4 with sound and music, the pause menu, settings, journal, map, the 1.1 trial and
+  achievements. **Resume with milestone 10 (phase checks → PLAYTEST GATE):** DevTools console check, a performance
+  trace of one key scene (the 1.5–1.9 s first-frame stall, open item 1), a 10-minute memory check (decoded audio is
+  ~40 MB at 44.1 kHz: watch it), a 4× CPU-throttled run, the prologue download budget (< 10 MB; open item 4), the
+  playtest checklist for Izaf, a checkpoint commit and the Vercel preview (needs Izaf's import). Then stop at the
+  PLAYTEST GATE and wait for "GO". Still open from M4: dedicated langkah/tangkis clips (library clips stand in).
 - **Visual tests:** run `npm run chrome:test` once, then `npx playwright test`: every test is a tab in that one window
   (D-035; Izaf asked for no window per run). Quick live checks go through the Chrome DevTools MCP.
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
@@ -213,6 +210,27 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
   and both languages); browser tests: the pause flow (opens on Esc, frozen game, keyboard walk, live language change,
   focus kept, layout at both phone sizes), restart from checkpoint, and a trial from the pause menu (a gold run in
   12.65 s, the toast, Retry against the ghost with a live delta, Exit back to the story).
+- **M9 done (2026-10-18)** (D-043, D-044, D-045): runtime audio and the score. `audio/AudioDirector.js` maps bus
+  events to sounds from `data/audio/sounds.json` (strikes, parries and perfect chimes, langkah, hits, enemy tells in
+  the world, wisps dissolving, villagers freed, Kelip's call and twinkles, pages and journal, race and trial counts,
+  achievements, pause, menu clicks via `UI_FEEDBACK`), `Foley.js` paces footsteps by distance on wood, thatch, mud or
+  water from kit tags and lands by impact speed, `Sfx.js` plays one-shots and loops (24 voices, priority stealing,
+  positional panners, HRTF on High), `Ambience.js` crossfades widened beds with the light (storm rain and wind; dusk
+  water, night insects), `MusicSystem.js` runs each region's stems in sync on the audio clock and moves between
+  states on the bar (combat on the beat), with stingers over ducked stems; `AudioManager.js` owns the graph, the
+  limiter, pause levels and ducking, and decodes before the start tap. Banks load per region behind the title and never
+  hold it up. Tok Belang roars, growls and his paws land with his gait; Kelam's tendrils rise with a swell; thunder
+  follows lightning. The score (`tools/audio/instruments.mjs`, `music.mjs`): Tok Wan's theme and stems for the
+  prologue (storm, combat, story) and the kampung (solo gambus explore, danger, combat, story, three stingers), all
+  synthesised, 80 BPM, seamless; cues in every mission and cutscene (`music`, `sting`, `sound` actions, validated by
+  the story-data test). Prologue audio 1.4 MB. Checked without ears: pitches measured exact, stems normalised, loop
+  seams continuous, spectrograms show the melody lines; **Izaf judges the sound on the iPhone.** Verified: 150 unit
+  tests (bank variants, voice stealing, beat/bar grid, state priority, ramps, footsteps and landings, every sound and
+  stem the data names exists, prologue audio budget); browser tests on both backends: the prologue (context running
+  after the start tap, beds and stems up, thatch footsteps, jump and landing, pause clicks and levels, danger on the
+  bar in the chase, thunder, paws, growl and roar in the standoff) and the jetty fight (combat on the beat, hits,
+  tells, dissolves, night beds, back to the mission's mix); no console warnings. Full browser suite green (45 passed,
+  1 skipped by design), with the prologue → kampung bank swap.
 
 ## Setup checklist status
 

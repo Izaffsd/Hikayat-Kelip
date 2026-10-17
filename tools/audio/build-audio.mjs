@@ -7,12 +7,18 @@
  *      hash is stable), published as public/assets/audio/<bank>.<hash>.ogg,
  *   4. returns manifest entries with each sound's [offset, duration] regions and rewrites the generated audio section
  *      of CREDITS.md.
+ * A music bank (`stems`) packs a region's looping stems (tools/audio/music.mjs), each normalised to one level and then
+ * mixed by its `gain`, each written between copies of its own tail and head so the loop seam is encoded in context.
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { BEATS_PER_BAR, BPM, STEM_GENERATORS, STING_GENERATORS } from './music.mjs';
 import { Biquad, GENERATORS, LOOP_GENERATORS, SAMPLE_RATE, encodeWav } from './synth.mjs';
+
+/** One-shot generators: sound effects and the score's stingers. */
+const ONE_SHOTS = { ...GENERATORS, ...STING_GENERATORS };
 
 /** Only these licences may enter a shipped bank (BUILD_PROMPT: never CC BY-NC or GPL). */
 export const ALLOWED_LICENSES = Object.freeze(['CC0-1.0']);
@@ -22,6 +28,10 @@ const LICENSE_NAMES = { 'CC0-1.0': 'CC0 1.0' };
 const GAP_SECONDS = 0.06;
 const PEAK_DB = -1;
 const LOOP_RMS_DB = -20;
+/** Every stem is normalised to this level; its `gain` then sets the mix. */
+const STEM_RMS_DB = -20;
+/** Wrap-around context written on both sides of a stem (longer than a Vorbis block, so the seam decodes clean). */
+const STEM_PAD_SECONDS = 0.1;
 const TRIM_HEAD_DB = -40;
 const TRIM_TAIL_DB = -60;
 const CREDITS_START = '<!-- audio-credits:start -->';
@@ -29,6 +39,7 @@ const CREDITS_END = '<!-- audio-credits:end -->';
 
 const dbToGain = (db) => 10 ** (db / 20);
 const round5 = (seconds) => Math.round(seconds * 1e5) / 1e5;
+const round7 = (seconds) => Math.round(seconds * 1e7) / 1e7;
 
 /**
  * Decodes an audio file to mono float PCM at SAMPLE_RATE.
@@ -160,7 +171,7 @@ function renderSound(id, spec, sources, rawDir) {
   let raw;
   let files = [];
   if (spec.synth) {
-    const generate = GENERATORS[spec.synth];
+    const generate = ONE_SHOTS[spec.synth];
     if (!generate) throw new Error(`${id}: unknown synth "${spec.synth}"`);
     if (LOOP_GENERATORS.includes(spec.synth))
       throw new Error(`${id}: ${spec.synth} is a loop; use a loop bank`);
@@ -202,25 +213,60 @@ function renderLoop(id, spec) {
 }
 
 /**
- * Joins variants with silent gaps.
- * @param {[string, Float32Array[]][]} sounds
+ * Renders a music bank's stems: each an exact number of bars, normalised to STEM_RMS_DB, then its own `gain`, limited
+ * to the peak ceiling.
+ * @param {string} id bank id
+ * @param {Record<string, { synth: string, seed?: number, gain?: number }>} stems
+ * @returns {[string, Float32Array[], { loop: true }][]}
+ */
+function renderStems(id, stems) {
+  const barSamples = (60 / BPM) * BEATS_PER_BAR * SAMPLE_RATE;
+  const rendered = Object.entries(stems).map(([stem, spec]) => {
+    const generate = STEM_GENERATORS[spec.synth];
+    if (!generate) throw new Error(`${id}.${stem}: unknown stem "${spec.synth}"`);
+    const samples = generate(spec.seed ?? 1);
+    const bars = samples.length / barSamples;
+    if (Math.abs(bars - Math.round(bars)) > 1e-6)
+      throw new Error(`${id}.${stem}: not a whole number of bars`);
+    return { stem, spec, samples };
+  });
+  return rendered.map(({ stem, spec, samples }) => {
+    const gain = Math.min(
+      (dbToGain(STEM_RMS_DB) / rmsOf(samples)) * dbToGain(spec.gain ?? 0),
+      dbToGain(PEAK_DB) / peakOf(samples),
+    );
+    return [stem, [scale(samples, gain)], { loop: true }];
+  });
+}
+
+/**
+ * Joins variants with silent gaps. A looping sound is written between copies of its own tail and head, so its seam
+ * is encoded (and decoded) exactly as it will play.
+ * @param {[string, Float32Array[], { loop?: boolean }?][]} sounds
  * @returns {{ samples: Float32Array, regions: Record<string, number[][]> }}
  */
 function assemble(sounds) {
   const gap = Math.round(GAP_SECONDS * SAMPLE_RATE);
+  const pad = Math.round(STEM_PAD_SECONDS * SAMPLE_RATE);
+  const padOf = (options) => (options?.loop ? pad : 0);
   const total = sounds.reduce(
-    (sum, [, variants]) => sum + variants.reduce((s, v) => s + v.length + gap, 0),
+    (sum, [, variants, options]) =>
+      sum + variants.reduce((s, v) => s + v.length + 2 * padOf(options) + gap, 0),
     -gap,
   );
   const samples = new Float32Array(total);
   const regions = {};
   let cursor = 0;
-  for (const [id, variants] of sounds) {
+  for (const [id, variants, options] of sounds) {
     regions[id] = [];
+    const context = padOf(options);
     for (const variant of variants) {
-      samples.set(variant, cursor);
-      regions[id].push([round5(cursor / SAMPLE_RATE), round5(variant.length / SAMPLE_RATE)]);
-      cursor += variant.length + gap;
+      if (context) samples.set(variant.subarray(variant.length - context), cursor);
+      samples.set(variant, cursor + context);
+      if (context) samples.set(variant.subarray(0, context), cursor + context + variant.length);
+      const round = options?.loop ? round7 : round5;
+      regions[id].push([round((cursor + context) / SAMPLE_RATE), round(variant.length / SAMPLE_RATE)]);
+      cursor += variant.length + 2 * context + gap;
     }
   }
   return { samples, regions };
@@ -314,12 +360,13 @@ export async function buildAudio({ root, rawDir }) {
       const samples = renderLoop(bank.id, bank.loop);
       built = { samples, regions: { [bank.id]: [[0, round5(samples.length / SAMPLE_RATE)]] } };
     } else {
-      const sounds = Object.entries(bank.sounds).map(([id, spec]) => {
+      const sounds = Object.entries(bank.sounds ?? {}).map(([id, spec]) => {
         const { variants, files } = renderSound(id, spec, config.sources, rawDir);
         if (files.length) uses.set(spec.source, [...(uses.get(spec.source) ?? []), ...files]);
         return [id, variants];
       });
-      built = assemble(sounds);
+      const stems = bank.stems ? renderStems(bank.id, bank.stems) : [];
+      built = assemble([...stems, ...sounds]);
     }
 
     const temp = path.join(previewDir, `${bank.id}.ogg`);
@@ -337,6 +384,9 @@ export async function buildAudio({ root, rawDir }) {
       type: 'audio',
       bus: bank.bus,
       ...(bank.loop ? { loop: true } : {}),
+      ...(bank.stems
+        ? { music: { bpm: BPM, beatsPerBar: BEATS_PER_BAR }, loops: Object.keys(bank.stems) }
+        : {}),
       sounds: built.regions,
     };
     for (const [sourceId, files] of uses)
