@@ -34,5 +34,6 @@
     "groundStickVelocity": -1.5
   },
   "gravity": 24,
+  "hardLandingSpeed": 11,
   "respawn": { "safeGroundTime": 0.3, "killHeight": -20 }
 }

@@ -2,6 +2,8 @@ import { PerspectiveCamera, Scene, Vector3 } from 'three/webgpu';
 import { CameraSystem } from '../camera/CameraSystem.js';
 import { CharacterController } from '../physics/CharacterController.js';
 import { PhysicsWorld } from '../physics/PhysicsWorld.js';
+import { prepareClips } from '../player/Animator.js';
+import { Avatar } from '../player/Avatar.js';
 import { PlayerController } from '../player/Controller.js';
 import { Traversal } from '../player/Traversal.js';
 import { PostFX } from '../render/PostFX.js';
@@ -10,6 +12,7 @@ import { Renderer } from '../render/Renderer.js';
 import { DebugOverlay } from '../ui/DebugOverlay.js';
 import { TouchControls } from '../ui/touch/TouchControls.js';
 import { SandboxLevel } from '../world/SandboxLevel.js';
+import { AssetLoader } from './AssetLoader.js';
 import { data } from './Data.js';
 import { EV } from './events.js';
 import { Input } from './Input.js';
@@ -47,6 +50,9 @@ export class Engine {
     this.started = false;
     this.portraitBlocked = false;
     this._feet = new Vector3();
+    this._down = { x: 0, y: -1, z: 0 };
+    this._probe = { x: 0, y: 0, z: 0 };
+    this.groundY = 0;
     this._frameStartMs = 0;
     this._fpsTimer = 0;
     this._resizeQueued = false;
@@ -65,9 +71,21 @@ export class Engine {
 
     onProgress(0.05);
     this.renderer = await Renderer.create({ canvas, forceWebGL, bus });
-    onProgress(0.35);
+    onProgress(0.25);
     this.physics = await PhysicsWorld.create();
-    onProgress(0.55);
+    onProgress(0.35);
+    this.assets = new AssetLoader({
+      renderer: this.renderer.three,
+      basisPath: `/vendor/three-${__THREE_VERSION__}/basis/`,
+    });
+    const manifest = data('generated/assets').assets;
+    const wanted = ['anim/anim_core', 'characters/bayu'].map((key) => manifest[key]);
+    const assets = await this.assets.loadAll(wanted, (done, total) =>
+      onProgress(0.35 + (0.25 * done) / total),
+    );
+    const [animPack, bayu] = wanted.map((entry) => assets.get(entry.url));
+    this.clips = prepareClips(animPack.animations);
+    onProgress(0.6);
 
     this.scene = new Scene();
     this.camera = new PerspectiveCamera(60, 1, 0.1, 600);
@@ -98,8 +116,20 @@ export class Engine {
     });
     this.traversal.facing = this.traversal.prevFacing = facing;
     this.controller = new PlayerController(this.input);
-    this.avatar = SandboxLevel.createAvatar();
-    this.scene.add(this.avatar);
+    this.avatar = new Avatar({
+      gltf: bayu,
+      clips: this.clips,
+      profile: data('animation/human'),
+      name: 'Bayu',
+    });
+    this.avatar.addTo(this.scene);
+    bus.on(EV.PLAYER_JUMPED, () => this.avatar.animator.setState('jumpStart', true));
+    bus.on(EV.PLAYER_LANDED, ({ speed }) =>
+      this.avatar.animator.setState(
+        speed > data('tuning/player').hardLandingSpeed ? 'hardLand' : 'land',
+        true,
+      ),
+    );
     this.cameraSystem = new CameraSystem({
       camera: this.camera,
       physics: this.physics,
@@ -114,7 +144,8 @@ export class Engine {
 
     // Warm up shaders behind the title so the first gameplay frame does not hitch.
     this.character.interpolatedFeet(1, this._feet);
-    this.avatar.position.copy(this._feet);
+    this.avatar.root.position.copy(this._feet);
+    this.avatar.update(0, this.camera, this._feet.y);
     this.cameraSystem.update(0, this._feet, facing, 0);
     await this.renderer.three.compileAsync(this.scene, this.camera);
     onProgress(0.95);
@@ -182,7 +213,22 @@ export class Engine {
     const intent = this.controller.update(this.cameraSystem.yaw);
     this.traversal.fixedUpdate(dt, intent);
     this.physics.step(dt);
+    this._probeGround();
     this.bus.flush();
+  }
+
+  /** Height of the ground under the player (for the blob shadow); one short ray per tick while airborne. */
+  _probeGround() {
+    const cc = this.character;
+    if (cc.grounded) {
+      this.groundY = cc.feetY;
+      return;
+    }
+    this._probe.x = cc.position.x;
+    this._probe.y = cc.feetY + 0.1;
+    this._probe.z = cc.position.z;
+    const hit = this.physics.castRay(this._probe, this._down, 8);
+    this.groundY = hit.hit ? hit.point.y : NaN;
   }
 
   /**
@@ -194,10 +240,18 @@ export class Engine {
     const alpha = this.time.alpha;
     this.character.interpolatedFeet(alpha, this._feet);
     const facing = this.traversal.interpolatedFacing(alpha);
-    this.avatar.position.copy(this._feet);
-    this.avatar.rotation.y = facing;
+    this.avatar.root.position.copy(this._feet);
+    this.avatar.root.rotation.y = facing;
+    const animator = this.avatar.animator;
+    animator.setSpeed(this.traversal.speed);
+    if (this.traversal.state === 'air' && (animator.state === 'ground' || animator.state === 'land')) {
+      animator.setState('air');
+    } else if (this.traversal.state === 'ground' && animator.state === 'air') {
+      animator.setState('ground');
+    }
     this.physics.interpolate(alpha);
     this.cameraSystem.update(dt, this._feet, facing, this.traversal.speed);
+    this.avatar.update(dt, this.camera, this.groundY);
     this.renderer.render(this.scene, this.camera);
     this.overlay.update(dt);
     this.perf.record(dt);

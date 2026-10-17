@@ -1,0 +1,28 @@
+{
+  "comment": "Animator profile for humans on the universal rig (TECHNICAL §5.4). Locomotion entries: clip, speed where it is fully weighted (at), and the speed its stride matches (nativeSpeed) for phase rate. States map to the locomotion tree (no clip) or a clip; one-shots continue to `then`.",
+  "fade": 0.16,
+  "actionFade": 0.1,
+  "initialState": "ground",
+  "locomotion": [
+    { "clip": "idle", "at": 0 },
+    { "clip": "walk", "at": 1.5, "nativeSpeed": 1.45, "minTimeScale": 0.7, "maxTimeScale": 1.4 },
+    { "clip": "jog", "at": 4.6, "nativeSpeed": 4.3, "minTimeScale": 0.75, "maxTimeScale": 1.35 },
+    { "clip": "sprint", "at": 7.4, "nativeSpeed": 7.0, "minTimeScale": 0.8, "maxTimeScale": 1.3 }
+  ],
+  "states": {
+    "ground": { "fade": 0.14 },
+    "jumpStart": { "clip": "jump_start", "fade": 0.06, "then": "air", "maxTime": 0.18, "timeScale": 2.2 },
+    "air": { "clip": "jump_loop", "fade": 0.18 },
+    "land": { "clip": "jump_land", "fade": 0.05, "then": "ground", "maxTime": 0.22, "timeScale": 1.8 },
+    "hardLand": { "clip": "jump_land", "fade": 0.05, "then": "ground", "maxTime": 0.42, "timeScale": 1.2 },
+    "slide": { "clip": "slide_loop", "fade": 0.1 },
+    "wallRun": { "clip": "sprint", "fade": 0.12, "timeScale": 1.15 },
+    "mantle": { "clip": "climb_up_1m_rm", "fade": 0.08, "then": "ground", "timeScale": 1.25 },
+    "glide": { "clip": "jump_loop", "fade": 0.2, "timeScale": 0.5 },
+    "flip": { "clip": "flip_loop", "fade": 0.08 },
+    "stance": { "clip": "stance_idle", "fade": 0.2 },
+    "talk": { "clip": "talk", "fade": 0.3 },
+    "cursedIdle": { "clip": "cursed_idle", "fade": 0.25 },
+    "cursedWalk": { "clip": "cursed_walk", "fade": 0.2 }
+  }
+}
