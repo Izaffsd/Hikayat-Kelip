@@ -1,4 +1,5 @@
 import { test as base, expect } from '@playwright/test';
+import { keepFocused } from './focus.js';
 
 const test = base.extend({ testQuery: ['', { option: true }] });
 
@@ -11,6 +12,7 @@ test('running, sprint build-up and a held jump behave as tuned', async ({ page, 
   const problems = [];
   page.on('console', (m) => (m.type() === 'error' || m.type() === 'warning') && problems.push(m.text()));
   page.on('pageerror', (e) => problems.push(e.message));
+  await keepFocused(page);
   await page.goto(`/?${['test=1', testQuery].filter(Boolean).join('&')}`);
   await page.waitForFunction(() => window.__hk?.ready === true, null, { timeout: 90_000 });
   await page.mouse.click(640, 520);
@@ -33,12 +35,13 @@ test('running, sprint build-up and a held jump behave as tuned', async ({ page, 
   await page.keyboard.up('KeyW');
   await page.waitForTimeout(800);
 
-  // Held jump: sample the height every frame until landing.
+  // Held jump: read the ground height first (a tick may run between the key press and the first sample, which
+  // would put the baseline mid-jump), then sample the height every frame until landing.
+  const base = await page.evaluate(() => window.__hk.player().y);
   await page.keyboard.down('Space');
   const jump = await page.evaluate(
-    () =>
+    (base) =>
       new Promise((resolve) => {
-        const base = window.__hk.player().y;
         let apex = base;
         let airborne = false;
         const startTime = performance.now();
@@ -54,6 +57,7 @@ test('running, sprint build-up and a held jump behave as tuned', async ({ page, 
         };
         requestAnimationFrame(sample);
       }),
+    base,
   );
   await page.keyboard.up('Space');
   expect(jump.airborne).toBe(true);

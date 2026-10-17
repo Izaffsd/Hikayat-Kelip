@@ -426,12 +426,9 @@ export class Engine {
          * @param {string[]} keys manifest keys, e.g. `kits/kampung_kit`
          */
         loadAssets: async (keys) => {
-          const { AssetLoader } = await import('./AssetLoader.js');
+          // The engine's loader: a second KTX2Loader on one renderer makes three warn (and wastes workers).
+          const loader = engine.assets;
           const manifest = data('generated/assets').assets;
-          const loader = new AssetLoader({
-            renderer: engine.renderer.three,
-            basisPath: `/vendor/three-${__THREE_VERSION__}/basis/`,
-          });
           const entries = keys.map((key) => manifest[key]);
           const loaded = await loader.loadAll(entries);
           const summary = {};
@@ -457,7 +454,7 @@ export class Engine {
               clips: gltf.animations.length,
             };
           });
-          loader.dispose();
+          for (const entry of entries) loader.release(entry.url);
           return summary;
         },
       }),

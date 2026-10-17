@@ -1,4 +1,5 @@
 import { test as base, expect } from '@playwright/test';
+import { keepFocused } from './focus.js';
 
 /** `testQuery` comes from the project (playwright.config.js): '' for WebGPU, 'webgl=1' for forced WebGL2. */
 const test = base.extend({ testQuery: ['', { option: true }] });
@@ -16,6 +17,7 @@ test('title paints, the engine boots, a tap starts the game and the sandbox rend
   page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`));
 
   const query = ['test=1', testQuery].filter(Boolean).join('&');
+  await keepFocused(page);
   await page.goto(`/?${query}`);
   await expect(page.locator('#title-name')).toBeVisible();
   await page.waitForTimeout(600);
