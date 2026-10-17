@@ -7,10 +7,11 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - **Push:** Izaf said "push and go ahead" (2026-10-17); `main` is on GitHub. The repo is still **public**; Izaf chose
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
   fresh `gh auth login --web`). Vercel previews start once he imports the repo on vercel.com (Vite preset).
-- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. **Resume with the rest of milestone 3:** a
-  scripted run of the kampung race route in the browser (validates layout + moves together), the ledge magnet
-  assist, glide and wall-run cameras, then authored `ledge_hang` and `glide` poses (Blender, previewed live) and the
-  wau prop on the glide.
+- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. **Resume with milestone 4 (combat):**
+  CombatSystem and moves data (strike/heavy chains, langkah with perfect-dodge slow motion, tangkis with perfect-parry
+  stagger, kuncian that frees a cursed villager, Semangat, lock-on, hit-stop), then the shadow wisp, cursed brawler
+  and Cursed Adi (2 phases) with attack tokens. Silat clips needed: langkah, tangkis, kuncian (edited from UAL clips or
+  authored like the poses in `tools/blender/anim/poses.py`).
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
   session `blender` and `chrome-devtools` are connected (the standalone `claude mcp list` still says "pending" because
   the CLI keeps its own approvals). Live previews use `tools/blender/live/hk_preview.py`: everything goes into an
@@ -131,6 +132,14 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
   is headroom), wau glide (hold jump; dive, pull up, steer); abilities per region (`data/abilities.json`). Found and
   fixed a real stutter: Rapier's controller stopped or deflected grounded moves at random on flat ground. Headless
   movement lab: 16 tests (`tests/unit/traversal.test.js`); browser test of every move on both backends.
+- **M3 done:** a bot runs the 1.1 race line through the kampung (gap jump, mantle, drop, wall-run, deck) in 12.6 s
+  with no respawns on both backends (`tests/visual/race-route.spec.js`); the boat shed became a tall two-storey shed
+  so the wall-run wall has height; ledge magnet (samples the jump arc; 0.4/0.6/0.8 m by device, settings); glide,
+  wall-run and slide cameras; authored `ledge_hang` and `glide_hold` poses (`tools/blender/anim/poses.py`, previewed
+  live on Bayu, baked into `anim_core`); the wau bulan opens above Bayu's hands and he leans into the glide; respawn
+  fade (fall → 0.22 s → back on safe ground, which must support the whole footprint). Lab: 18 tests.
+- **Tuning notes for M7:** the race takes a bot 12.6 s at full sprint; the mission wants ~90 s with banter, so the
+  route may grow (or Adi's pace and the dare/finish beats fill it).
 
 ## Setup checklist status
 

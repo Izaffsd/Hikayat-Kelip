@@ -7,6 +7,15 @@ const DEG = Math.PI / 180;
 /** Everything allowed (tests and the sandbox when no Abilities are given). */
 const ALL_MOVES = { has: () => true };
 
+/** Centre and four points around the capsule's footprint (unit offsets) checked before recording safe ground. */
+const FOOTPRINT = [
+  [0, 0],
+  [1, 0],
+  [-1, 0],
+  [0, 1],
+  [0, -1],
+];
+
 /**
  * Movement state machine for Bayu (TECHNICAL Ã‚Â§5.3).
  *
@@ -133,12 +142,40 @@ export class Traversal {
       case 'glide':
         this._updateGlide(dt, intent);
         break;
+      case 'respawn':
+        this._updateFalling(dt);
+        return;
       default:
         this._updateFree(dt, intent);
     }
     this._trackSafeGround(dt);
-    if (this.cc.feetY < this.tuning.respawn.killHeight) this.respawn('fell');
-    else if (this.cc.feetY < this.hazardWaterLevel - this.tuning.respawn.waterDepth) this.respawn('water');
+    if (this.cc.feetY < this.tuning.respawn.killHeight) this._fall('fell');
+    else if (this.cc.feetY < this.hazardWaterLevel - this.tuning.respawn.waterDepth) this._fall('water');
+  }
+
+  /**
+   * Fell into a hazard: keep falling briefly while the screen fades (TECHNICAL §5.3), then respawn.
+   * @param {'water'|'fell'} reason
+   */
+  _fall(reason) {
+    if (this.state === 'glide') this.bus.emit(EV.PLAYER_GLIDE, { open: false });
+    if (this.state === 'wallRun') this.bus.emit(EV.PLAYER_WALLRUN, { started: false, side: this.wall.side });
+    this.state = 'respawn';
+    this._fallTime = 0;
+    this._fallReason = reason;
+    this.wallSide = 0;
+    this.bus.emit(EV.PLAYER_FELL, { reason });
+  }
+
+  _updateFalling(dt) {
+    const v = this.velocity;
+    this._fallTime += dt;
+    v.x *= 0.9;
+    v.z *= 0.9;
+    v.y = Math.max(-6, v.y - this.tuning.gravity * dt);
+    this.cc.move(v.x * dt, v.y * dt, v.z * dt);
+    this.speed = Math.hypot(v.x, v.z);
+    if (this._fallTime >= this.tuning.respawn.fadeOut) this.respawn(this._fallReason);
   }
 
   // ---------------------------------------------------------------------------------------------- ground and air
@@ -799,7 +836,7 @@ export class Traversal {
       this.cc.groundNormalY > 0.85
     ) {
       this._safeTime += dt;
-      if (this._safeTime >= this.tuning.respawn.safeGroundTime) {
+      if (this._safeTime >= this.tuning.respawn.safeGroundTime && this._supported()) {
         this.lastSafe.x = this.cc.position.x;
         this.lastSafe.y = this.cc.feetY;
         this.lastSafe.z = this.cc.position.z;
@@ -807,6 +844,18 @@ export class Traversal {
     } else {
       this._safeTime = 0;
     }
+  }
+
+  /** Whether the whole footprint stands on ground (not perched on an edge), so a respawn there is stable. */
+  _supported() {
+    if (!this.probe) return true;
+    const feet = this._currentFeet();
+    const r = this.cc.radius * 0.9;
+    for (const [dx, dz] of FOOTPRINT) {
+      const ground = this.probe.groundAt(feet.x + dx * r, feet.y + 0.3, feet.z + dz * r, 0.5);
+      if (Number.isNaN(ground) || feet.y - ground > 0.2) return false;
+    }
+    return true;
   }
 
   /**

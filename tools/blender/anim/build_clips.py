@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 
+from anim.poses import POSES, bake_pose_action  # noqa: E402
 from lib import hk  # noqa: E402
 
 UAL1 = r"D:\dev\raw\quaternius\ual1\extracted\Animation Library[Standard]\Unreal Engine\AL_Standard.fbx"
@@ -191,6 +192,15 @@ def main() -> None:
         if not action.get("hk_clip"):
             bpy.data.actions.remove(action)
     print(f"HK_CLIPS kept={len(bpy.data.actions)} constant_channels_removed={total_removed}")
+
+    # Authored poses the libraries lack (anim/poses.py): baked on the clip rig as short loops, shipped in anim_core.
+    for pose_name in POSES:
+        action = bake_pose_action(target, pose_name, fps=FPS)
+        action["hk_clip"] = pose_name
+        action["hk_pack"] = "anim_core"
+        action.use_fake_user = True
+        PACKS["anim_core"][pose_name] = pose_name
+    print(f"HK_POSES {sorted(POSES)}")
 
     if target.animation_data is None:
         target.animation_data_create()

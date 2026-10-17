@@ -39,6 +39,8 @@ export const EV = Object.freeze({
   PLAYER_LANDED: 'player:landed',
   /** { coyote: boolean, buffered: boolean } */
   PLAYER_JUMPED: 'player:jumped',
+  /** { reason: 'water'|'fell' } — fell into a hazard; the screen fades and a respawn follows (GDD: under 2 s) */
+  PLAYER_FELL: 'player:fell',
   /** { reason: string } */
   PLAYER_RESPAWNED: 'player:respawned',
   /** { kind: 'step'|'mantle'|'climb', height: number, duration: number } — a scripted climb started */

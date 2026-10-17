@@ -86,8 +86,8 @@ export class SandboxLevel {
 
     this._ground();
 
-    // Step heights: 0.15 / 0.3 climb by autostep (≤ 0.35 m); 0.45+ block (mantle comes in Phase 3).
-    const steps = [0.15, 0.3, 0.45, 0.6, 1.0, 1.4];
+    // Edge heights: up to 0.42 m step up, up to 1.3 m mantle, 1.4 and 2.0 m need a jump and a ledge grab.
+    const steps = [0.15, 0.3, 0.45, 0.6, 1.0, 1.4, 2.0];
     steps.forEach((h, i) => this.box('stone', -10 + i * 3.2, h / 2, -10, 2, h, 2));
 
     // Ramps: 20° and 40° are climbable; 55° exceeds the 50° limit and slides.

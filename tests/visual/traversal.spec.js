@@ -35,19 +35,21 @@ test('mantle, ledge climb, slide and glide work in the game', async ({ page, tes
   await waitPlayer(page, () => window.__hk.player().state === 'ground' && window.__hk.player().y > 0.9);
   await page.keyboard.up('KeyW');
 
-  // Ledge: the 1.4 m block at (6, −10): walk up to it, jump, hang, then climb by holding forward.
-  await page.evaluate(() => window.__hk.teleport([6, 0.05, -7.6]));
+  // Ledge: the 2.0 m block at (9.2, −10): walk into it, jump, hang (screenshot), then climb by holding forward.
+  await page.evaluate(() => window.__hk.teleport([9.2, 0.05, -7.6]));
   await page.waitForTimeout(400);
   await page.keyboard.down('KeyW');
-  await page.waitForTimeout(500);
-  await page.keyboard.press('Space');
-  await waitPlayer(page, () => ['hang', 'mantle', 'climb'].includes(window.__hk.player().state));
-  const caught = await page.evaluate(() => window.__hk.player().state);
-  await page.waitForTimeout(100);
-  await shot('11-ledge');
-  await waitPlayer(page, () => window.__hk.player().state === 'ground' && window.__hk.player().y > 1.3);
+  await page.waitForTimeout(700);
   await page.keyboard.up('KeyW');
-  expect(['hang', 'mantle', 'climb']).toContain(caught);
+  await page.keyboard.down('KeyW');
+  await page.keyboard.press('Space');
+  await waitPlayer(page, () => window.__hk.player().state === 'hang');
+  await page.keyboard.up('KeyW');
+  await page.waitForTimeout(300);
+  await shot('11-ledge');
+  await page.keyboard.down('KeyW');
+  await waitPlayer(page, () => window.__hk.player().state === 'ground' && window.__hk.player().y > 1.9);
+  await page.keyboard.up('KeyW');
 
   // Slide: sprint across open ground and press C.
   await page.evaluate(() => window.__hk.teleport([0, 0.05, 8]));

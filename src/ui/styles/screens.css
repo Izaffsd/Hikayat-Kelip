@@ -48,3 +48,19 @@
 .hk-touch-device .hk-sandbox-hint {
   display: none;
 }
+
+/* Respawn fade (TECHNICAL 5.3): never blocks input; quick to black, a little slower back. */
+#ui-root > .hk-fade {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+#ui-root > .hk-fade.is-dark {
+  opacity: 1;
+  transition-duration: var(--dur-fast);
+  transition-timing-function: var(--ease-in);
+}

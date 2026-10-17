@@ -121,6 +121,8 @@ describe('published assets', () => {
         'climb_up_1m_rm',
         'block',
         'lay_to_idle',
+        'ledge_hang',
+        'glide_hold',
       ],
       'anim/anim_villager': ['talk', 'sit_idle', 'lantern_idle', 'rail_idle', 'harvest'],
       'anim/anim_cursed': ['cursed_idle', 'cursed_walk', 'shield_idle'],

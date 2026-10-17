@@ -17,6 +17,7 @@ import { Traversal } from '../../src/player/Traversal.js';
 const RECORDED = [
   EV.PLAYER_JUMPED,
   EV.PLAYER_LANDED,
+  EV.PLAYER_FELL,
   EV.PLAYER_RESPAWNED,
   EV.PLAYER_MANTLE,
   EV.PLAYER_LEDGE,
@@ -213,6 +214,27 @@ describe('ledges', () => {
     expect(lab.until(() => lab.traversal.state === 'ground', 90)).toBe(true);
     expect(lab.count(EV.PLAYER_LEDGE, { grabbed: true })).toBe(1);
     expect(lab.feet.y).toBeLessThan(0.05);
+  });
+});
+
+describe('respawn', () => {
+  it('falls into water, fades, and comes back on the last safe ground', async () => {
+    const deck = { c: [0, 0.5, -7], h: [4, 0.5, 10] }; // top 1.0, z −17…3
+    const mud = { c: [0, -2.5, 0], h: [60, 0.5, 60] }; // top −2
+    const lab = await makeLab([deck, mud], [0, 1.05, -4]);
+    lab.traversal.hazardWaterLevel = 0.5;
+    lab.stick(0, 1);
+    expect(lab.until(() => lab.traversal.state === 'respawn', 200)).toBe(true);
+    lab.stick(0, 0);
+    expect(lab.count(EV.PLAYER_FELL, { reason: 'water' })).toBe(1);
+    expect(lab.count(EV.PLAYER_RESPAWNED)).toBe(0);
+    const fadeTicks = Math.ceil(tuning.respawn.fadeOut * 60) + 1;
+    lab.tick(fadeTicks);
+    expect(lab.count(EV.PLAYER_RESPAWNED)).toBe(1);
+    lab.tick(20);
+    expect(lab.traversal.state).toBe('ground');
+    expect(lab.feet.y).toBeCloseTo(1.0, 1);
+    expect(lab.feet.z).toBeLessThan(3);
   });
 });
 

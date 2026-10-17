@@ -7,10 +7,12 @@ import { prepareClips } from '../player/Animator.js';
 import { Avatar } from '../player/Avatar.js';
 import { PlayerController } from '../player/Controller.js';
 import { Traversal } from '../player/Traversal.js';
+import { Wau } from '../player/Wau.js';
 import { PostFX } from '../render/PostFX.js';
 import { QualityManager } from '../render/QualityManager.js';
 import { Renderer } from '../render/Renderer.js';
 import { DebugOverlay } from '../ui/DebugOverlay.js';
+import { ScreenFade } from '../ui/ScreenFade.js';
 import { TouchControls } from '../ui/touch/TouchControls.js';
 import { SandboxLevel } from '../world/SandboxLevel.js';
 import { World } from '../world/World.js';
@@ -81,11 +83,11 @@ export class Engine {
       basisPath: `/vendor/three-${__THREE_VERSION__}/basis/`,
     });
     const manifest = data('generated/assets').assets;
-    const wanted = ['anim/anim_core', 'characters/bayu'].map((key) => manifest[key]);
+    const wanted = ['anim/anim_core', 'characters/bayu', 'props/props_slice'].map((key) => manifest[key]);
     const assets = await this.assets.loadAll(wanted, (done, total) =>
       onProgress(0.35 + (0.25 * done) / total),
     );
-    const [animPack, bayu] = wanted.map((entry) => assets.get(entry.url));
+    const [animPack, bayu, props] = wanted.map((entry) => assets.get(entry.url));
     this.clips = prepareClips(animPack.animations);
     onProgress(0.6);
 
@@ -150,6 +152,9 @@ export class Engine {
     this.avatar.addTo(this.scene);
     this.avatar.root.rotation.order = 'YXZ';
     this._lean = 0;
+    this._pitch = 0;
+    this.wau = new Wau({ gltf: props, avatar: this.avatar, config: data('animation/human').wau });
+    bus.on(EV.PLAYER_GLIDE, ({ open }) => this.wau.setOpen(open));
     bus.on(EV.PLAYER_JUMPED, () => this.avatar.animator.setState('jumpStart', true));
     bus.on(EV.PLAYER_LANDED, ({ speed }) =>
       this.avatar.animator.setState(
@@ -300,6 +305,20 @@ export class Engine {
     const targetLean = -this.traversal.wallSide * leanDeg * (Math.PI / 180);
     this._lean += (targetLean - this._lean) * Math.min(1, dt * 10);
     this.avatar.root.rotation.z = this._lean;
+    // Gliding: lean into the flight, pivoting about the hands on the wau so the kite stays put.
+    const glide = data('animation/human').glide;
+    const targetPitch = state === 'glide' ? (glide.pitchDeg * Math.PI) / 180 : 0;
+    this._pitch += (targetPitch - this._pitch) * Math.min(1, dt * glide.blend);
+    const root = this.avatar.root;
+    root.rotation.x = this._pitch;
+    if (Math.abs(this._pitch) > 1e-4) {
+      const h = glide.pivotHeight;
+      const s = Math.sin(this._pitch);
+      root.position.x -= Math.sin(root.rotation.y) * h * s;
+      root.position.y += h * (1 - Math.cos(this._pitch));
+      root.position.z -= Math.cos(root.rotation.y) * h * s;
+    }
+    this.wau.update(dt);
   }
 
   /** Height of the ground under the player (for the blob shadow); one short ray per tick while airborne. */
@@ -377,6 +396,7 @@ export class Engine {
       collect: () => this._stats(),
     });
     if (this.platform.query.get('debug') === '1') this.overlay.setVisible(true);
+    this.fade = new ScreenFade({ root: this.uiRoot, bus: this.bus });
     this.touch = new TouchControls({
       root: this.touchRoot,
       input: this.input,
