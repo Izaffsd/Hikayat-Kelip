@@ -100,6 +100,12 @@ export class Input {
     this._uiStickPrev = { x: 0, y: 0 };
     /** @type {Map<string, number>} held repeating UI actions → seconds until next repeat */
     this._uiRepeat = new Map();
+    /**
+     * Mouse buttons pressed while gameplay input was closed (the click on the title that starts the game): their
+     * mousedown, which can reach the canvas after gameplay opens, is ignored until they are released.
+     * @type {Set<number>}
+     */
+    this._staleMouse = new Set();
     this._listeners = [];
 
     this.setBindings(overrides);
@@ -148,6 +154,16 @@ export class Input {
     };
     listen(win, 'keydown', (event) => this._onKey(event, true));
     listen(win, 'keyup', (event) => this._onKey(event, false));
+    listen(
+      win,
+      'pointerdown',
+      (event) => {
+        if (event.pointerType !== 'mouse') return;
+        if (this.gameplayEnabled) this._staleMouse.delete(event.button);
+        else this._staleMouse.add(event.button);
+      },
+      { capture: true },
+    );
     listen(canvas, 'mousedown', (event) => this._onMouseButton(event, true));
     listen(win, 'mouseup', (event) => this._onMouseButton(event, false));
     listen(canvas, 'contextmenu', (event) => event.preventDefault());
@@ -394,6 +410,10 @@ export class Input {
    * @param {boolean} down
    */
   _onMouseButton(event, down) {
+    if (this._staleMouse.has(event.button)) {
+      if (!down) this._staleMouse.delete(event.button);
+      return;
+    }
     const code = `Mouse${event.button}`;
     const game = this._keyToGame.get(code);
     this._setDevice('keyboard');

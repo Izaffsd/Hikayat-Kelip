@@ -1,0 +1,6 @@
+{
+  "comment": "Kelip's call (GDD Kelip guidance; TECHNICAL §9): cooldown between calls, and the idle-lost rule (no progress of `lostProgress` metres toward the goal for `lostSeconds` → Kelip calls by itself).",
+  "cooldown": 3,
+  "lostSeconds": 20,
+  "lostProgress": 2
+}

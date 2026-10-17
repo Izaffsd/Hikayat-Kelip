@@ -1,8 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { test as base, expect } from '@playwright/test';
-
-/** `testQuery` comes from the project (playwright.config.js): '' for WebGPU, 'webgl=1' for forced WebGL2. */
-const test = base.extend({ testQuery: ['', { option: true }] });
+import { expect, test } from './fixtures.js';
 
 const manifest = JSON.parse(readFileSync('src/data/generated/assets.json', 'utf8')).assets;
 const models = Object.keys(manifest).filter((key) => manifest[key].type === 'glb');

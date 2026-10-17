@@ -1,7 +1,5 @@
-import { test as base, expect } from '@playwright/test';
+import { expect, test } from './fixtures.js';
 import { keepFocused } from './focus.js';
-
-const test = base.extend({ testQuery: ['', { option: true }] });
 
 async function boot(page, scene, testQuery, problems) {
   page.on(

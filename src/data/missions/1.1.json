@@ -1,0 +1,40 @@
+{
+  "comment": "1.1, Lumba ke Jeti (GDD 3:15–5:00): Bayu wakes in his room, Mak Som calls, Adi dares him to race to her stall. Teaches movement. Phase 3 M7 adds Adi as the rival runner, the visible timer and the race result on the race step.",
+  "id": "1.1",
+  "chapter": "1",
+  "region": "kampung",
+  "abilities": "chapter1",
+  "setup": [{ "light": "dusk" }, { "prop": "hikayat_open", "at": "marker:hikayat" }],
+  "start": [],
+  "steps": [
+    {
+      "id": "wake",
+      "objective": "objective.1.1.wake",
+      "guide": "trigger:k_leave_room",
+      "until": { "trigger": "k_leave_room" },
+      "on": { "start": [{ "say": ["k.maksom.call", "k.bayu.wake"] }] }
+    },
+    {
+      "id": "dare",
+      "objective": "objective.1.1.dare",
+      "guide": "marker:adi_dare",
+      "until": { "trigger": "k_race_ready" },
+      "on": { "start": [{ "say": "k.adi.dare" }] }
+    },
+    {
+      "id": "race",
+      "checkpoint": true,
+      "objective": "objective.1.1.race",
+      "guide": "trigger:k_finish",
+      "until": { "trigger": "k_finish" },
+      "on": { "start": [{ "conversation": ["k.bayu.dare", "k.adi.go"] }] }
+    },
+    {
+      "id": "stall",
+      "objective": "objective.1.1.race",
+      "until": { "dialogue": "done" },
+      "on": { "start": [{ "say": ["k.maksom.finish", "k.maksom.pondok"] }] }
+    }
+  ],
+  "end": [{ "next": "1.2" }]
+}

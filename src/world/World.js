@@ -6,6 +6,7 @@ import { LevelBuilder } from './LevelBuilder.js';
 import { Rain } from './Rain.js';
 import { Sky } from './Sky.js';
 import { Terrain } from './Terrain.js';
+import { insideTrigger } from './triggers.js';
 import { Water } from './Water.js';
 
 /** Thin kit pieces the camera passes through (TECHNICAL §7: posts and ropes never shove the camera). */
@@ -161,18 +162,7 @@ export class World {
    * @returns {boolean}
    */
   static inside(trigger, p) {
-    const c = trigger.center;
-    if (trigger.half) {
-      return (
-        Math.abs(p.x - c.x) <= trigger.half.x &&
-        Math.abs(p.y - c.y) <= trigger.half.y &&
-        Math.abs(p.z - c.z) <= trigger.half.z
-      );
-    }
-    const dx = p.x - c.x;
-    const dy = p.y - c.y;
-    const dz = p.z - c.z;
-    return dx * dx + dy * dy + dz * dz <= trigger.radius * trigger.radius;
+    return insideTrigger(trigger, p);
   }
 
   /**

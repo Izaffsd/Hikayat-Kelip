@@ -1,0 +1,64 @@
+{
+  "comment": "1.2, Cahaya dari Hikayat (GDD 5:00–10:00): Kelip rises from Tok Wan's hikayat, the player learns Kelip's call, the berembang display goes dark row by row, the first real fight on the jetty, Adi is caught by Kelam and the chapter title appears; the journal opens with Tok Wan's line and the first Cahaya. Phase 3 M7 adds Adi's actor, Kelam's tendrils and the music cues.",
+  "id": "1.2",
+  "chapter": "1",
+  "region": "kampung",
+  "abilities": "chapter1",
+  "setup": [{ "light": "dusk" }, { "prop": "hikayat_open", "at": "marker:hikayat" }],
+  "start": [],
+  "steps": [
+    {
+      "id": "pondok",
+      "objective": "objective.1.2.pondok",
+      "guide": "trigger:k_pondok",
+      "until": { "trigger": "k_pondok" },
+      "on": { "done": [{ "say": "k.bayu.pondok" }] }
+    },
+    {
+      "id": "hikayat",
+      "objective": "objective.1.2.hikayat",
+      "guide": "marker:hikayat",
+      "until": { "interact": "hikayat", "radius": 2.4 },
+      "on": { "start": [{ "say": "k.bayu.hikayat" }, { "prompt": "context", "text": "prompt.read" }] }
+    },
+    {
+      "id": "kelip",
+      "until": { "cutscene": "k_kelip_rise" },
+      "on": { "start": [{ "prompt": null }, { "cutscene": "k_kelip_rise" }] }
+    },
+    {
+      "id": "call",
+      "objective": "objective.1.2.call",
+      "guide": "marker:display_view",
+      "until": { "event": "guide:kelip" },
+      "on": {
+        "start": [{ "prompt": "kelip", "text": "prompt.kelip" }],
+        "done": [{ "say": "k.bayu.call" }]
+      }
+    },
+    {
+      "id": "display",
+      "until": { "cutscene": "k_display" },
+      "on": { "start": [{ "cutscene": "k_display" }] }
+    },
+    {
+      "id": "fight",
+      "checkpoint": true,
+      "objective": "objective.1.2.fight",
+      "until": { "encounter": "kampung_jetty" },
+      "on": {
+        "resume": [{ "light": "night" }, { "darken": [0, -1], "seconds": 0 }],
+        "start": [{ "say": "k.bayu.fight" }, { "encounter": "kampung_jetty" }]
+      }
+    },
+    {
+      "id": "adi",
+      "until": { "all": [{ "seconds": 4 }, { "dialogue": "done" }] },
+      "on": {
+        "start": [{ "say": ["k.adi.caught", "k.bayu.adi"] }, { "title": "chapter.1" }],
+        "done": [{ "journal": "j.tokwan.1" }, { "cahaya": 1 }, { "flag": "adi_caught" }]
+      }
+    }
+  ],
+  "end": [{ "next": "1.3" }]
+}

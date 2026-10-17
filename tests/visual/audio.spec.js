@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { test, expect } from '@playwright/test';
+import { expect, test } from './fixtures.js';
 
 const manifest = JSON.parse(readFileSync('src/data/generated/assets.json', 'utf8')).assets;
 const banks = Object.entries(manifest).filter(([, entry]) => entry.type === 'audio');

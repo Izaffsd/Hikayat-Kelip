@@ -1,0 +1,108 @@
+{
+  "comment": "Chapter 1, Bunyi Pertama (GDD missions 1.1–1.4). Bayu calls his grandfather Atuk and his mother Mak. Barks never block control; the journal line (j.*) is Tok Wan's handwriting in the hikayat. BM is the source; EN is a natural translation.",
+  "speakers": {
+    "bayu": { "bm": "Bayu", "en": "Bayu" },
+    "maksom": { "bm": "Mak Som", "en": "Mak Som" },
+    "adi": { "bm": "Adi", "en": "Adi" },
+    "tokwan": { "bm": "Tok Wan", "en": "Tok Wan" }
+  },
+  "lines": {
+    "k.maksom.call": {
+      "speaker": "maksom",
+      "bm": "Bayu! Dah nak senja ni. Turun ke jeti, tolong mak kemas gerai!",
+      "en": "Bayu! It's nearly dusk. Come down to the jetty and help me pack up the stall!"
+    },
+    "k.bayu.wake": { "speaker": "bayu", "bm": "Ya, mak! Sekejap!", "en": "Coming, Mak!" },
+    "k.adi.dare": {
+      "speaker": "adi",
+      "bm": "Oi, Bayu! Lumba sampai gerai mak kau. Kalah, belanja air tebu!",
+      "en": "Oi, Bayu! Race you to your mum's stall. Loser buys the sugarcane juice!"
+    },
+    "k.bayu.dare": { "speaker": "bayu", "bm": "Kau nak kalah lagi ke?", "en": "You want to lose again?" },
+    "k.adi.go": { "speaker": "adi", "bm": "Sedia... lari!", "en": "Ready... go!" },
+    "k.maksom.finish": {
+      "speaker": "maksom",
+      "bm": "Berlumba lagi? Hati-hati, papan jeti tu dah reput.",
+      "en": "Racing again? Careful, those jetty planks are rotten."
+    },
+    "k.maksom.pondok": {
+      "speaker": "maksom",
+      "bm": "Bayu... pergilah ke pondok atuk di hujung jeti. Barang-barang dia masih di situ. Mak belum sanggup.",
+      "en": "Bayu... go to Atuk's hut at the end of the jetty. His things are still there. I can't, not yet."
+    },
+    "k.bayu.pondok": {
+      "speaker": "bayu",
+      "bm": "Pondok atuk... sunyi betul tanpa dia.",
+      "en": "Atuk's hut... so quiet without him."
+    },
+    "k.bayu.hikayat": {
+      "speaker": "bayu",
+      "bm": "Hikayat atuk. Kenapa... bercahaya?",
+      "en": "Atuk's hikayat. Why is it... glowing?"
+    },
+    "k.bayu.kelip": {
+      "speaker": "bayu",
+      "bm": "Kelip-kelip? Dari dalam buku atuk?",
+      "en": "A firefly? Out of Atuk's book?"
+    },
+    "k.bayu.call": {
+      "speaker": "bayu",
+      "bm": "Kau nak tunjuk sesuatu?",
+      "en": "You want to show me something?"
+    },
+    "k.adi.display": {
+      "speaker": "adi",
+      "bm": "Bayu! Tengok berembang tu, semua menyala!",
+      "en": "Bayu! Look at the berembang, they're all lit up!"
+    },
+    "k.bayu.display": {
+      "speaker": "bayu",
+      "bm": "Atuk selalu bawa aku tengok ni...",
+      "en": "Atuk always brought me here to watch this..."
+    },
+    "k.adi.dark": { "speaker": "adi", "bm": "Eh... kenapa padam?", "en": "Hey... why are they going out?" },
+    "k.bayu.fight": { "speaker": "bayu", "bm": "Kelip, duduk belakang aku!", "en": "Kelip, stay behind me!" },
+    "k.adi.caught": {
+      "speaker": "adi",
+      "bm": "Bayu... kepala aku... panas...",
+      "en": "Bayu... my head... it's burning..."
+    },
+    "k.bayu.adi": { "speaker": "bayu", "bm": "Adi! Adi, tunggu!", "en": "Adi! Adi, wait!" },
+    "k.bayu.track": {
+      "speaker": "bayu",
+      "bm": "Kesan dakwat... Adi lari ikut bumbung.",
+      "en": "Ink stains... Adi went over the rooftops."
+    },
+    "k.bayu.oldJetty": {
+      "speaker": "bayu",
+      "bm": "Jeti lama. Atuk tak pernah benarkan aku datang sini.",
+      "en": "The old jetty. Atuk never let me come here."
+    },
+    "k.adi.cursed": {
+      "speaker": "adi",
+      "bm": "Selalu kau... selalu kau yang menang!",
+      "en": "Always you... you always win!"
+    },
+    "k.adi.freed": {
+      "speaker": "adi",
+      "bm": "Bayu? Aku... apa aku dah buat?",
+      "en": "Bayu? What... what did I do?"
+    },
+    "k.bayu.freed": {
+      "speaker": "bayu",
+      "bm": "Bukan salah kau. Rehat dulu.",
+      "en": "It wasn't you. Rest now."
+    },
+    "k.bayu.tree": {
+      "speaker": "bayu",
+      "bm": "Pelita Air... di puncak berembang paling tinggi.",
+      "en": "The Pelita Air... at the top of the tallest berembang."
+    },
+    "k.bayu.relit": { "speaker": "bayu", "bm": "Satu halaman... kembali.", "en": "A page... it came back." },
+    "j.tokwan.1": {
+      "speaker": "tokwan",
+      "bm": "Cerita yang benar mesti dibacakan, walaupun suara kita bergetar.",
+      "en": "A true story must be read aloud, even if your voice shakes."
+    }
+  }
+}

@@ -55,6 +55,18 @@ export async function loadData(key) {
 }
 
 /**
+ * Keys of the on-demand data files under a prefix, e.g. `lazyKeys('missions/')`.
+ * @param {string} prefix
+ * @returns {string[]}
+ */
+export function lazyKeys(prefix) {
+  return Object.keys(lazyFiles)
+    .map(toKey)
+    .filter((key) => key.startsWith(prefix))
+    .sort();
+}
+
+/**
  * Keys of all bundled data files (used by tests).
  * @returns {string[]}
  */

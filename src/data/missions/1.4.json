@@ -1,0 +1,57 @@
+{
+  "comment": "1.4, Pelita Air (GDD): free Adi on the old jetty (D-033: freed when his corruption bar empties), climb the tallest berembang and relight the first Pelita; page 1 returns and the fireflies come back. The last mission of the vertical slice. Phase 3 M7 adds the freeing scene, the Pelita's light and the page.",
+  "id": "1.4",
+  "chapter": "1",
+  "region": "kampung",
+  "abilities": "chapter1",
+  "setup": [
+    { "light": "night" },
+    { "darken": [0, -1], "seconds": 0 },
+    { "prop": "hikayat_open", "at": "marker:hikayat" },
+    { "prop": "pelita_air", "at": "marker:pelita_air" }
+  ],
+  "start": [],
+  "steps": [
+    {
+      "id": "arena",
+      "objective": "objective.1.4.arena",
+      "guide": "trigger:k_arena",
+      "until": { "trigger": "k_arena" }
+    },
+    {
+      "id": "adi",
+      "checkpoint": true,
+      "objective": "objective.1.4.adi",
+      "until": { "encounter": "kampung_adi" },
+      "on": {
+        "start": [{ "say": "k.adi.cursed" }, { "encounter": "kampung_adi" }],
+        "done": [{ "say": ["k.adi.freed", "k.bayu.freed"] }, { "flag": "adi_freed" }, { "cahaya": 1 }]
+      }
+    },
+    {
+      "id": "climb",
+      "checkpoint": true,
+      "objective": "objective.1.4.climb",
+      "guide": "trigger:k_tree_top",
+      "until": { "trigger": "k_tree_top" },
+      "on": { "start": [{ "say": "k.bayu.tree" }] }
+    },
+    {
+      "id": "relight",
+      "objective": "objective.1.4.relight",
+      "guide": "marker:pelita_air",
+      "until": { "interact": "pelita_air", "radius": 2.5 },
+      "on": {
+        "start": [{ "prompt": "context", "text": "prompt.relight" }],
+        "done": [
+          { "prompt": null },
+          { "flag": "pelita_air" },
+          { "relight": 6 },
+          { "page": 1 },
+          { "say": "k.bayu.relit" }
+        ]
+      }
+    }
+  ],
+  "end": [{ "autosave": true }]
+}

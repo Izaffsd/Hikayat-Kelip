@@ -7,11 +7,15 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
 - **Push:** Izaf said "push and go ahead" (2026-10-17); `main` is on GitHub. The repo is still **public**; Izaf chose
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
   fresh `gh auth login --web`). Vercel previews start once he imports the repo on vercel.com (Vite preset).
-- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. **Resume with milestone 4 (combat):**
-  CombatSystem and moves data (strike/heavy chains, langkah with perfect-dodge slow motion, tangkis with perfect-parry
-  stagger, kuncian that frees a cursed villager, Semangat, lock-on, hit-stop), then the shadow wisp, cursed brawler
-  and Cursed Adi (2 phases) with attack tokens. Silat clips needed: langkah, tangkis, kuncian (edited from UAL clips or
-  authored like the poses in `tools/blender/anim/poses.py`).
+- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M5 done. **Resume with milestone 6
+  (prologue content):** young Wan's model on the avatar for mission P (Bayu's model stands in), the tiger silhouette
+  fleeing along `paths.tiger` with scripted near-misses, the flood/collapse beats on the chase, Wan raising the
+  tongkat and the tiger in the `p_standoff` shots, the roof rim/key light from the M2 note, and tuning the first three
+  minutes against the GDD rules (no failure before minute 8, one new prompt per minute, cutscenes < 20 s). Mission P's
+  steps, lines and cutscene already run (`src/data/missions/P.json`); M6 hangs content on them. Still open from M4:
+  dedicated langkah/tangkis clips (library staff/dash/block clips stand in; kuncian is Chapter 2, D-033).
+- **Visual tests:** run `npm run chrome:test` once, then `npx playwright test`: every test is a tab in that one window
+  (D-035; Izaf asked for no window per run). Quick live checks go through the Chrome DevTools MCP.
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
   session `blender` and `chrome-devtools` are connected (the standalone `claude mcp list` still says "pending" because
   the CLI keeps its own approvals). Live previews use `tools/blender/live/hk_preview.py`: everything goes into an
@@ -24,9 +28,6 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   0.106° (gltfpack `-ar 14`), durations identical.
 - **Status (2026-10-17): Phases 0, 1 and 2 done** (see the log). Phase 1's DevTools MCP checks were run after the
   restart. The only open phase-end item is the Vercel preview, which needs the first push (Izaf).
-- **Resume with:** Phase 3, the vertical slice (prologue + Chapter 1, GDD P0). Custom silat clips (langkah, tangkis,
-  kuncian), glide and ledge-hang poses are made in Phase 3 against the combat data; the cursed ink overlay (cursed
-  brawler, cursed Adi) is a Phase 3 TSL material on the existing meshes.
 
 ## Phase log
 
@@ -140,6 +141,39 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
   fade (fall → 0.22 s → back on safe ground, which must support the whole footprint). Lab: 18 tests.
 - **Tuning notes for M7:** the race takes a bot 12.6 s at full sprint; the mission wants ~90 s with banter, so the
   route may grow (or Adi's pace and the dare/finish beats fill it).
+- **M4 done** (`897dabb`, D-033, D-034): CombatSystem from `data/combat/moves.json` (buffered strike chains, heavy,
+  counter after a perfect langkah, langkah with invulnerable ticks and slow motion when perfect, tangkis with a
+  perfect-parry stagger and chip-damage block, hit stun, regeneration, Semangat and the finisher, soft and hard
+  lock-on, hit-stop, camera shake); EnemyDirector with attack tokens, wisps that dissolve into motes, cursed villagers
+  freed when corruption empties, Cursed Adi in two phases; TSL ink on cursed avatars with an amber tell; combat HUD;
+  the tongkat in Bayu's hand. Headless combat lab (12 tests) and browser fights on both backends.
+- **M5 done (2026-10-18)** (D-035 – D-037): MissionSystem (data missions: steps, objectives, guide points, conditions
+  on triggers, encounters, events, interact, timers, flags, dialogue; setup/start/resume actions; save points),
+  StoryState in the save (schema 2 with migration: step, journal), Dialogue (BM/EN lines, speakers, queued barks),
+  Cutscenes (camera shots, lines and events on real time; hold 0.6 s to skip and every remaining event still runs;
+  barks cleared first), KelipGuide (call button and the 20 s idle-lost call; fireflies' wave, a stream of guide motes
+  from Bayu, Kelip darting ahead), Kelip at Bayu's shoulder as a moving lamp, StoryUi (subtitles, objective after a
+  call, prompts in the device's own key names, chapter title card, letterbox, skip ring), story props, the fireflies'
+  row-by-row darkening, screen fades, and region changes behind the fade (prologue → kampung keeps the shared kit
+  loaded). Content: missions P and 1.1–1.4 (1.3 and 1.4 are route skeletons for M7), 32 lines BM/EN, cutscenes
+  `p_standoff` (10 s, cut to black and "Atuk?"), `k_kelip_rise` (8 s), `k_display` (15 s). A new save starts P; the
+  prologue hands over to Chapter 1 and a reload resumes at the last save point.
+- **Fixed on the way:** the click that started the game also struck (D-037); story timers no longer count frame
+  hitches; the combat HUD stays hidden at the start of play and during cutscenes.
+- **Verified:** lint, format, 120 unit tests (missions: every step type, chaining, resume with setup/on.resume,
+  region entry; cutscene timing and skip; dialogue; save migration 1→2; story data integrity: every trigger, marker,
+  encounter, cutscene, line, event, prompt and i18n key a mission names exists, cutscene limits, both languages for
+  every line; the starting click). Browser, both backends, as tabs in the test Chrome: all 25 visual tests pass,
+  including the new story tests — a new save plays P (prompt, Kelip's call and objective, the wisp fight, the
+  standoff, hold to skip, cut to black), wakes Bayu in his room in 1.1 with the save at 1.1/wake and resumes there
+  after a reload; 1.2 runs Kelip's rise, the call, the display going dark, the jetty fight, the chapter card, the
+  journal line and the first Cahaya, and saves at 1.3. No console errors or warnings.
+- **Open, for later milestones:** (1) a 1.5–1.9 s stall on the first frames after the start tap on this PC, both
+  backends, story or not; the engine's own calls stay under 75 ms, so it is browser/GPU side (M10 performance trace;
+  judge on the iPhone). (2) In the jetty fight the camera sits under the pondok roof and the frame is mostly dark
+  (M7: fight on the open deck or fade the roof). (3) Izaf's native-speaker read of the BM lines before the playtest
+  gate (CULTURE §4). (4) The three chunk is 338 KB gzipped (282 KB at Phase 1); check the prologue download budget in
+  M10.
 
 ## Setup checklist status
 

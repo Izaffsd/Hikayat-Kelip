@@ -80,6 +80,9 @@ Communications and Multimedia Act 1998 (GDD, [FMT](https://www.freemalaysiatoday
 | Atuk, Tok, Mak, Pak | Grandfather, elder, mother, uncle/Mr | Forms of address | Natural kampung usage |
 | Names: Bayu (breeze), Embun (dew), Adi, Som, Mail, Leman, Wan | Common Malay names/nicknames | Characters | Ordinary villagers; names do not refer to any religious or historical figure |
 | Pondok kelip | "Firefly hut" (our coinage) | The GDD's hidden "shrines" that give Cahaya | Small carved lantern posts; deliberately non-religious |
+| Pondok | Hut, open shelter | Tok Wan's open hut on the long jetty, where his hikayat lies on a low table | Everyday structure |
+| Jeti, titian, gerai | Jetty; narrow plank walkway; stall | Kampung places in Chapter 1 dialogue and objectives | Natural kampung words (Phase 3 M5 dialogue) |
+| Air tebu | Sugarcane juice | Adi's stake in the race ("loser buys") | Everyday drink |
 
 ## 4. Language guide
 

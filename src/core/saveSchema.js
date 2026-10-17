@@ -4,7 +4,7 @@
  */
 
 /** Current save schema version. */
-export const CURRENT_SCHEMA = 1;
+export const CURRENT_SCHEMA = 2;
 
 /**
  * Creates a fresh save document.
@@ -16,7 +16,8 @@ export function createDefaultSave(now = Date.now()) {
     schema: CURRENT_SCHEMA,
     createdAt: now,
     savedAt: now,
-    story: { chapter: 'prologue', mission: 'P', flags: {}, pages: [], ending: null },
+    story: { chapter: 'prologue', mission: 'P', step: null, flags: {}, pages: [], journal: [], ending: null },
+    /** Where play resumes: { region, mission, step, position: [x, y, z], yaw } or null (start of the mission). */
     checkpoint: null,
     missions: { completed: {}, best: {} },
     progression: {
@@ -45,6 +46,13 @@ export const MIGRATIONS = [
     if (typeof doc.mission === 'string') fresh.story.mission = doc.mission;
     if (doc.flags && typeof doc.flags === 'object') fresh.story.flags = { ...doc.flags };
     if (Number.isFinite(doc.cahaya)) fresh.progression.cahaya = doc.cahaya;
+    // createDefaultSave already has the schema-2 story shape; the next step tolerates that.
+    fresh.schema = 1;
     return fresh;
   },
+  // 1 → 2 (Phase 3 M5): the story remembers the mission step and a journal (Tok Wan's lines, the hikayat's pages).
+  (doc) => ({
+    ...doc,
+    story: { step: null, journal: [], ...doc.story },
+  }),
 ];

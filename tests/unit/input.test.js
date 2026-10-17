@@ -130,3 +130,32 @@ describe('Input', () => {
     expect(radialDeadzone(0.575, 0, 0.15).len).toBeCloseTo(0.5);
   });
 });
+
+describe('Input: the click that starts the game', () => {
+  function attached() {
+    const { input } = makeInput();
+    const win = new EventTarget();
+    win.document = new EventTarget();
+    const canvas = new EventTarget();
+    input.attach({ window: win, canvas });
+    const mouse = (target, type, button = 0) =>
+      target.dispatchEvent(Object.assign(new Event(type), { pointerType: 'mouse', button }));
+    return { input, win, canvas, mouse };
+  }
+
+  it('does not strike when its mousedown reaches the canvas after gameplay opens', () => {
+    const { input, win, canvas, mouse } = attached();
+    input.gameplayEnabled = false;
+    mouse(win, 'pointerdown'); // on the title
+    input.gameplayEnabled = true; // the title's handler started the game
+    mouse(canvas, 'mousedown');
+    input.beginTick(1);
+    expect(input.pressed('strike')).toBe(false);
+    mouse(win, 'mouseup');
+    // The next click is a real strike.
+    mouse(win, 'pointerdown');
+    mouse(canvas, 'mousedown');
+    input.beginTick(2);
+    expect(input.pressed('strike')).toBe(true);
+  });
+});

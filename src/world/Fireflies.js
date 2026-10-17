@@ -69,6 +69,9 @@ export class Fireflies {
       }
     });
     this.count = index;
+    this._anchors = anchors;
+    /** Running darken/relight sweep: front moves from `from` to `to` over `seconds`. */
+    this._sweep = null;
     this.uniforms = {
       brightness: uniform(1),
       waveOrigin: uniform(new Vector3()),
@@ -141,11 +144,75 @@ export class Fireflies {
   }
 
   /**
-   * Advances story-driven effects (the guide wave).
+   * The display going dark row by row (Chapter 1, 7:00): a front sweeps against `dir` and every firefly whose
+   * projection on `dir` is past it goes out, largest projection first. A second call continues from where the
+   * first stopped. `seconds` 0 darkens at once (resuming after the display).
+   * @param {{ x: number, z: number }} dir horizontal direction
+   * @param {number} seconds
+   * @param {number} [to] where the front stops (projection on `dir`); default: every firefly is out
+   */
+  darken(dir, seconds, to) {
+    const len = Math.hypot(dir.x, dir.z) || 1;
+    this.uniforms.darkDir.value.set(dir.x / len, 0, dir.z / len);
+    const [min, max] = this._extent(dir.x / len, dir.z / len);
+    const from = this.dark ? Math.min(this.uniforms.darkFront.value, max + 2) : max + 2;
+    this._startSweep(from, to ?? min - 2, seconds);
+  }
+
+  /**
+   * Lights every firefly again (a Pelita relit), sweeping back the way the dark came.
+   * @param {number} seconds
+   */
+  relight(seconds) {
+    const d = this.uniforms.darkDir.value;
+    const [, max] = this._extent(d.x, d.z);
+    this._startSweep(this.uniforms.darkFront.value, max + 2, seconds, 1e6);
+  }
+
+  /**
+   * Advances story-driven effects (the guide wave, darkening sweeps).
    * @param {number} dt
    */
   update(dt) {
     if (this.uniforms.waveAge.value < 100) this.uniforms.waveAge.value += dt;
+    const s = this._sweep;
+    if (s) {
+      s.t = Math.min(s.seconds, s.t + dt);
+      const u = s.t / s.seconds;
+      this.uniforms.darkFront.value = s.from + (s.to - s.from) * u;
+      if (u >= 1) {
+        this.uniforms.darkFront.value = s.end;
+        this._sweep = null;
+      }
+    }
+  }
+
+  _startSweep(from, to, seconds, end = to) {
+    if (seconds <= 0) {
+      this.uniforms.darkFront.value = end;
+      this._sweep = null;
+      return;
+    }
+    this.uniforms.darkFront.value = from;
+    this._sweep = { from, to, end, seconds, t: 0 };
+  }
+
+  /** Smallest and largest projection of the anchors on a horizontal direction. */
+  _extent(dx, dz) {
+    let min = Infinity;
+    let max = -Infinity;
+    const a = this._anchors;
+    for (let i = 0; i < this.count; i++) {
+      const d = a[i * 4] * dx + a[i * 4 + 2] * dz;
+      if (d < min) min = d;
+      if (d > max) max = d;
+    }
+    return this.count ? [min, max] : [0, 0];
+  }
+
+  /** Whether the display is (partly) dark. */
+  get dark() {
+    return this.uniforms.darkFront.value < 1e5;
   }
 
   dispose() {

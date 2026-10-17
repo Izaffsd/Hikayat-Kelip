@@ -72,6 +72,10 @@
   opacity: 0;
 }
 
+#ui-root > .hk-hud.is-cutscene {
+  opacity: 0;
+}
+
 .hk-hud__bar {
   height: 8px;
   border-radius: var(--radius-round);
@@ -137,6 +141,167 @@
 
 .hk-hud__lock.is-hard {
   border-color: var(--color-primary);
+}
+
+/* Story layer: subtitles, objective, prompts, hold-to-skip, letterbox. Never blocks input. */
+#ui-root > .hk-story {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  --subtitle-scale: 1;
+}
+
+.hk-letterbox span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9vh;
+  background: var(--hk-ink-950);
+  transform: scaleY(0);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.hk-letterbox span:first-child {
+  top: 0;
+  transform-origin: top;
+}
+
+.hk-letterbox span:last-child {
+  bottom: 0;
+  transform-origin: bottom;
+}
+
+.hk-letterbox.is-on span {
+  transform: scaleY(1);
+}
+
+.hk-objective,
+.hk-prompt,
+.hk-subtitle,
+.hk-title-card,
+.hk-skip {
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out);
+}
+
+.hk-objective.is-visible,
+.hk-prompt.is-visible,
+.hk-subtitle.is-visible,
+.hk-title-card.is-visible,
+.hk-skip.is-visible {
+  opacity: 1;
+}
+
+.hk-title-card {
+  position: absolute;
+  top: 34vh;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: var(--color-text);
+  text-shadow: 0 2px 10px rgb(7 10 20 / 0.9);
+  transition-duration: var(--dur-scene);
+}
+
+.hk-title-card__kicker {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--text-label);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.hk-title-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-h1);
+  font-weight: 700;
+}
+
+.hk-objective {
+  position: absolute;
+  top: calc(var(--safe-top) + 64px);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  max-width: min(70vw, 560px);
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  color: var(--color-text);
+  text-align: center;
+  text-shadow: 0 1px 4px rgb(7 10 20 / 0.85);
+}
+
+.hk-prompt {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 28vh);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-round);
+  background: var(--color-scrim);
+  color: var(--color-text);
+  font-size: var(--text-label);
+}
+
+.hk-prompt kbd {
+  min-width: 32px;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--color-control-border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-primary);
+}
+
+.hk-subtitle {
+  position: absolute;
+  bottom: calc(var(--safe-bottom) + 11vh);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(78vw, 760px);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-scrim);
+  text-align: center;
+  font-size: calc(var(--text-subtitle) * var(--subtitle-scale));
+  line-height: 1.35;
+  color: var(--color-text);
+}
+
+.hk-subtitle__speaker {
+  margin-right: var(--space-2);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.hk-skip {
+  position: absolute;
+  right: calc(var(--safe-right) + var(--space-5));
+  bottom: calc(var(--safe-bottom) + var(--space-5));
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+}
+
+.hk-skip__ring {
+  --progress: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-primary) calc(var(--progress) * 360deg),
+    var(--color-control-fill) 0
+  );
+  mask: radial-gradient(circle, transparent 55%, #000 57%);
 }
 
 /* Respawn fade (TECHNICAL 5.3): never blocks input; quick to black, a little slower back. */

@@ -115,6 +115,39 @@ describe('SaveManager', () => {
     expect(loaded.doc.progression.cahaya).toBe(3);
   });
 
+  it('migrates a schema-1 save: the story gains the mission step and a journal (fixture of the old shape)', () => {
+    const { saves, storage } = makeManager();
+    const v1 = {
+      schema: 1,
+      createdAt: NOW - 5000,
+      savedAt: NOW - 1000,
+      story: { chapter: '1', mission: '1.2', flags: { kelip_awake: true }, pages: [], ending: null },
+      checkpoint: null,
+      missions: { completed: { P: true, 1.1: true }, best: {} },
+      progression: {
+        cahaya: 1,
+        skills: [],
+        cosmetics: { owned: [], equipped: {} },
+        achievements: {},
+        lore: [],
+      },
+      competitive: { medals: {}, ghosts: {}, nickname: null, deletionTokens: {} },
+      stats: { playSeconds: 600 },
+    };
+    const body = JSON.stringify(v1);
+    storage.set('hk.save', `{"crc":${crc32(body)},"doc":${body}}`);
+    const loaded = saves.load();
+    expect(loaded.status).toBe('migrated');
+    expect(loaded.doc.schema).toBe(CURRENT_SCHEMA);
+    expect(loaded.doc.story).toMatchObject({
+      mission: '1.2',
+      step: null,
+      journal: [],
+      flags: { kelip_awake: true },
+    });
+    expect(loaded.doc.missions.completed['1.1']).toBe(true);
+  });
+
   it('runs every migration step in order', () => {
     const steps = [];
     const migrations = [

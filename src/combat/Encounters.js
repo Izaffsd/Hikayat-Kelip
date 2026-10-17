@@ -1,9 +1,10 @@
 import { EV } from '../core/events.js';
-import { World } from '../world/World.js';
+import { insideTrigger } from '../world/triggers.js';
 
 /**
  * Starts the region's fights from layout triggers and restarts them after a defeat (TECHNICAL §6.3: "defeat in
- * combat restarts the encounter in < 2 s"). Missions will drive encounters in M5; this is the slice's glue.
+ * combat restarts the encounter in < 2 s"). With a story running, missions start encounters; in free roam
+ * (`?scene=`) the layout triggers do.
  */
 export class Encounters {
   /**
@@ -15,9 +16,11 @@ export class Encounters {
    * @param {Record<string, object>} options.defs data/encounters.json
    * @param {string} options.regionId
    * @param {World|null} options.world
+   * @param {boolean} [options.autoStart=true] start fights from their layout triggers (free roam; missions start
+   *   them otherwise)
    */
-  constructor({ bus, director, combat, traversal, defs, regionId, world }) {
-    Object.assign(this, { bus, director, combat, traversal, world });
+  constructor({ bus, director, combat, traversal, defs, regionId, world, autoStart = true }) {
+    Object.assign(this, { bus, director, combat, traversal, world, autoStart });
     this.defs = Object.entries(defs)
       .filter(([id, def]) => id !== 'comment' && def.region === regionId)
       .map(([id, def]) => ({ id, ...def }));
@@ -56,11 +59,11 @@ export class Encounters {
       if (this._restartIn <= 0) this._restart();
       return;
     }
-    if (this.active || !this.world) return;
+    if (this.active || !this.world || !this.autoStart) return;
     for (const def of this.defs) {
       if (!def.trigger || this.cleared.has(def.id)) continue;
       const trigger = this.world.triggers.find((t) => t.id === def.trigger);
-      if (trigger && World.inside(trigger, feet)) {
+      if (trigger && insideTrigger(trigger, feet)) {
         this.start(def.id);
         return;
       }

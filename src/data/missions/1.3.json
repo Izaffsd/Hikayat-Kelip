@@ -1,0 +1,31 @@
+{
+  "comment": "1.3, Jejak Adi (GDD): track cursed Adi across the night rooftops to the old jetty. This is the route skeleton; Phase 3 M7 adds Adi fleeing ahead (paths.adi_rooftops), the ink trail and the tide flooding the boardwalks with safe ground kept above it.",
+  "id": "1.3",
+  "chapter": "1",
+  "region": "kampung",
+  "abilities": "chapter1",
+  "setup": [
+    { "light": "night" },
+    { "prop": "hikayat_open", "at": "marker:hikayat" },
+    { "darken": [0, -1], "seconds": 0 }
+  ],
+  "start": [],
+  "steps": [
+    {
+      "id": "rooftops",
+      "objective": "objective.1.3.rooftops",
+      "guide": "trigger:k_rooftops",
+      "until": { "trigger": "k_rooftops" },
+      "on": { "start": [{ "say": "k.bayu.track" }] }
+    },
+    {
+      "id": "oldJetty",
+      "checkpoint": true,
+      "objective": "objective.1.3.oldJetty",
+      "guide": "trigger:k_old_jetty",
+      "until": { "trigger": "k_old_jetty" },
+      "on": { "done": [{ "say": "k.bayu.oldJetty" }] }
+    }
+  ],
+  "end": [{ "next": "1.4" }]
+}

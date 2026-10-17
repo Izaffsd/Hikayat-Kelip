@@ -242,13 +242,27 @@ export class DayNight {
         light.intensity = 0;
         continue;
       }
+      // Lamps can move (Kelip follows Bayu): track them every frame.
+      light.position.copy(lamp.position);
       const flicker =
         lamp.kind === 'pelita'
           ? 0.85 + 0.15 * Math.sin(this._time * 13 + lamp.phase) * Math.sin(this._time * 7.3)
           : 1;
       light.color.setHex(lamp.kind === 'kelip' ? 0xd8f06a : 0xffa04a);
-      light.intensity = (lamp.kind === 'kelip' ? 6 : 14) * flicker;
+      light.intensity = (lamp.kind === 'kelip' ? 6 : 14) * flicker * (lamp.intensity ?? 1);
     }
+  }
+
+  /**
+   * Adds one lamp to the pool's candidates (a moving light such as Kelip); returns it so the owner can move it.
+   * @param {{ position: Vector3, kind: string, intensity?: number }} lamp
+   * @returns {{ position: Vector3, kind: string, phase: number, intensity?: number }}
+   */
+  addLamp(lamp) {
+    const entry = { ...lamp, phase: this.lamps.length * 1.7 };
+    this.lamps.push(entry);
+    this._lampTimer = 0;
+    return entry;
   }
 
   _snapshot(source) {

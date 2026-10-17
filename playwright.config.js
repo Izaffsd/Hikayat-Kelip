@@ -9,6 +9,8 @@ const PORT = 4173;
 /**
  * Visual self-tests: the installed Chrome, headed, on the real GPU (never a headless WebGPU capture).
  * Run with `npm run test:visual` (builds first). Never run `playwright install`.
+ * With the test Chrome open (`npm run chrome:test`), every test runs as a new tab in that one window
+ * (tests/visual/fixtures.js, D-035); otherwise Playwright launches Chrome with `launchOptions` below.
  */
 export default defineConfig({
   testDir: 'tests/visual',

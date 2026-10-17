@@ -14,6 +14,7 @@ import { Traversal } from '../player/Traversal.js';
 import { Wau } from '../player/Wau.js';
 import { MoteBurst } from '../render/MoteBurst.js';
 import { CombatHud } from '../ui/CombatHud.js';
+import { StoryDirector } from '../narrative/StoryDirector.js';
 import { PostFX } from '../render/PostFX.js';
 import { QualityManager } from '../render/QualityManager.js';
 import { Renderer } from '../render/Renderer.js';
@@ -23,7 +24,7 @@ import { TouchControls } from '../ui/touch/TouchControls.js';
 import { SandboxLevel } from '../world/SandboxLevel.js';
 import { World } from '../world/World.js';
 import { AssetLoader } from './AssetLoader.js';
-import { data } from './Data.js';
+import { data, loadData } from './Data.js';
 import { EV } from './events.js';
 import { Input } from './Input.js';
 import { log } from './Log.js';
@@ -38,6 +39,46 @@ const TELEMETRY_FPS_INTERVAL = 60;
 
 /** Character model per enemy archetype (data/combat/enemies.json). */
 const ENEMY_MODELS = { wisp: 'characters/wisp', brawler: 'characters/villager_man', adi: 'characters/adi' };
+
+/** Milliseconds for the screen to go dark before a region is swapped (the fade's fast duration, rounded up). */
+const REGION_FADE_MS = 260;
+
+/** Intent of a player standing still (cutscenes). */
+const STILL = Object.freeze({ x: 0, z: 0, magnitude: 0, sprintHeld: false });
+
+/**
+ * @param {number} value
+ * @returns {number} rounded to centimetres (save positions)
+ */
+const round2 = (value) => Math.round(value * 100) / 100;
+
+/** Gameplay presses swallowed while a cutscene holds control (holding them skips it instead). */
+const CUTSCENE_SWALLOW = [
+  'jump',
+  'strike',
+  'heavy',
+  'langkah',
+  'tangkis',
+  'slide',
+  'context',
+  'kelip',
+  'lockon',
+];
+
+/**
+ * Manifest keys of the enemy models a region's encounters use (the prologue needs just the wisp).
+ * @param {Record<string, any>} defs data/encounters.json
+ * @param {string} regionId
+ * @returns {Set<string>}
+ */
+function enemyModelKeys(defs, regionId) {
+  const keys = new Set();
+  for (const [id, def] of Object.entries(defs)) {
+    if (id === 'comment' || def.region !== regionId) continue;
+    for (const spawn of def.spawns) keys.add(ENEMY_MODELS[spawn.archetype]);
+  }
+  return keys;
+}
 
 /**
  * Owns every runtime system and the frame/tick order (TECHNICAL §2.2). Core services that the title
@@ -92,21 +133,26 @@ export class Engine {
       renderer: this.renderer.three,
       basisPath: `/vendor/three-${__THREE_VERSION__}/basis/`,
     });
-    /** Region to play: the prologue by default; `?scene=sandbox` keeps the Phase 1 movement course for tests. */
-    this.sceneId = query.get('scene') ?? 'prologue';
-    // Only the enemy models this region's encounters use (the prologue needs just the wisp).
+    // Where play starts: `?mission=<id>` starts a mission; `?scene=<id>` loads a region with no story (tests, free
+    // roam, `sandbox` = the Phase 1 movement course); otherwise the save resumes (a new save starts the prologue).
+    this.saves = new SaveManager({ storage: this.storage, bus });
+    const loadedSave = this.saves.load();
+    this.saveDoc = loadedSave.doc;
+    if (loadedSave.status !== 'loaded' && loadedSave.status !== 'new')
+      log.add('warn', `Save: ${loadedSave.status}`);
+    if (!this.storage.available) log.add('warn', this.i18n.t('save.storageUnavailable'));
+    this.storyContent = query.has('scene') ? null : await StoryDirector.loadData();
+    this._storyStart = this.storyContent ? this._storyStartPoint(query) : null;
+    this.sceneId = query.get('scene') ?? this._storyStart?.region ?? 'prologue';
     const encounterDefs = data('encounters');
-    const enemyKeys = new Set();
-    for (const [id, def] of Object.entries(encounterDefs)) {
-      if (id === 'comment' || def.region !== this.sceneId) continue;
-      for (const spawn of def.spawns) enemyKeys.add(ENEMY_MODELS[spawn.archetype]);
-    }
+    const enemyKeys = enemyModelKeys(encounterDefs, this.sceneId);
     const manifest = data('generated/assets').assets;
     const keys = [
       'anim/anim_core',
       'anim/anim_villager',
       'anim/anim_cursed',
       'characters/bayu',
+      ...(this.storyContent ? ['characters/kelip'] : []),
       'props/props_slice',
       ...enemyKeys,
     ];
@@ -115,6 +161,7 @@ export class Engine {
       (done, total) => onProgress(0.35 + (0.25 * done) / total),
     );
     const byKey = (key) => assets.get(manifest[key].url);
+    this._enemyAssetUrls = [...enemyKeys].map((key) => manifest[key].url);
     this.clips = new Map();
     for (const pack of ['anim/anim_core', 'anim/anim_villager', 'anim/anim_cursed']) {
       for (const [name, clip] of prepareClips(byKey(pack).animations)) this.clips.set(name, clip);
@@ -145,14 +192,7 @@ export class Engine {
       this.level = new SandboxLevel({ scene: this.scene, physics: this.physics });
       ({ spawn, facing } = this.level.build());
     } else {
-      this.world = new World({
-        scene: this.scene,
-        physics: this.physics,
-        assets: this.assets,
-        renderer: this.renderer,
-        bus,
-        preset: this.quality.preset,
-      });
+      this.world = this._newWorld();
       await this.world.load(this.sceneId, (fraction) => onProgress(0.6 + fraction * 0.1));
       const marker = this.world.markers.spawn;
       spawn = { x: marker.p.x, y: marker.p.y, z: marker.p.z };
@@ -160,7 +200,7 @@ export class Engine {
     }
     this.character = new CharacterController(this.physics, data('tuning/player'), spawn);
     this.abilities = new Abilities(data('abilities'));
-    this.abilities.useSet(this.abilities.setForRegion(this.sceneId));
+    this.abilities.useSet(this._storyStart?.abilities ?? this.abilities.setForRegion(this.sceneId));
     this.traversal = new Traversal({
       character: this.character,
       tuning: data('tuning/player'),
@@ -185,6 +225,7 @@ export class Engine {
     this._pitch = 0;
     this.wau = new Wau({ gltf: props, avatar: this.avatar, config: data('animation/human').wau });
     bus.on(EV.PLAYER_GLIDE, ({ open }) => this.wau.setOpen(open));
+    this.props = props;
     this._attachTongkat(props);
 
     // Silat: the enemy director, Bayu's combat, enemy visuals, the region's encounters.
@@ -211,24 +252,12 @@ export class Engine {
       scene: this.scene,
       bus,
       director: this.director,
-      models: {
-        wisp: enemyKeys.has('characters/wisp') ? byKey('characters/wisp') : null,
-        villager_man: enemyKeys.has('characters/villager_man') ? byKey('characters/villager_man') : null,
-        adi: enemyKeys.has('characters/adi') ? byKey('characters/adi') : null,
-      },
+      models: this._enemyModels(enemyKeys, byKey),
       clips: this.clips,
       profile: data('animation/cursed'),
       motes: this.motes,
     });
-    this.encounters = new Encounters({
-      bus,
-      director: this.director,
-      combat: this.combat,
-      traversal: this.traversal,
-      defs: encounterDefs,
-      regionId: this.sceneId,
-      world: this.world,
-    });
+    this.encounters = this._createEncounters();
     const engine = this;
     this._playerAdapter = {
       get feet() {
@@ -268,6 +297,10 @@ export class Engine {
       tuning: data('tuning/camera'),
     });
     this.cameraSystem.snapBehind(facing);
+    this.fade = new ScreenFade({ root: this.uiRoot, bus });
+    this.story = this.storyContent
+      ? new StoryDirector({ engine: this, content: this.storyContent, kelipModel: byKey('characters/kelip') })
+      : null;
     this.postfx = new PostFX(this.renderer);
     this.postfx.build(this.scene, this.camera, this.quality.preset);
     onProgress(0.75);
@@ -279,12 +312,6 @@ export class Engine {
     this.cameraSystem.update(0, this._feet, facing, 0);
     await this.renderer.three.compileAsync(this.scene, this.camera);
     onProgress(0.95);
-
-    this.saves = new SaveManager({ storage: this.storage, bus });
-    const loaded = this.saves.load();
-    this.saveDoc = loaded.doc;
-    if (loaded.status !== 'loaded' && loaded.status !== 'new') log.add('warn', `Save: ${loaded.status}`);
-    if (!this.storage.available) log.add('warn', this.i18n.t('save.storageUnavailable'));
 
     this.telemetry = new Telemetry({
       enabled: telemetryAllowed({
@@ -315,9 +342,18 @@ export class Engine {
     if (this.started) return;
     this.started = true;
     this.loop.start(this.renderer.animationLoopDriver);
-    this.input.gameplayEnabled = !this.portraitBlocked;
+    // The key that started the game must not also jump: gameplay input opens after this gesture's events. (The
+    // starting click is handled in Input: a mouse button pressed while gameplay was closed is ignored until up.)
+    setTimeout(() => {
+      this.input.gameplayEnabled = !this.portraitBlocked;
+    }, 0);
     this.canvas.focus({ preventScroll: true });
     this.bus.emit(EV.GAME_START, {});
+    if (this.story && this._storyStart) {
+      const { id, step, checkpoint } = this._storyStart;
+      if (checkpoint?.position) this.placePlayer(checkpoint.position, checkpoint.yaw);
+      if (id) this.story.start(id, step);
+    }
     this.telemetry.track('session_start', {
       backend: this.renderer.backend,
       preset: this.quality.presetName,
@@ -340,16 +376,170 @@ export class Engine {
    */
   _fixed(dt) {
     this.input.beginTick(this.time.tick);
-    const intent = this._testIntent ?? this.controller.update(this.cameraSystem.yaw);
+    if (this._regionLoading) {
+      // The old region is gone and the new one is not built: hold everything still behind the fade.
+      this.bus.flush();
+      return;
+    }
+    const cutscene = this.story?.blocking ?? false;
+    if (cutscene) for (const action of CUTSCENE_SWALLOW) this.input.consume(action);
+    const intent = cutscene ? STILL : (this._testIntent ?? this.controller.update(this.cameraSystem.yaw));
     if (this.world?.deadlyWater) this.traversal.hazardWaterLevel = this.world.waterLevel;
     this._updateAssists();
-    this.combat.fixedUpdate(dt, intent);
+    if (!cutscene) this.combat.fixedUpdate(dt, intent);
     this.traversal.fixedUpdate(dt, intent);
     this.physics.step(dt);
     this.director.fixedUpdate(dt, this._playerAdapter);
     this.encounters.fixedUpdate(dt, this._currentFeet());
+    this.story?.fixedUpdate(dt);
     this._probeGround();
     this.bus.flush();
+  }
+
+  /**
+   * Where the story starts: `?mission=<id>[&step=<id>]`, or the save (its checkpoint when it belongs to the saved
+   * mission). Returns the mission (null once the slice's last mission is done: free roam), step, region and ability
+   * set, or null when the save names no known mission.
+   * @param {URLSearchParams} query
+   * @returns {{ id: string|null, step: string|null, region: string, abilities: string|null,
+   *   checkpoint: object|null }|null}
+   */
+  _storyStartPoint(query) {
+    const missions = this.storyContent.missions;
+    const story = this.saveDoc.story;
+    const requested = query.get('mission');
+    let id = requested ?? story.mission;
+    let mission = missions[id];
+    if (!mission) {
+      if (requested) log.add('warn', `Unknown mission "${requested}"`);
+      return null;
+    }
+    // Saved after a mission ended but before the next one began (closed during the region change): go on.
+    let finished = !requested && this.saveDoc.missions.completed[id] === true;
+    const next = mission.end?.find((action) => action.next)?.next;
+    if (finished && missions[next]) {
+      id = next;
+      mission = missions[next];
+      finished = false;
+    }
+    const saved = this.saveDoc.checkpoint;
+    const checkpoint = !requested && saved?.mission === id ? saved : null;
+    // finished: the slice's last mission is done; free roam where it ended.
+    return {
+      id: finished ? null : id,
+      step: requested ? query.get('step') : (checkpoint?.step ?? null),
+      region: checkpoint?.region ?? mission.region,
+      abilities: mission.abilities ?? null,
+      checkpoint,
+    };
+  }
+
+  /**
+   * Places Bayu (mission teleports, checkpoints): feet position, optional facing; the camera snaps behind.
+   * @param {{ x: number, y: number, z: number }|number[]} point
+   * @param {number} [yaw] radians
+   */
+  placePlayer(point, yaw) {
+    const [x, y, z] = Array.isArray(point) ? point : [point.x, point.y, point.z];
+    this.combat.reset();
+    this.traversal.respawnAt({ x, y, z });
+    if (Number.isFinite(yaw)) this.traversal.facing = this.traversal.prevFacing = yaw;
+    this.cameraSystem.snapBehind(this.traversal.facing);
+  }
+
+  /**
+   * Saves progress here (mission checkpoints and every mission's end, TECHNICAL §9).
+   * @param {{ mission: string|null, step: string|null }} at
+   * @returns {boolean} whether the save was written
+   */
+  checkpoint({ mission, step }) {
+    const feet = this._currentFeet();
+    this.saveDoc.checkpoint = {
+      region: this.sceneId,
+      mission,
+      step,
+      position: [round2(feet.x), round2(feet.y), round2(feet.z)],
+      yaw: round2(this.traversal.facing),
+    };
+    return this.saves.save(this.saveDoc);
+  }
+
+  /**
+   * Moves play to another region behind the fade (end of the prologue): drops the old region's world, enemies and
+   * encounters, builds the new one, loads its enemy models, and places Bayu at a marker.
+   * @param {string} id region
+   * @param {string} [markerName='spawn']
+   * @param {string|null} [abilitySet] ability set for the new region (default: the region's)
+   */
+  async changeRegion(id, markerName = 'spawn', abilitySet = null) {
+    const wasDark = this.fade.dark;
+    this.bus.emit(EV.REGION_CHANGE, { id, marker: markerName });
+    if (!wasDark) await new Promise((resolve) => setTimeout(resolve, REGION_FADE_MS));
+    const manifest = data('generated/assets').assets;
+    // Kits both regions share stay loaded across the swap (one extra reference until the new world holds its own).
+    const kits = (await loadData(`regions/${id}`)).kits.map((key) => manifest[key]);
+    await this.assets.loadAll(kits);
+    this._regionLoading = true;
+    this.combat.reset();
+    this.director.stop();
+    this.enemyViews.clear();
+    this.encounters.dispose();
+    this.world.dispose();
+    for (const url of this._enemyAssetUrls) this.assets.release(url);
+    this.sceneId = id;
+    const enemyKeys = enemyModelKeys(data('encounters'), id);
+    const enemyEntries = [...enemyKeys].map((key) => manifest[key]);
+    this._enemyAssetUrls = enemyEntries.map((entry) => entry.url);
+    this.world = this._newWorld();
+    const [enemyAssets] = await Promise.all([this.assets.loadAll(enemyEntries), this.world.load(id)]);
+    for (const entry of kits) this.assets.release(entry.url);
+    this.enemyViews.models = this._enemyModels(enemyKeys, (key) => enemyAssets.get(manifest[key].url));
+    this.encounters = this._createEncounters();
+    this.abilities.useSet(abilitySet ?? this.abilities.setForRegion(id));
+    const marker = this.world.markers[markerName];
+    this.placePlayer(marker.p, marker.yaw);
+    await this.renderer.three.compileAsync(this.scene, this.camera);
+    this._regionLoading = false;
+    this.bus.emit(EV.REGION_READY, { id });
+  }
+
+  _newWorld() {
+    return new World({
+      scene: this.scene,
+      physics: this.physics,
+      assets: this.assets,
+      renderer: this.renderer,
+      bus: this.bus,
+      preset: this.quality.preset,
+    });
+  }
+
+  _createEncounters() {
+    return new Encounters({
+      bus: this.bus,
+      director: this.director,
+      combat: this.combat,
+      traversal: this.traversal,
+      defs: data('encounters'),
+      regionId: this.sceneId,
+      world: this.world,
+      // With a story running, missions start the fights; free roam (`?scene=`) keeps the layout triggers.
+      autoStart: !this.storyContent,
+    });
+  }
+
+  /**
+   * Enemy models by name for EnemyViews.
+   * @param {Set<string>} keys manifest keys loaded for this region
+   * @param {(key: string) => { scene: import('three').Object3D }} byKey
+   */
+  _enemyModels(keys, byKey) {
+    const models = {};
+    for (const name of ['wisp', 'villager_man', 'adi']) {
+      const key = `characters/${name}`;
+      models[name] = keys.has(key) ? byKey(key) : null;
+    }
+    return models;
   }
 
   /** Current (tick) feet position, shared object. */
@@ -500,6 +690,8 @@ export class Engine {
       this.cameraSystem.addTrauma(this.combat.trauma);
       this.combat.trauma = 0;
     }
+    // Story first: a cutscene sets this frame's camera shot.
+    this.story?.frameUpdate(dt, this.time.realTime, this._feet, facing);
     // Hard lock-on: the camera settles behind Bayu, looking at the target.
     const target = this.combat.hardLock ? this.combat.target : null;
     const lookYaw = target
@@ -517,8 +709,10 @@ export class Engine {
     this.enemyViews.update(animDt, alpha, this.camera, this.time.realTime);
     this.motes.update(this.time.realTime);
     this.hud.update(dt, this.camera, this.combat.inCombat, this.combat.hardLock);
-    this.world?.update(dt, this.camera, this._feet);
-    this.renderer.render(this.scene, this.camera);
+    if (!this._regionLoading) {
+      this.world?.update(dt, this.camera, this._feet);
+      this.renderer.render(this.scene, this.camera);
+    }
     this.overlay.update(dt);
     this.perf.record(dt);
     this.quality.update(dt, (performance.now() - this._frameStartMs) / 1000);
@@ -563,7 +757,6 @@ export class Engine {
       collect: () => this._stats(),
     });
     if (this.platform.query.get('debug') === '1') this.overlay.setVisible(true);
-    this.fade = new ScreenFade({ root: this.uiRoot, bus: this.bus });
     this.hud = new CombatHud({ root: this.uiRoot, bus: this.bus, i18n: this.i18n, director: this.director });
     this.touch = new TouchControls({
       root: this.touchRoot,
@@ -737,6 +930,31 @@ export class Engine {
           inCombat: engine.combat.inCombat,
           timeScale: engine.time.scale,
         }),
+        /** Where the story stands (null in free roam). */
+        story: () => {
+          const story = engine.story;
+          if (!story) return null;
+          const doc = engine.saveDoc;
+          return {
+            region: engine.sceneId,
+            mission: story.missions.mission?.id ?? null,
+            step: story.missions.step?.id ?? null,
+            cutscene: story.cutscenes.active?.def.id ?? null,
+            dialogue: story.dialogue.current?.id ?? null,
+            loading: !!engine._regionLoading,
+            flags: { ...doc.story.flags },
+            journal: [...doc.story.journal],
+            pages: [...doc.story.pages],
+            cahaya: doc.progression.cahaya,
+            completed: Object.keys(doc.missions.completed),
+            checkpoint: doc.checkpoint,
+            kelip: story.kelip?.visible ?? false,
+          };
+        },
+        /** Starts a mission (at a step) as if the story had reached it. */
+        mission: (id, step = null) => engine.story.start(id, step),
+        /** The saved document as written to storage. */
+        savedDoc: () => engine.saves.load().doc,
         /** The current encounter's enemies. */
         enemies: () =>
           engine.director.enemies.map((e) => ({

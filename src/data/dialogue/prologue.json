@@ -1,0 +1,33 @@
+{
+  "comment": "Prologue lines (GDD The first 10 minutes, 0:05–3:15): young Wan on the night of the hunt, 40 years ago. Every line is a bark: subtitled, never blocks control. BM is the source; EN is a natural translation, not word for word.",
+  "speakers": {
+    "wan": { "bm": "Wan", "en": "Wan" },
+    "villager": { "bm": "Orang kampung", "en": "Villager" },
+    "voice": { "bm": "", "en": "" }
+  },
+  "lines": {
+    "p.villager.1": {
+      "speaker": "villager",
+      "bm": "Wan! Harimau tu lari ke hilir!",
+      "en": "Wan! The tiger's heading downriver!"
+    },
+    "p.wan.1": {
+      "speaker": "wan",
+      "bm": "Aku kejar ikut bumbung. Yang lain, jaga jeti!",
+      "en": "I'll take the rooftops. The rest of you, hold the jetty!"
+    },
+    "p.wan.wisps": { "speaker": "wan", "bm": "Bayang apa pula ni?", "en": "What are these shadows?" },
+    "p.wan.after": {
+      "speaker": "wan",
+      "bm": "Cepat. Jejaknya masih baru.",
+      "en": "Quick. The tracks are still fresh."
+    },
+    "p.villager.2": {
+      "speaker": "villager",
+      "bm": "Air makin naik, Wan! Rumah-rumah dah runtuh!",
+      "en": "The water's rising, Wan! The houses are coming down!"
+    },
+    "p.wan.standoff": { "speaker": "wan", "bm": "Cukup. Habis di sini.", "en": "Enough. It ends here." },
+    "p.voice.atuk": { "speaker": "voice", "bm": "Atuk?", "en": "Atuk?", "seconds": 2.2 }
+  }
+}

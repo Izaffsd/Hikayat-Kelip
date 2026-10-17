@@ -92,6 +92,45 @@ export const EV = Object.freeze({
   /** { id: string } */
   ENCOUNTER_CLEARED: 'encounter:cleared',
 
+  /** { id: string } */
+  MISSION_STARTED: 'mission:started',
+  /** { mission: string, step: string, objective: string|null } — a mission step began */
+  MISSION_STEP: 'mission:step',
+  /** { id: string } */
+  MISSION_COMPLETED: 'mission:completed',
+  /** { mission: string, step: string } — progress saved here */
+  CHECKPOINT: 'mission:checkpoint',
+  /** { name: string, value: any } */
+  STORY_FLAG: 'story:flag',
+  /** { id: string } — a journal line was added */
+  JOURNAL_ADDED: 'story:journal',
+  /** { value: number } */
+  CAHAYA_CHANGED: 'story:cahaya',
+  /** { page: number } — a hikayat page returned */
+  PAGE_RETURNED: 'story:page',
+  /** { id: string, speaker: string, text: string, seconds: number } — show this subtitle now */
+  DIALOGUE_LINE: 'dialogue:line',
+  /** {} — the current subtitle ended */
+  DIALOGUE_CLEAR: 'dialogue:clear',
+  /** { id: string } */
+  CUTSCENE_STARTED: 'cutscene:started',
+  /** { id: string, skipped: boolean } */
+  CUTSCENE_ENDED: 'cutscene:ended',
+  /** { progress: number } — hold-to-skip progress 0..1 (0 hides the indicator) */
+  CUTSCENE_SKIP_PROGRESS: 'cutscene:skip',
+  /** { action: string, text: string }|{ action: null } — an on-screen prompt (first-time hints) */
+  PROMPT: 'ui:prompt',
+  /** { target: { x: number, y: number, z: number }|null } — Kelip's call sent a wave toward the goal */
+  KELIP_CALLED: 'guide:kelip',
+  /** { id: string, marker: string } — the world is changing region (fade, load, place) */
+  REGION_CHANGE: 'world:region',
+  /** { id: string } — the new region is ready */
+  REGION_READY: 'world:ready',
+  /** { dark: boolean } — the story cuts to (or back from) black */
+  SCREEN_FADE: 'ui:fade',
+  /** { kicker: string, title: string } — i18n keys of a chapter title card */
+  TITLE_CARD: 'ui:titleCard',
+
   /** { delay: number } — a lightning flash; thunder should follow after `delay` seconds */
   LIGHTNING: 'world:lightning',
 

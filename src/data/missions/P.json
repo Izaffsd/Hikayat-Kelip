@@ -1,0 +1,55 @@
+{
+  "comment": "P, Malam Pemburuan (GDD The first 10 minutes, 0:05–3:15). Young Wan, every move borrowed. Rules: no failure state, no text that must be read, one new prompt at a time, cutscenes under 20 s. Phase 3 M6 adds young Wan's model, the tiger and the flood beats on these steps.",
+  "id": "P",
+  "chapter": "prologue",
+  "region": "prologue",
+  "abilities": "borrowed",
+  "setup": [{ "light": "storm" }],
+  "start": [],
+  "steps": [
+    {
+      "id": "roofs",
+      "objective": "objective.P.roofs",
+      "guide": "trigger:p_glide_hint",
+      "until": { "trigger": "p_glide_hint" },
+      "on": {
+        "start": [{ "prompt": "jump", "text": "prompt.jump" }, { "say": ["p.villager.1", "p.wan.1"] }]
+      }
+    },
+    {
+      "id": "glide",
+      "objective": "objective.P.glide",
+      "guide": "trigger:p_arena",
+      "until": { "trigger": "p_arena" },
+      "on": { "start": [{ "prompt": "jump", "text": "prompt.glide" }] }
+    },
+    {
+      "id": "wisps",
+      "checkpoint": true,
+      "objective": "objective.P.wisps",
+      "until": { "encounter": "prologue_wisps" },
+      "on": {
+        "start": [
+          { "say": "p.wan.wisps" },
+          { "encounter": "prologue_wisps" },
+          { "prompt": "strike", "text": "prompt.strike" }
+        ],
+        "done": [{ "say": "p.wan.after" }]
+      }
+    },
+    {
+      "id": "chase",
+      "checkpoint": true,
+      "objective": "objective.P.chase",
+      "guide": "trigger:p_standoff",
+      "until": { "trigger": "p_standoff" },
+      "on": { "start": [{ "say": "p.villager.2" }] }
+    },
+    {
+      "id": "standoff",
+      "until": { "cutscene": "p_standoff" },
+      "on": { "start": [{ "cutscene": "p_standoff" }] }
+    }
+  ],
+  "end": [{ "region": "kampung", "marker": "spawn" }, { "next": "1.1" }]
+}

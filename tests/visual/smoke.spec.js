@@ -1,8 +1,5 @@
-import { test as base, expect } from '@playwright/test';
+import { expect, test } from './fixtures.js';
 import { keepFocused } from './focus.js';
-
-/** `testQuery` comes from the project (playwright.config.js): '' for WebGPU, 'webgl=1' for forced WebGL2. */
-const test = base.extend({ testQuery: ['', { option: true }] });
 
 test('title paints, the engine boots, a tap starts the game and the sandbox renders', async ({
   page,

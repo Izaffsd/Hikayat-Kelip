@@ -1,0 +1,39 @@
+{
+  "comment": "Chapter 1, 7:00 (GDD wow moment 2, then dread): at dusk the berembang across the river blaze with synchronized fireflies; mid-display they go dark row by row, far rows first, and night falls. Under 20 s. Phase 3 M7 adds Kelam's tendrils rising from the water (paths.tendrils_jetty) and the music sting.",
+  "id": "k_display",
+  "duration": 15,
+  "shots": [
+    {
+      "t": 0,
+      "duration": 6,
+      "from": { "at": "marker:display_view", "offset": [-1.5, 1.7, 2.5] },
+      "to": { "at": "marker:display_view", "offset": [-0.8, 1.9, 0.5] },
+      "look": { "at": [4, 6, -104] }
+    },
+    {
+      "t": 6,
+      "duration": 6,
+      "from": { "at": "marker:display_view", "offset": [4, 2.4, -2] },
+      "to": { "at": "marker:display_view", "offset": [2, 2.0, -3.5] },
+      "look": { "at": [-12, 6, -106] },
+      "lookTo": { "at": [16, 6, -106] }
+    },
+    {
+      "t": 12,
+      "duration": 3,
+      "from": { "at": "marker:display_view", "offset": [0, 1.9, 4.5] },
+      "to": { "at": "marker:display_view", "offset": [0, 2.2, 6] },
+      "look": { "at": "marker:display_view", "offset": [0, 0.2, -8] }
+    }
+  ],
+  "lines": [
+    { "t": 1.0, "id": "k.adi.display" },
+    { "t": 3.6, "id": "k.bayu.display" },
+    { "t": 8.4, "id": "k.adi.dark" }
+  ],
+  "events": [
+    { "t": 6.5, "darken": [0, -1], "seconds": 5, "to": 96 },
+    { "t": 7.0, "light": "night", "seconds": 7 },
+    { "t": 11.5, "darken": [0, -1], "seconds": 2.5 }
+  ]
+}

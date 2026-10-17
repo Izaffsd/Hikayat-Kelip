@@ -16,6 +16,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:visual": "playwright test",
+    "chrome:test": "node tools/test-chrome.mjs",
     "test:perf": "playwright test --config playwright.perf.config.js",
     "assets": "node tools/build-assets.mjs",
     "layouts": "node tools/layout/build.mjs"

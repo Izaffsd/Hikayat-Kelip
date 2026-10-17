@@ -1,7 +1,5 @@
-import { test as base, expect } from '@playwright/test';
+import { expect, test } from './fixtures.js';
 import { keepFocused } from './focus.js';
-
-const test = base.extend({ testQuery: ['', { option: true }] });
 
 /** Waits until the player state satisfies `predicate` (evaluated in the page), polling each animation frame. */
 async function waitPlayer(page, predicate, timeout = 4000) {

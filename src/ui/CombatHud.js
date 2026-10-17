@@ -42,11 +42,15 @@ export class CombatHud {
     this._health.style.transform = 'scaleX(1)';
     this._semangat.style.transform = 'scaleX(0)';
     this._healthValue = 1;
-    this._calm = 0;
+    /** Seconds out of combat at full health; starts calm so the bars stay hidden at the start of play. */
+    this._calm = Infinity;
     this._bossId = null;
     this._lockId = null;
     this._point = new Vector3();
     this._off = [
+      // Cutscenes show the scene, not the HUD.
+      bus.on(EV.CUTSCENE_STARTED, () => this.element.classList.add('is-cutscene')),
+      bus.on(EV.CUTSCENE_ENDED, () => this.element.classList.remove('is-cutscene')),
       bus.on(EV.PLAYER_HEALTH, ({ health, max }) => this._setHealth(health / max)),
       bus.on(EV.SEMANGAT_CHANGED, ({ value, max }) => {
         this._semangat.style.transform = `scaleX(${value / max})`;
