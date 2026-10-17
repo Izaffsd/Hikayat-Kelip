@@ -22,6 +22,10 @@ export class CharacterController {
     this.physics = physics;
     this.radius = radius;
     this.halfHeight = halfHeight;
+    /** Standing half height (the capsule shrinks while sliding). */
+    this.standHalfHeight = halfHeight;
+    /** Whether the capsule is currently shrunk. */
+    this.crouched = false;
     /** Distance from the feet to the capsule centre. */
     this.centerOffset = halfHeight + radius;
     /** Capsule centre position (world). */
@@ -61,10 +65,16 @@ export class CharacterController {
     this.groundNormalY = 1;
     /** Whether the last move hit something above (head bump). */
     this.hitCeiling = false;
+    /** Whether the last move touched a wall (a surface too steep to climb); its normal is in `wallNormal`. */
+    this.hitWall = false;
+    /** Horizontal normal of the wall touched by the last move (unit, y = 0). */
+    this.wallNormal = { x: 0, y: 0, z: 0 };
+    this._wallLimitY = Math.cos(kcc.maxSlopeClimbDeg * DEG) - 0.02;
     this._desired = { x: 0, y: 0, z: 0 };
     this._next = { x: 0, y: 0, z: 0 };
     /** Reused collision record (Rapier fills it in place). */
     this._collision = new R.CharacterCollision();
+    this._probeCenter = { x: 0, y: 0, z: 0 };
   }
 
   /**
@@ -92,13 +102,23 @@ export class CharacterController {
     this.grounded = this.kcc.computedGrounded();
     this.groundNormalY = this.grounded ? 1 : 0;
     this.hitCeiling = false;
+    this.hitWall = false;
     const count = this.kcc.numComputedCollisions();
     for (let i = 0; i < count; i++) {
       const collision = this.kcc.computedCollision(i, this._collision);
       if (!collision) continue;
-      const ny = collision.normal1.y;
+      const n = collision.normal1;
+      const ny = n.y;
       if (ny > 0.05 && (this.groundNormalY === 0 || ny < this.groundNormalY)) this.groundNormalY = ny;
       if (ny < -0.7 && dy > 0) this.hitCeiling = true;
+      if (ny < this._wallLimitY && ny > -0.7) {
+        const h = Math.hypot(n.x, n.z);
+        if (h > 1e-4) {
+          this.hitWall = true;
+          this.wallNormal.x = n.x / h;
+          this.wallNormal.z = n.z / h;
+        }
+      }
     }
     const next = this._next;
     next.x = this.position.x + movement.x;
@@ -109,6 +129,86 @@ export class CharacterController {
     this.position.y = next.y;
     this.position.z = next.z;
     return movement;
+  }
+
+  /**
+   * Moves the capsule to a feet position without collision, keeping render interpolation from the previous spot
+   * (scripted motion: mantles, ledge climbs). The caller checks clearance first.
+   * @param {number} x
+   * @param {number} y feet height
+   * @param {number} z
+   */
+  place(x, y, z) {
+    this.prevPosition.x = this.position.x;
+    this.prevPosition.y = this.position.y;
+    this.prevPosition.z = this.position.z;
+    this.position.x = x;
+    this.position.y = y + this.centerOffset;
+    this.position.z = z;
+    this.lastMovement.x = this.position.x - this.prevPosition.x;
+    this.lastMovement.y = this.position.y - this.prevPosition.y;
+    this.lastMovement.z = this.position.z - this.prevPosition.z;
+    this.body.setNextKinematicTranslation(this.position);
+    this.grounded = false;
+    this.hitWall = false;
+    this.hitCeiling = false;
+  }
+
+  /**
+   * Shrinks the capsule (slide) or restores it, keeping the feet where they are.
+   * @param {boolean} crouched
+   * @param {number} [crouchHalfHeight]
+   */
+  setCrouched(crouched, crouchHalfHeight = 0.15) {
+    if (crouched === this.crouched) return;
+    const feet = this.feetY;
+    const prevFeet = this.prevPosition.y - this.centerOffset;
+    this.crouched = crouched;
+    this.halfHeight = crouched ? crouchHalfHeight : this.standHalfHeight;
+    this.centerOffset = this.halfHeight + this.radius;
+    this.collider.setHalfHeight(this.halfHeight);
+    this.position.y = feet + this.centerOffset;
+    this.prevPosition.y = prevFeet + this.centerOffset;
+    this.body.setTranslation(this.position, true);
+    this.body.setNextKinematicTranslation(this.position);
+  }
+
+  /**
+   * Whether the standing capsule fits at the current spot (stand up from a slide only when it does).
+   * @returns {boolean}
+   */
+  canStand() {
+    const centerY = this.feetY + this.standHalfHeight + this.radius + 0.02;
+    this._probeCenter.x = this.position.x;
+    this._probeCenter.y = centerY;
+    this._probeCenter.z = this.position.z;
+    return !this.physics.capsuleOverlaps(
+      this._probeCenter,
+      this.standHalfHeight,
+      this.radius - 0.02,
+      undefined,
+      this.collider,
+    );
+  }
+
+  /**
+   * Whether the standing capsule fits with its feet at a point (mantle and ledge targets).
+   * @param {number} x
+   * @param {number} y feet height
+   * @param {number} z
+   * @returns {boolean}
+   */
+  fitsAt(x, y, z) {
+    this._probeCenter.x = x;
+    this._probeCenter.y = y + this.standHalfHeight + this.radius + 0.03;
+    this._probeCenter.z = z;
+    return !this.physics.capsuleOverlaps(
+      this._probeCenter,
+      this.standHalfHeight,
+      this.radius - 0.02,
+      undefined,
+      this.collider,
+    );
   }
 
   /**

@@ -41,6 +41,16 @@ export const EV = Object.freeze({
   PLAYER_JUMPED: 'player:jumped',
   /** { reason: string } */
   PLAYER_RESPAWNED: 'player:respawned',
+  /** { kind: 'step'|'mantle'|'climb', height: number, duration: number } — a scripted climb started */
+  PLAYER_MANTLE: 'player:mantle',
+  /** { grabbed: boolean } — caught a ledge (true) or let go of it (false) */
+  PLAYER_LEDGE: 'player:ledge',
+  /** { started: boolean, side: -1|1 } — wall-run began or ended (side: wall on the left −1 or right +1) */
+  PLAYER_WALLRUN: 'player:wallrun',
+  /** { started: boolean } */
+  PLAYER_SLIDE: 'player:slide',
+  /** { open: boolean } — the wau opened or closed */
+  PLAYER_GLIDE: 'player:glide',
 
   /** { delay: number } — a lightning flash; thunder should follow after `delay` seconds */
   LIGHTNING: 'world:lightning',

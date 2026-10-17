@@ -6,6 +6,7 @@
     "moveRight": ["KeyD", "ArrowRight"],
     "jump": ["Space"],
     "sprint": ["ShiftLeft"],
+    "slide": ["KeyC", "ControlLeft"],
     "strike": ["Mouse0"],
     "heavy": ["KeyF"],
     "langkah": ["KeyQ"],

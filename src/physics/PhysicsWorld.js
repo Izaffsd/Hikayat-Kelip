@@ -71,6 +71,8 @@ export class PhysicsWorld {
       collider: null,
     };
     this._identityRotation = { x: 0, y: 0, z: 0, w: 1 };
+    /** @type {Map<string, any>} cached capsule shapes by size */
+    this._capsules = new Map();
   }
 
   /**
@@ -227,6 +229,40 @@ export class PhysicsWorld {
       groups,
     );
     return hit ? hit.time_of_impact : maxDistance;
+  }
+
+  /**
+   * Whether an upright capsule at `center` would overlap solid world geometry (clearance checks for mantles, ledges
+   * and standing up from a slide).
+   * @param {{ x: number, y: number, z: number }} center
+   * @param {number} halfHeight
+   * @param {number} radius
+   * @param {number} [groups]
+   * @param {any} [excludeCollider]
+   * @returns {boolean}
+   */
+  capsuleOverlaps(
+    center,
+    halfHeight,
+    radius,
+    groups = interactionGroups(GROUP.PLAYER, GROUP.WORLD),
+    excludeCollider,
+  ) {
+    const key = `${halfHeight}:${radius}`;
+    let shape = this._capsules.get(key);
+    if (!shape) {
+      shape = new this.R.Capsule(halfHeight, radius);
+      this._capsules.set(key, shape);
+    }
+    const hit = this.world.intersectionWithShape(
+      center,
+      this._identityRotation,
+      shape,
+      this.R.QueryFilterFlags.EXCLUDE_SENSORS,
+      groups,
+      excludeCollider,
+    );
+    return !!hit;
   }
 
   /**

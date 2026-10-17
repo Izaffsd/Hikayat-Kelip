@@ -1,0 +1,14 @@
+{
+  "comment": "Movement abilities by set (GDD Traversal: one new verb per chapter; the prologue lends young Wan the full moveset). Regions pick their set until story progress drives it (Phase 3 M5).",
+  "sets": {
+    "borrowed": ["mantle", "ledge", "wallRun", "slide", "glide"],
+    "chapter1": ["mantle", "ledge", "wallRun", "slide"],
+    "chapter2": ["mantle", "ledge", "wallRun", "slide", "glide", "rope"],
+    "all": ["mantle", "ledge", "wallRun", "slide", "glide", "rope"]
+  },
+  "regions": {
+    "prologue": "borrowed",
+    "kampung": "chapter1",
+    "sandbox": "all"
+  }
+}

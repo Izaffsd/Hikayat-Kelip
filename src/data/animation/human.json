@@ -19,6 +19,7 @@
     "wallRun": { "clip": "sprint", "fade": 0.12, "timeScale": 1.15 },
     "mantle": { "clip": "climb_up_1m_rm", "fade": 0.08, "then": "ground", "timeScale": 1.25 },
     "glide": { "clip": "jump_loop", "fade": 0.2, "timeScale": 0.5 },
+    "hang": { "clip": "jump_loop", "fade": 0.1, "timeScale": 0.1 },
     "flip": { "clip": "flip_loop", "fade": 0.08 },
     "stance": { "clip": "stance_idle", "fade": 0.2 },
     "talk": { "clip": "talk", "fade": 0.3 },

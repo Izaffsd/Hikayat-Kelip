@@ -2,6 +2,7 @@ import { PerspectiveCamera, Scene, Vector3 } from 'three/webgpu';
 import { CameraSystem } from '../camera/CameraSystem.js';
 import { CharacterController } from '../physics/CharacterController.js';
 import { PhysicsWorld } from '../physics/PhysicsWorld.js';
+import { Abilities } from '../player/Abilities.js';
 import { prepareClips } from '../player/Animator.js';
 import { Avatar } from '../player/Avatar.js';
 import { PlayerController } from '../player/Controller.js';
@@ -126,12 +127,17 @@ export class Engine {
       facing = marker.yaw;
     }
     this.character = new CharacterController(this.physics, data('tuning/player'), spawn);
+    this.abilities = new Abilities(data('abilities'));
+    this.abilities.useSet(this.abilities.setForRegion(this.sceneId));
     this.traversal = new Traversal({
       character: this.character,
       tuning: data('tuning/player'),
       input: this.input,
       time: this.time,
       bus,
+      physics: this.physics,
+      abilities: this.abilities,
+      tagsOf: this.world ? (collider) => this.world.tagsOf(collider) : null,
     });
     this.traversal.facing = this.traversal.prevFacing = facing;
     this.controller = new PlayerController(this.input);
@@ -142,6 +148,8 @@ export class Engine {
       name: 'Bayu',
     });
     this.avatar.addTo(this.scene);
+    this.avatar.root.rotation.order = 'YXZ';
+    this._lean = 0;
     bus.on(EV.PLAYER_JUMPED, () => this.avatar.animator.setState('jumpStart', true));
     bus.on(EV.PLAYER_LANDED, ({ speed }) =>
       this.avatar.animator.setState(
@@ -149,6 +157,17 @@ export class Engine {
         true,
       ),
     );
+    bus.on(EV.PLAYER_MANTLE, ({ kind, duration }) => {
+      if (kind === 'step') return;
+      const clip = this.clips.get('climb_up_1m_rm');
+      if (!clip) return;
+      this.avatar.animator.playAction('climb_up_1m_rm', {
+        duration,
+        timeScale: clip.duration / duration,
+        fadeIn: 0.06,
+        fadeOut: 0.16,
+      });
+    });
     this.cameraSystem = new CameraSystem({
       camera: this.camera,
       physics: this.physics,
@@ -237,6 +256,39 @@ export class Engine {
     this.bus.flush();
   }
 
+  /**
+   * Keeps the animator's base state in line with the traversal state, and leans the body away from the wall on a
+   * wall-run (feet on the wall). Mantles and climbs play on the action layer (PLAYER_MANTLE).
+   * @param {number} dt
+   */
+  _syncAnimator(dt) {
+    const animator = this.avatar.animator;
+    const state = this.traversal.state;
+    const free = ['ground', 'land', 'hardLand', 'air', 'jumpStart'];
+    animator.setSpeed(this.traversal.speed);
+    switch (state) {
+      case 'air':
+        if (animator.state !== 'air' && animator.state !== 'jumpStart') animator.setState('air');
+        break;
+      case 'ground':
+      case 'step':
+        if (!free.includes(animator.state) || animator.state === 'air') animator.setState('ground');
+        break;
+      case 'wallRun':
+      case 'slide':
+      case 'glide':
+      case 'hang':
+        animator.setState(state);
+        break;
+      default:
+        break;
+    }
+    const leanDeg = data('tuning/player').wallRun.leanDeg;
+    const targetLean = -this.traversal.wallSide * leanDeg * (Math.PI / 180);
+    this._lean += (targetLean - this._lean) * Math.min(1, dt * 10);
+    this.avatar.root.rotation.z = this._lean;
+  }
+
   /** Height of the ground under the player (for the blob shadow); one short ray per tick while airborne. */
   _probeGround() {
     const cc = this.character;
@@ -262,13 +314,7 @@ export class Engine {
     const facing = this.traversal.interpolatedFacing(alpha);
     this.avatar.root.position.copy(this._feet);
     this.avatar.root.rotation.y = facing;
-    const animator = this.avatar.animator;
-    animator.setSpeed(this.traversal.speed);
-    if (this.traversal.state === 'air' && (animator.state === 'ground' || animator.state === 'land')) {
-      animator.setState('air');
-    } else if (this.traversal.state === 'ground' && animator.state === 'air') {
-      animator.setState('ground');
-    }
+    this._syncAnimator(dt);
     this.physics.interpolate(alpha);
     this.cameraSystem.update(dt, this._feet, facing, this.traversal.speed);
     this.avatar.update(dt, this.camera, this.groundY);

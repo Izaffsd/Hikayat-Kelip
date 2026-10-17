@@ -4,6 +4,7 @@ import { EV } from './events.js';
 export const GAME_ACTIONS = Object.freeze([
   'jump',
   'sprint',
+  'slide',
   'strike',
   'heavy',
   'langkah',
