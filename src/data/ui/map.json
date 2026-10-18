@@ -19,6 +19,7 @@
       "name": "map.region.sawah",
       "pelita": "map.pelita.bumi",
       "flag": "pelita_bumi",
+      "scenes": ["sawah"],
       "x": 250,
       "y": 172
     },

@@ -255,8 +255,9 @@ describe('audio data', () => {
     }
   });
 
-  it('the stingers the music plays exist in the score of the regions that use them', () => {
-    expect(builtSounds.get('sting_win')).toBe(REGIONS.regions.kampung.music.bank);
+  it('the stingers the music plays are in a global bank (any region can play them)', () => {
+    for (const sting of ['sting_win', 'sting_wonder', 'sting_kelam'])
+      expect(REGIONS.global, `${sting} plays in every region`).toContain(builtSounds.get(sting));
   });
 
   it('prologue audio stays under 2 MB (TECHNICAL §10)', () => {

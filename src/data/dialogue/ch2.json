@@ -1,0 +1,18 @@
+{
+  "comment": "Chapter 2, Wau Bulan (GDD missions 2.1–2.4), Sawah Emas. Bayu calls his grandfather Atuk. BM is the source; EN is a natural translation. Lines await Izaf's native-speaker read (CULTURE §4).",
+  "speakers": {
+    "bayu": { "bm": "Bayu", "en": "Bayu" }
+  },
+  "lines": {
+    "k2.bayu.arrive": {
+      "speaker": "bayu",
+      "bm": "Sawah Emas. Tiap-tiap tahun Atuk bawa aku datang pesta wau ni.",
+      "en": "Sawah Emas. Every year Atuk brought me to this kite festival."
+    },
+    "k2.bayu.festival": {
+      "speaker": "bayu",
+      "bm": "Atuk selalu cakap, wau yang baik terbang sebab angin percayakan dia.",
+      "en": "Atuk always said a good wau flies because the wind trusts it."
+    }
+  }
+}

@@ -8,8 +8,11 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
   fresh `gh auth login --web`). **Vercel is connected:** production is https://hikayat-kelip.vercel.app (every push to
   `main` deploys; GitHub shows the Vercel status per commit).
-- **Phase 4 in progress (GO received 2026-10-18, no findings reported).** Plan below (Phase 4 log). **Resume with
-  M1 (Sawah Emas, the region).** Still open from Phase 3: Izaf's BM read, a real mid-range Android phone, dedicated
+- **Phase 4 in progress (GO received 2026-10-18, no findings reported).** Plan below (Phase 4 log). M1 done.
+  **Resume with M2 (rope swing; 2.1 Pesta Wau, the kite festival race):** 2.1 exists as the arrival step only
+  (`src/data/missions/2.1.json`); add the wau lesson (Embun gives the glide upgrade later, Ch3 — here the festival
+  teaches gliding from a launch tower), the race course over the paddies (rings or gates, rival kite fliers), the
+  rope swing traversal verb (Traversal state between `tiang_buluh` anchors, `hk_anchor` extras), `race` music. Still open from Phase 3: Izaf's BM read, a real mid-range Android phone, dedicated
   langkah/tangkis clips (library clips stand in), the repo's visibility, fewer shader variants if the iPhone's Boot
   line asks for it. Any `BUG:`/`FEEL:` from Izaf comes first.
 - **Visual tests:** run `npm run chrome:test` once, then `npx playwright test`: every test is a tab in that one window
@@ -292,6 +295,35 @@ the Pelita and its page → browser tests on both backends → commit and push (
 | 17 | 5 | 5.4 Pilihan, both endings; E Hikayat Baru (Ending B's epilogue) |
 | 18 | all | Compute fireflies (WebGPU, WebGL2 fallback), light shafts, Kelam's look, journal and map for every page, regional ambience pass |
 | 19 | all | Full playthrough tests (both endings, BM and EN), phase checks, Vercel, report |
+
+- **M1 done (2026-10-18)** (D-048, D-049, D-050): Sawah Emas, the region. Lighting moods moved to
+  `data/lighting.json` with per-mood colour grading in the post chain (`render/grade.js`) and allocation-free blends;
+  the golden-hour mood. Terrace fields as ring meshes (`world/Terraces.js`): smooth curved paddies stepping 1 m up a
+  hill, a walkable bund on every lip, grassy banks (≤ 45°), paddy water that mirrors the sky; one shared profile for
+  mesh, collider and layouts (`world/terrainHeight.js`); rice as instanced blade clumps (`world/Rice.js`, density
+  and distance per quality preset). The Sawah kit (`tools/blender/kits/sawah.py`, 16 pieces: field hut, rice barn,
+  scarecrows, palms and rain tree, rope poles, festival kites and bunting, sluice, haystack, fence, plank bridge, the
+  Pelita Bumi) and the layout (`tools/layout/sawah.mjs`: village, festival field, the terrace hill with the Pelita
+  Bumi on its crown, west paddies with rope poles, the flood paddy by the river). Audio: wind through the rice,
+  buffalo bells and paddy birds as sprinkles, a gamelan-Melayu explore stem with a new bonang (`sawahGamelan`), the
+  region's score; stingers in a global bank. Chapter 1 now travels upriver into 2.1 (arrival and the walk to the
+  festival field; the Chapter 2 title). Verified: 161 unit tests (terrace slopes, water on every plateau, bunds, the
+  ring mesh against the profile, the ground under fields, Kampung's ground unchanged); browser tests on both backends:
+  the region's views, a bot walking from the valley floor up every terrace to the crown in 11 s, Chapter 2's start
+  (title, Kelip, score and beds, completion), and the 1.4 → 2.1 hand-over. High: 128 draw calls, ~400k triangles in the
+  terraces (rice is most of it), 100 FPS on this PC. Full browser suite (now silent: the test Chrome runs with
+  `--mute-audio`): all pass. **Watch:** on WebGL2 the first trip to Sawah Emas with a cold shader cache took over 30 s
+  on this PC (12.8 s cached, 9.0 s on WebGPU); the hand-over test reports the time. Look at it in the M18 performance
+  pass (fewer shader variants, compile in the background while the 1.4 ending plays).
+- **M2 plan (in progress):** the rope swing (Traversal `swing` state: auto-catch with the grab assist or the context
+  button, pendulum with pumping, jump-release that carries into a glide; `world/Ropes.js` free ropes that sway and
+  settle, one draw call; `rope_hang` pose; ropes strung between the west paddies' bamboo poles). 2.1 Pesta Wau: Pak Mail
+  (new character, terendak) keeps the festival and gives Bayu Tok Wan's own wau (the glide is granted here); the lesson
+  from the launch tower (`pelantar_wau`) through two hoops; the race against Adi: launch tower → hoops over the
+  paddies → up the terraces → the crown's tower → the long glide home through hoops to the festival field. Hoops hang
+  from flying kites (`gelung_wau_*`); `competitive/RaceCourse.js` (in order, assist margin, a missed hoop costs 2 s,
+  never sends anyone back); Adi glides (PathMover flight segments, his own wau); festival villagers; race music and
+  festival sounds (hoop chimes, the kite's humming bow, the crowd); the Gelung Sawah trial with medals.
 
 ## Setup checklist status
 

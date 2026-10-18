@@ -8,7 +8,17 @@
  * its head, so it loops without a seam. Stingers are one-shots for story moments.
  */
 import { SAMPLE_RATE, bell, reverb, rng } from './synth.mjs';
-import { drone, gambang, gambus, gambusBody, gong, rebanaDum, rebanaTak, seruling } from './instruments.mjs';
+import {
+  bonang,
+  drone,
+  gambang,
+  gambus,
+  gambusBody,
+  gong,
+  rebanaDum,
+  rebanaTak,
+  seruling,
+} from './instruments.mjs';
 
 export const BPM = 80;
 export const BEATS_PER_BAR = 4;
@@ -355,6 +365,59 @@ function prologueStorm(seed) {
   );
 }
 
+/**
+ * Sawah Emas, explore (16 bars; GDD: light gamelan Melayu, flute): the theme on the bonang an octave up over a
+ * gambang lilting through the chords, then an interlocking pair of bonang lines on the chords while the seruling
+ * answers with the theme's opening; a light gendang (rebana) dance and small gongs on the cycle.
+ * @param {number} seed
+ */
+function sawahGamelan(seed) {
+  const random = rng(seed);
+  return renderLoop(
+    16,
+    (out) => {
+      for (const n of themeNotes(12, 0)) {
+        bonang(out, at(0, n.beat) + nudge(random), n.note, 0.3);
+        // A bonang cannot hold a note: long ones are struck again, softer.
+        if (n.beats >= 1.5) bonang(out, at(0, n.beat + n.beats / 2) + nudge(random), n.note, 0.15);
+      }
+      const lilt = [0, 2, 1, 2, 3, 2, 1, 2];
+      for (let bar = 0; bar < 16; bar++) {
+        const chord = CHORDS[bar % 8].map((note) => note + 12);
+        lilt.forEach((index, e) =>
+          gambang(out, at(bar, e * 0.5) + nudge(random, 4), chord[index], e % 2 ? 0.05 : 0.08),
+        );
+      }
+      for (let bar = 8; bar < 16; bar++) {
+        const chord = CHORDS[bar % 8].map((note) => note + 24);
+        for (let s16 = 0; s16 < 16; s16++) {
+          // Two parts that fill each other's gaps (imbal-like): one on the even sixteenths, one on the odd.
+          const part = s16 % 2 ? [3, 1, 2, 1] : [0, 2, 1, 2];
+          const note = chord[part[(s16 >> 1) % 4]];
+          bonang(out, at(bar, s16 * 0.25) + nudge(random, 3), note, s16 % 2 ? 0.08 : 0.11);
+        }
+      }
+      const answer = themeNotes(12, 8, 4).map((n) => ({
+        start: n.beat * BEAT,
+        seconds: n.beats * BEAT - 0.05,
+        note: n.note,
+        gain: 0.24 * (0.92 + random() * 0.1),
+      }));
+      seruling(out, answer, random, { vibrato: 0.007, breath: 0.08 });
+      for (let bar = 0; bar < 16; bar++) {
+        rebanaDum(out, at(bar, 0) + nudge(random, 4), 0.26, random, 1.1);
+        rebanaTak(out, at(bar, 1.5) + nudge(random, 4), 0.12, random, 1.1);
+        rebanaTak(out, at(bar, 2.5) + nudge(random, 4), 0.1, random, 1.1);
+        rebanaDum(out, at(bar, 3) + nudge(random, 4), 0.18, random, 1.15);
+        rebanaDum(out, at(bar, 3.5) + nudge(random, 4), 0.12, random, 1.15);
+      }
+      gong(out, at(0), 45, 0.3, random, 4);
+      gong(out, at(8), 45, 0.24, random, 4);
+    },
+    0.3,
+  );
+}
+
 /** Stinger: wonder (the display begins): a rising gambang run into a shimmer of bells. */
 function stingWonder(seed) {
   const random = rng(seed);
@@ -408,6 +471,7 @@ function stingWin(seed) {
 /** Stem generators by name: (seed) => Float32Array, an exact whole number of bars. */
 export const STEM_GENERATORS = Object.freeze({
   kampungGambus,
+  sawahGamelan,
   kampungDanger,
   silatCombat,
   themeSeruling,

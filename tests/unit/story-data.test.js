@@ -209,14 +209,16 @@ function checkAction(action, mission, region, where) {
 }
 
 describe('story data', () => {
-  it('loads the slice: the prologue and Chapter 1 missions, chained from P to 1.4', () => {
-    expect(Object.keys(content.missions).sort()).toEqual(['1.1', '1.2', '1.3', '1.4', 'P']);
+  it('loads the story: the prologue onward, every mission chained from P in order', () => {
     const chain = [];
     for (let id = 'P'; id;) {
       chain.push(id);
       id = content.missions[id].end?.find((action) => action.next)?.next;
     }
-    expect(chain).toEqual(['P', '1.1', '1.2', '1.3', '1.4']);
+    expect(chain.slice(0, 6)).toEqual(['P', '1.1', '1.2', '1.3', '1.4', '2.1']);
+    // Every mission is reachable from the prologue, exactly once.
+    expect([...chain].sort()).toEqual(Object.keys(content.missions).sort());
+    expect(new Set(chain).size).toBe(chain.length);
     // A new save starts the prologue.
     expect(content.missions.P.region).toBe('prologue');
   });

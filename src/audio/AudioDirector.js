@@ -51,7 +51,7 @@ export class AudioDirector {
     this.bank = new SoundBank(random);
     this.sfx = new Sfx({ audio, bank: this.bank, voices: sounds.voices });
     this.music = new MusicSystem({ audio, bank: this.bank, sfx: this.sfx, config: regions.musicSystem });
-    this.ambience = new Ambience({ sfx: this.sfx, bank: this.bank, config: regions.ambience });
+    this.ambience = new Ambience({ sfx: this.sfx, bank: this.bank, config: regions.ambience, random });
     this.foley = new Foley({
       play: (id, options) => this.sfx.play(id, options),
       surfaceAt,
@@ -78,6 +78,8 @@ export class AudioDirector {
     if (region) {
       for (const id of region.banks) ids.add(id);
       for (const mix of Object.values(region.ambience)) for (const id of Object.keys(mix)) ids.add(id);
+      for (const list of Object.values(region.sprinkles ?? {}))
+        for (const sprinkle of list) ids.add(sprinkle.bank);
       if (region.music) ids.add(region.music.bank);
     }
     return [...ids];
@@ -106,7 +108,7 @@ export class AudioDirector {
     this.regionId = id;
     const region = id ? (this.regions.regions[id] ?? null) : null;
     this.music.setRegion(id, region?.music ?? null);
-    this.ambience.setRegion(region?.ambience ?? null);
+    this.ambience.setRegion(region?.ambience ?? null, region?.sprinkles ?? null);
     this._glideOpen(false);
   }
 
@@ -136,7 +138,7 @@ export class AudioDirector {
     audio.update(dt);
     if (!audio.running) return;
     audio.setListener(listener, forward);
-    this.ambience.update(preset);
+    this.ambience.update(preset, paused ? 0 : dt);
     this.music.update(fighting);
     if (this._glide) {
       const g = this.sounds.glide;

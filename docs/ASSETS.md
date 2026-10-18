@@ -109,7 +109,7 @@ with the runtime overlay. Not built yet: `tokwan` (P1), `pakmail`, `pakleman`, `
 | `lore_scroll`, `paper_scrap`, `chest` | Collectibles | Scroll tube, fluttering scraps, peti (chest) | P0 (few), P3 (all 40) |
 | `sampan`, `perahu` | Boats | Ambient in Ch1; playable sampan in Ch4 | P0 (ambient), P1 (playable) |
 | Village props | Pelita oil lamps, gas lamps, nets (jala), fish traps (bubu), washing lines with batik, water jars (tempayan), baskets, stall (gerai), radio, bicycles | Kit-level variety, instanced | P0 |
-| Sawah props | Scarecrows (orang-orang sawah), huts (dangau), ropes/vines for swings, kite stands | | P1 |
+| Sawah props | Scarecrows (orang-orang sawah), huts (dangau), ropes/vines for swings, kite stands | `tools/blender/kits/sawah.py` (Phase 4 M1): pondok sawah, jelapang, two orang-orang, kelapa, pokok hujan-hujan, tiang buluh (rope anchors), three festival wau on stands (own palettes), bunting, pintu air, haystack, pagar buluh, titian, Pelita Bumi | P1: built |
 | Kota Kayu props | Market stalls, carving tools, gambus, harbour cranes (wooden), lighthouse, festival lanterns and banners (no religious symbols) | | P1 |
 
 P0 props built 2026-10-17 by `tools/blender/props/slice_props.py` → `props/props_slice`: `tongkat` (origin at the grip,
@@ -123,7 +123,7 @@ light offset), `peti` (lid hinged on `hk_hinge=x`) and `lore_scroll`. 1,418 tria
 | --- | --- | --- | --- |
 | Prologue: flooded Kampung Berembang, 40 years ago | Kampung kit in storm/damaged states: broken planks, tilting houses, collapsing roofs (scripted breakables), floating debris; rain, rising water | The jetty standoff in the rain | P0 |
 | Kampung Berembang (Ch1, epilogue) | Stilt houses (rumah ibu, serambi, dapur; posts, floors, woven walls, shuttered windows, stairs), nipah/attap roofs with simple gable boards, boardwalks and the long jetty, berembang mangroves (Sonneratia) with pneumatophores, nipah palms, mudflat heightfield, river | The tallest berembang (Pelita Air), the old jetty (boss arena) | P0 |
-| Sawah Emas (Ch2) | Terraced paddies (bendang, batas, channels), instanced rice, huts, giant scarecrows, festival field, ropes and nets between poles | Kites overhead, terrace Pelita | P1 |
+| Sawah Emas (Ch2) | Terraced paddies (bendang, batas, channels), instanced rice, huts, giant scarecrows, festival field, ropes and nets between poles | Kites overhead, terrace Pelita | P1: region built (M1). Terraces are ring meshes from `region.terrain.terraces` (src/world/Terraces.js), rice is instanced blades (src/world/Rice.js), houses reuse the Kampung kit; layout `tools/layout/sawah.mjs` |
 | Hutan Larangan (Ch3) | Giant trees with buttress roots, vines, ferns, mossy rocks, mist cards, bioluminescent fungi, Bunian arches (original woven-root design with glowing threads), Tok Belang's den, the memory grove | Bunian arches, Pelita Rimba | P1 |
 | Kota Kayu (Ch4) | Carved timber town with rumah limas roofs (tunjuk langit finials, tebar layar gable boards, sisir angin panels), market streets, rooftop routes, poles, carving hall (heritage building, no royals), boatyard, harbour cranes | Lighthouse (Pelita Pelabuhan) | P1 |
 | Puncak Seri (Ch5) | Mountain path, collapsing ledges, cloud sea, thermal columns (VFX), summit | The last Pelita | P1 |

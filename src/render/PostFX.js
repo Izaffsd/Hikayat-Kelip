@@ -3,10 +3,12 @@ import { pass, renderOutput } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
 import { smaa } from 'three/addons/tsl/display/SMAANode.js';
+import { gradeNode } from './grade.js';
 
 /**
  * Builds the post-processing chain for a quality preset (TECHNICAL §3.3) using `RenderPipeline`
- * (three r183+; never the deprecated `PostProcessing`). Low quality renders directly with no chain.
+ * (three r183+; never the deprecated `PostProcessing`): bloom, the region's colour grade (render/grade.js, driven by
+ * the lighting mood), anti-aliasing. Low quality renders directly with no chain (its moods carry the look).
  */
 export class PostFX {
   /**
@@ -40,6 +42,7 @@ export class PostFX {
       this.bloomNode = bloom(color, 0.6, 0.35, 0.82);
       color = color.add(this.bloomNode);
     }
+    color = gradeNode(color);
     if (post.smaa || post.fxaa) {
       // Anti-aliasing expects display-referred (tone-mapped, sRGB) input.
       pipeline.outputColorTransform = false;

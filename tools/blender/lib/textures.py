@@ -310,15 +310,21 @@ def polygon_distance(size: int, polygon: list[tuple[float, float]]) -> tuple[np.
     return inside, dist
 
 
-def wau_skin(polygon_uv: list[tuple[float, float]], size: int = 1024, seed: int = 111, metres: float = 2.6) -> np.ndarray:
+WAU_PALETTE = {"ground": "#efe2c4", "a": "#a3242a", "gold": "#d9a441", "b": "#1f5f63"}
+
+
+def wau_skin(polygon_uv: list[tuple[float, float]], size: int = 1024, seed: int = 111, metres: float = 2.6,
+             palette: dict | None = None) -> np.ndarray:
     """Layered cut-paper kite skin: colour bands that follow the outline (as layered paper does on a wau) and a
-    column of nested diamonds and dots down the spine. Original geometry, no copied motif."""
+    column of nested diamonds and dots down the spine. Original geometry, no copied motif. `palette` recolours it
+    (ground, a, gold, b): Bayu's glider keeps the default; festival kites get their own."""
+    pal = {**WAU_PALETTE, **(palette or {})}
     inside, dist = polygon_distance(size, polygon_uv)
     d = dist * metres  # metres from the edge
     yy, xx = np.mgrid[0:size, 0:size].astype(np.float32) / size
-    rgb = np.zeros((size, size, 3), dtype=np.float32) + _hex("#efe2c4")
-    bands = [(0.0, 0.035, "#a3242a"), (0.035, 0.05, "#d9a441"), (0.05, 0.08, "#1f5f63"), (0.08, 0.095, "#d9a441"),
-             (0.2, 0.235, "#a3242a"), (0.235, 0.25, "#d9a441")]
+    rgb = np.zeros((size, size, 3), dtype=np.float32) + _hex(pal["ground"])
+    bands = [(0.0, 0.035, pal["a"]), (0.035, 0.05, pal["gold"]), (0.05, 0.08, pal["b"]), (0.08, 0.095, pal["gold"]),
+             (0.2, 0.235, pal["a"]), (0.235, 0.25, pal["gold"])]
     for lo, hi, colour in bands:
         rgb[(d >= lo) & (d < hi)] = _hex(colour)
     # Spine column: nested diamonds and dots (|x| small in metres).
@@ -326,13 +332,34 @@ def wau_skin(polygon_uv: list[tuple[float, float]], size: int = 1024, seed: int 
     cy = (yy - 0.5) * metres
     for k, z in enumerate(np.arange(-0.62, 0.86, 0.16)):
         diamond = np.abs(cx) + np.abs(cy - z)
-        rgb[(diamond < 0.07) & (d > 0.1)] = _hex("#a3242a" if k % 2 else "#1f5f63")
-        rgb[(diamond < 0.045) & (d > 0.1)] = _hex("#d9a441")
-        rgb[(diamond < 0.02) & (d > 0.1)] = _hex("#efe2c4")
+        rgb[(diamond < 0.07) & (d > 0.1)] = _hex(pal["a"] if k % 2 else pal["b"])
+        rgb[(diamond < 0.045) & (d > 0.1)] = _hex(pal["gold"])
+        rgb[(diamond < 0.02) & (d > 0.1)] = _hex(pal["ground"])
     paper_grain = fbm(size, seed, gx=48, octaves=2)
     rgb = rgb * (0.92 + 0.12 * paper_grain)[..., None]
-    rgb[~inside] = _hex("#efe2c4")  # outside the outline (never shown; keeps mip edges clean)
+    rgb[~inside] = _hex(pal["ground"])  # outside the outline (never shown; keeps mip edges clean)
     return _rgba(_painterly(rgb, seed, 0.04))
+
+
+def stone(size: int = 512, seed: int = 141, base: str = "#9a5a3c", rows: int = 4) -> np.ndarray:
+    """Laterite blocks (batu laterit): porous red-brown stone laid in courses, with dark mortar and pitting."""
+    yy, xx = np.mgrid[0:size, 0:size].astype(np.float32) / size
+    row = np.floor(yy * rows)
+    offset = (row % 2) * 0.5
+    col = np.floor(xx * 2 + offset)
+    ux = (xx * 2 + offset) - col
+    uy = yy * rows - row
+    mortar = np.clip(np.minimum(np.minimum(ux, 1 - ux) * 18, np.minimum(uy, 1 - uy) * 9), 0, 1)
+    rng = np.random.default_rng(seed)
+    tint = rng.uniform(0.85, 1.12, size=(rows + 1, 4))
+    block = tint[row.astype(int), col.astype(int) % 4]
+    pits = fbm(size, seed + 3, gx=40, octaves=3)
+    pitting = np.clip((0.35 - pits) * 5, 0, 1)
+    broad = fbm(size, seed + 7, gx=6, octaves=4)
+    rgb = _hex(base) * (block * (0.8 + 0.35 * broad))[..., None]
+    rgb = rgb * (1 - 0.45 * pitting[..., None])
+    rgb = rgb * (0.35 + 0.65 * mortar[..., None])
+    return _rgba(_painterly(rgb, seed, 0.06))
 
 
 def bark(size: int = 512, seed: int = 41, base: str = "#5e5144", moss: str = "#4c5b34") -> np.ndarray:

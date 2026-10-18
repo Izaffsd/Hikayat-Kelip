@@ -151,6 +151,8 @@
   "race.time": "{time} · best {best}",
   "chapter.1.kicker": "Chapter 1 · The First Sound",
   "chapter.1.title": "Bunyi Pertama",
+  "chapter.2.kicker": "Chapter 2 · The Moon Kite",
+  "chapter.2.title": "Wau Bulan",
   "objective.P.roofs": "Chase the tiger across the rooftops",
   "objective.P.glide": "Glide down to the lamp-lit deck",
   "objective.P.wisps": "Drive off the shadows",
@@ -167,5 +169,6 @@
   "objective.1.4.arena": "Find Adi on the old jetty",
   "objective.1.4.adi": "Free Adi from Kelam",
   "objective.1.4.climb": "Climb the tallest berembang",
-  "objective.1.4.relight": "Relight the Pelita Air"
+  "objective.1.4.relight": "Relight the Pelita Air",
+  "objective.2.1.arrive": "Go to the kite festival"
 }

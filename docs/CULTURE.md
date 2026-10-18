@@ -63,7 +63,14 @@ Communications and Multimedia Act 1998 (GDD, [FMT](https://www.freemalaysiatoday
 | Rumah limas, tunjuk langit, tebar layar, sisir angin | Hip-roof house; roof finial; gable board; ventilation panel | Kota Kayu roofs | ([The Malaysian Insight](https://www.themalaysianinsight.com/g/370170)) |
 | Atap nipah (attap) | Nipah-palm thatch | Roofs | |
 | Sawah, bendang, batas | Paddy field, field, bund | Sawah Emas | |
-| Orang-orang sawah | Scarecrow | Ch2 giant scarecrows, side story | |
+| Orang-orang sawah | Scarecrow | Ch2 giant scarecrows, side story | Bamboo cross, old baju and sarung, straw head, terendak; cloth streamers. No faces painted, nothing mocking |
+| Terendak | Wide conical field hat | Scarecrows' hats | Everyday farm wear |
+| Pondok sawah / dangau | Field hut on stilts | Sawah Emas huts | Everyday structure |
+| Jelapang | Raised rice barn with rat guards on its posts | Sawah Emas village | Everyday structure |
+| Batas | The earth bund around a paddy | Terraces' walkable lips | Everyday word |
+| Pintu air | Sluice gate of a field channel | Sawah Emas channels | Everyday structure |
+| Pesta wau | Kite festival | 2.1 (the festival field, kites on stands) | A harvest-time community festival; original kite patterns |
+| Bonang | Row of small bronze kettle gongs of the gamelan | Sawah Emas music (theme and interlocking parts) | Instrument timbre only; original music |
 | Kerbau | Water buffalo | Ch2 herd hazard/shield | |
 | Terendak | Wide farmer's hat | Pak Mail | |
 | Hutan larangan, rimba | Forbidden forest, jungle | Chapter 3 region | |

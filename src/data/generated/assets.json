@@ -45,6 +45,21 @@
         ]
       }
     },
+    "audio/amb_rice": {
+      "url": "/assets/audio/amb_rice.fe6a872aaf.ogg",
+      "bytes": 104349,
+      "type": "audio",
+      "bus": "ambience",
+      "loop": true,
+      "sounds": {
+        "amb_rice": [
+          [
+            0,
+            12
+          ]
+        ]
+      }
+    },
     "audio/amb_water": {
       "url": "/assets/audio/amb_water.9dd162a560.ogg",
       "bytes": 75384,
@@ -91,8 +106,8 @@
       }
     },
     "audio/music_kampung": {
-      "url": "/assets/audio/music_kampung.b80c9a2ab4.ogg",
-      "bytes": 1078012,
+      "url": "/assets/audio/music_kampung.741a543aa8.ogg",
+      "bytes": 1003819,
       "type": "audio",
       "bus": "music",
       "music": {
@@ -129,24 +144,6 @@
             96.88,
             24
           ]
-        ],
-        "sting_wonder": [
-          [
-            121.04,
-            5
-          ]
-        ],
-        "sting_kelam": [
-          [
-            126.1,
-            7
-          ]
-        ],
-        "sting_win": [
-          [
-            133.16,
-            3.2
-          ]
         ]
       }
     },
@@ -181,6 +178,88 @@
           [
             48.62,
             24
+          ]
+        ]
+      }
+    },
+    "audio/music_sawah": {
+      "url": "/assets/audio/music_sawah.232d780556.ogg",
+      "bytes": 891754,
+      "type": "audio",
+      "bus": "music",
+      "music": {
+        "bpm": 80,
+        "beatsPerBar": 4
+      },
+      "loops": [
+        "explore",
+        "danger",
+        "combat",
+        "story"
+      ],
+      "sounds": {
+        "explore": [
+          [
+            0.1,
+            48
+          ]
+        ],
+        "danger": [
+          [
+            48.36,
+            24
+          ]
+        ],
+        "combat": [
+          [
+            72.62,
+            24
+          ]
+        ],
+        "story": [
+          [
+            96.88,
+            24
+          ]
+        ]
+      }
+    },
+    "audio/sawah_sfx": {
+      "url": "/assets/audio/sawah_sfx.6881976110.ogg",
+      "bytes": 27697,
+      "type": "audio",
+      "bus": "sfx",
+      "sounds": {
+        "buffalo_bell": [
+          [
+            0,
+            1.1
+          ],
+          [
+            1.16,
+            1.03834
+          ],
+          [
+            2.25834,
+            1.1
+          ]
+        ],
+        "bird_chirp": [
+          [
+            3.41834,
+            0.78118
+          ],
+          [
+            4.25952,
+            0.78082
+          ],
+          [
+            5.10034,
+            0.78102
+          ],
+          [
+            5.94136,
+            0.78091
           ]
         ]
       }
@@ -605,6 +684,32 @@
         ]
       }
     },
+    "audio/stings": {
+      "url": "/assets/audio/stings.ce045f8e3d.ogg",
+      "bytes": 78317,
+      "type": "audio",
+      "bus": "music",
+      "sounds": {
+        "sting_wonder": [
+          [
+            0,
+            5
+          ]
+        ],
+        "sting_kelam": [
+          [
+            5.06,
+            7
+          ]
+        ],
+        "sting_win": [
+          [
+            12.12,
+            3.2
+          ]
+        ]
+      }
+    },
     "audio/storm": {
       "url": "/assets/audio/storm.19dbf1d339.ogg",
       "bytes": 119084,
@@ -850,6 +955,11 @@
     "kits/kampung_kit": {
       "url": "/assets/kits/kampung_kit.aa913c43a3.glb",
       "bytes": 737300,
+      "type": "glb"
+    },
+    "kits/sawah_kit": {
+      "url": "/assets/kits/sawah_kit.02a552dd72.glb",
+      "bytes": 1047104,
       "type": "glb"
     },
     "props/props_slice": {

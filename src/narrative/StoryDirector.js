@@ -108,8 +108,11 @@ export class StoryDirector {
     this.holding = false;
     this._tide = null;
     this._off = [
+      // Kelip is at Bayu's side whenever it has risen (a chapter's setup can say so; its rise places it itself).
       bus.on(EV.STORY_FLAG, ({ name, value }) => {
-        if (name === 'kelip_awake' && this.kelip && !value) this.kelip.setVisible(false);
+        if (name !== 'kelip_awake' || !this.kelip) return;
+        if (!value) this.kelip.setVisible(false);
+        else if (!this.kelip.visible) this.kelip.setVisible(true, engine._currentFeet());
       }),
       bus.on(EV.REGION_READY, () => this._regionReady()),
       bus.on(EV.CUTSCENE_ENDED, () => engine.setPose(null)),

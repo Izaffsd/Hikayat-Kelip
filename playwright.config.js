@@ -24,7 +24,9 @@ export default defineConfig({
     headless: false,
     baseURL: `http://localhost:${PORT}`,
     viewport: { width: 1280, height: 720 },
-    launchOptions: { args: ['--enable-unsafe-webgpu', '--autoplay-policy=no-user-gesture-required'] },
+    launchOptions: {
+      args: ['--enable-unsafe-webgpu', '--autoplay-policy=no-user-gesture-required', '--mute-audio'],
+    },
   },
   projects: [
     { name: 'webgpu', use: { testQuery: '' } },

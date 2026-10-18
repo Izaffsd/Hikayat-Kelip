@@ -151,6 +151,8 @@
   "race.time": "{time} · terbaik {best}",
   "chapter.1.kicker": "Bab 1",
   "chapter.1.title": "Bunyi Pertama",
+  "chapter.2.kicker": "Bab 2",
+  "chapter.2.title": "Wau Bulan",
   "objective.P.roofs": "Kejar harimau merentas bumbung",
   "objective.P.glide": "Melayang turun ke pelantar berpelita",
   "objective.P.wisps": "Halau bayang-bayang itu",
@@ -167,5 +169,6 @@
   "objective.1.4.arena": "Cari Adi di jeti lama",
   "objective.1.4.adi": "Bebaskan Adi daripada Kelam",
   "objective.1.4.climb": "Panjat berembang paling tinggi",
-  "objective.1.4.relight": "Nyalakan semula Pelita Air"
+  "objective.1.4.relight": "Nyalakan semula Pelita Air",
+  "objective.2.1.arrive": "Pergi ke pesta wau"
 }

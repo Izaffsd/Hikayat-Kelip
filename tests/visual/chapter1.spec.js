@@ -101,7 +101,7 @@ test('1.4: Cursed Adi is freed, the tide goes out, the climb, and the Pelita Air
   page,
   testQuery,
 }, testInfo) => {
-  test.setTimeout(200_000);
+  test.setTimeout(260_000);
   const problems = [];
   watch(page, problems);
   await boot(page, ['mission=1.4', testQuery]);
@@ -143,5 +143,13 @@ test('1.4: Cursed Adi is freed, the tide goes out, the climb, and the Pelita Air
   expect(end.flags.pelita_air).toBe(true);
   expect(end.pages).toEqual([1]);
   expect((await page.evaluate(() => window.__hk.savedDoc())).missions.completed['1.4']).toBe(true);
+  // Chapter 2: upriver to Sawah Emas. WebGL2 compiles the region's shaders on the main thread: with a cold shader
+  // cache the first trip took over 30 s here (12 s once cached), so allow for it and report the time.
+  const upriver = Date.now();
+  await reach(page, '2.1', 'arrive', 90_000);
+  console.info(
+    `[${testInfo.project.name}] upriver to Sawah Emas: ${((Date.now() - upriver) / 1000).toFixed(1)} s`,
+  );
+  expect((await story(page)).region).toBe('sawah');
   expect(problems).toEqual([]);
 });

@@ -7,6 +7,11 @@
       "outputs": [{ "file": "kampung_kit.glb", "group": "kits", "textureSize": 512 }]
     },
     {
+      "id": "sawah_kit",
+      "script": "tools/blender/kits/sawah.py",
+      "outputs": [{ "file": "sawah_kit.glb", "group": "kits", "textureSize": 512 }]
+    },
+    {
       "id": "tokbelang",
       "script": "tools/blender/characters/tokbelang.py",
       "outputs": [{ "file": "tokbelang.glb", "group": "characters", "textureSize": 1024 }]

@@ -1,0 +1,20 @@
+{
+  "comment": "2.1, Pesta Wau (GDD: join the kite festival, learn the wau glide, win the race). Bayu comes up the river path to Sawah Emas for the festival Tok Wan always brought him to. Phase 4 M1: the arrival and the walk to the festival field; M2 adds the wau lesson and the race.",
+  "id": "2.1",
+  "chapter": "2",
+  "region": "sawah",
+  "abilities": "chapter2",
+  "avatar": "bayu",
+  "setup": [{ "light": "golden" }, { "music": null }, { "flag": "kelip_awake" }],
+  "start": [{ "title": "chapter.2" }],
+  "steps": [
+    {
+      "id": "arrive",
+      "objective": "objective.2.1.arrive",
+      "guide": "trigger:s_festival",
+      "until": { "trigger": "s_festival" },
+      "on": { "start": [{ "say": "k2.bayu.arrive" }], "done": [{ "say": "k2.bayu.festival" }] }
+    }
+  ],
+  "end": [{ "autosave": true }]
+}

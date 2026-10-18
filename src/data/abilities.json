@@ -46,6 +46,7 @@
   "regions": {
     "prologue": "borrowed",
     "kampung": "chapter1",
+    "sawah": "chapter2",
     "sandbox": "all"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "comment": "1.4, Pelita Air (GDD): free Adi on the old jetty (D-033: freed when his corruption bar empties), then the freeing scene (the ink drains, Adi thanks Bayu, the tide goes out), climb the tallest berembang and relight the first Pelita: its teal light returns, the fireflies come back row by row and page 1 returns to the hikayat. The last mission of the vertical slice.",
+  "comment": "1.4, Pelita Air (GDD): free Adi on the old jetty (D-033: freed when his corruption bar empties), then the freeing scene (the ink drains, Adi thanks Bayu, the tide goes out), climb the tallest berembang and relight the first Pelita: its teal light returns, the fireflies come back row by row and page 1 returns to the hikayat. Then Bayu travels upriver to Sawah Emas (Chapter 2).",
   "id": "1.4",
   "chapter": "1",
   "region": "kampung",
@@ -55,5 +55,11 @@
       }
     }
   ],
-  "end": [{ "music": null }, { "autosave": true }]
+  "end": [
+    { "autosave": true },
+    { "music": null },
+    { "wait": 2 },
+    { "region": "sawah", "marker": "spawn" },
+    { "next": "2.1" }
+  ]
 }

@@ -2,6 +2,7 @@ import { Group, Vector3 } from 'three/webgpu';
 import { data, loadData } from '../core/Data.js';
 import { DayNight } from './DayNight.js';
 import { Fireflies } from './Fireflies.js';
+import { Rice } from './Rice.js';
 import { LevelBuilder } from './LevelBuilder.js';
 import { Rain } from './Rain.js';
 import { Sky } from './Sky.js';
@@ -83,7 +84,13 @@ export class World {
     this.terrain = region.terrain
       ? new Terrain(region.terrain, this.physics, region.water?.level ?? -10)
       : null;
-    if (this.terrain) this.root.add(this.terrain.mesh);
+    if (this.terrain) this.root.add(this.terrain.group);
+    // Rice in the paddies (regions with terrace fields).
+    this.rice =
+      region.rice && region.terrain
+        ? new Rice({ terrain: region.terrain, def: region.rice, quality: this.preset })
+        : null;
+    if (this.rice) this.root.add(this.rice.group);
 
     this.builder = new LevelBuilder({
       physics: this.physics,
@@ -175,6 +182,7 @@ export class World {
     this.sky.follow(camera);
     this.dayNight.update(dt, focus);
     this.fireflies?.update(dt);
+    this.rice?.update(camera.position);
   }
 
   /** Frees GPU resources and colliders; releases the kit GLBs. */
@@ -183,6 +191,7 @@ export class World {
     this.sky?.dispose();
     this.water?.dispose();
     this.terrain?.dispose();
+    this.rice?.dispose();
     this.fireflies?.dispose();
     this.rain?.dispose();
     this.dayNight?.dispose();

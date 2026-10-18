@@ -202,6 +202,34 @@ export function gong(out, start, note, gain, random, decay = 5) {
 }
 
 /**
+ * Bonang (a bronze kettle gong of the gamelan Melayu): a clear fundamental beating gently against its twin, bright
+ * upper partials that die fast, and a soft padded mallet. It cannot sustain, so long notes are struck again.
+ * @param {Float32Array} out
+ * @param {number} start sample
+ * @param {number} note MIDI
+ * @param {number} gain
+ */
+export function bonang(out, start, note, gain) {
+  if (start < 0 || start >= out.length) return;
+  const frequency = midiHz(note);
+  const n = Math.min(out.length - start, Math.round(1.8 * SAMPLE_RATE));
+  const partials = [
+    [1, 1, 1.3],
+    [1.0035, 0.5, 1.2],
+    [2.02, 0.42, 0.55],
+    [2.76, 0.26, 0.4],
+    [4.07, 0.1, 0.22],
+  ];
+  for (let i = 0; i < n; i++) {
+    const t = i / SAMPLE_RATE;
+    let v = 0;
+    for (const [ratio, amp, decay] of partials)
+      v += Math.sin(TAU * frequency * ratio * t) * amp * Math.exp(-t / decay);
+    out[start + i] += v * gain * Math.min(1, t / 0.002);
+  }
+}
+
+/**
  * Gambang note (wooden bar), re-exported for the score.
  * @param {Float32Array} out
  * @param {number} start sample

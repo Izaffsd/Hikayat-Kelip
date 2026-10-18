@@ -455,23 +455,42 @@
           "seed": 5,
           "gain": -2
         }
-      },
+      }
+    },
+    {
+      "id": "stings",
+      "bus": "music",
+      "quality": 4,
       "sounds": {
-        "sting_wonder": {
-          "synth": "stingWonder",
-          "seeds": [1],
-          "gain": -5
-        },
-        "sting_kelam": {
-          "synth": "stingKelam",
-          "seeds": [1],
-          "gain": -3
-        },
-        "sting_win": {
-          "synth": "stingWin",
-          "seeds": [1],
-          "gain": -5
-        }
+        "sting_wonder": { "synth": "stingWonder", "seeds": [1], "gain": -5 },
+        "sting_kelam": { "synth": "stingKelam", "seeds": [1], "gain": -3 },
+        "sting_win": { "synth": "stingWin", "seeds": [1], "gain": -5 }
+      }
+    },
+    {
+      "id": "sawah_sfx",
+      "bus": "sfx",
+      "quality": 3,
+      "sounds": {
+        "buffalo_bell": { "synth": "buffaloBell", "seeds": [1, 2, 3], "gain": -6 },
+        "bird_chirp": { "synth": "birdChirp", "seeds": [1, 2, 3, 4], "gain": -10 }
+      }
+    },
+    {
+      "id": "amb_rice",
+      "bus": "ambience",
+      "quality": 3,
+      "loop": { "synth": "riceWind", "seed": 3, "gain": -4 }
+    },
+    {
+      "id": "music_sawah",
+      "bus": "music",
+      "quality": 4,
+      "stems": {
+        "explore": { "synth": "sawahGamelan", "seed": 1, "gain": -2 },
+        "danger": { "synth": "kampungDanger", "seed": 9, "gain": -1 },
+        "combat": { "synth": "silatCombat", "seed": 11, "gain": 0 },
+        "story": { "synth": "themeSeruling", "seed": 13, "gain": -2 }
       }
     }
   ]

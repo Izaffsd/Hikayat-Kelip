@@ -766,6 +766,91 @@ function kelamRise(seed) {
   return reverb(out, 0.35);
 }
 
+/** Wind moving through ripe rice: a soft rush, rustling highs and slow gusts (Sawah Emas by day, loop). */
+function riceWind(seed) {
+  return seamless(
+    (n) => {
+      const random = rng(seed);
+      const pink = pinkNoise(random);
+      const body = new Biquad('bandpass', 650, 0.7);
+      const rustle = new Biquad('bandpass', 4200, 1.3);
+      const gust = rng(seed + 1);
+      let target = 0.5;
+      let level = 0.5;
+      let crackle = 0;
+      const out = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        if (i % 6615 === 0) target = 0.3 + gust() * 0.7;
+        level += (target - level) * 0.00015;
+        if (random() < 0.0004) crackle = 0.5 + random() * 0.5;
+        crackle *= 0.9993;
+        const p = pink();
+        out[i] =
+          body.process(p) * level * 1.1 + rustle.process(p) * (0.2 + level * 0.55 + crackle * 0.35) * 0.9;
+      }
+      return out;
+    },
+    12,
+    1.5,
+  );
+}
+
+/** A wooden buffalo bell (a hollow clapper bell): two clonks, the second softer. */
+function buffaloBell(seed) {
+  const random = rng(seed);
+  const n = Math.round(1.1 * SAMPLE_RATE);
+  const out = new Float32Array(n);
+  const f0 = 380 + random() * 140;
+  const modes = [
+    [1, 1, 0.22],
+    [2.32, 0.45, 0.12],
+    [3.9, 0.22, 0.06],
+  ];
+  const hits = [
+    [0, 1],
+    [0.11 + random() * 0.06, 0.55],
+  ];
+  const pink = pinkNoise(random);
+  const knock = new Biquad('bandpass', f0 * 1.6, 2);
+  for (const [time, gain] of hits) {
+    const s0 = Math.round(time * SAMPLE_RATE);
+    for (let i = 0; i < n - s0; i++) {
+      const t = i / SAMPLE_RATE;
+      let v = 0;
+      for (const [ratio, amp, decay] of modes)
+        v += Math.sin(2 * Math.PI * f0 * ratio * t) * amp * Math.exp(-t / decay);
+      out[s0 + i] +=
+        (v + knock.process(pink()) * Math.exp(-t / 0.012) * 1.5) * gain * Math.min(1, t / 0.0015);
+    }
+  }
+  return reverb(out, 0.18);
+}
+
+/** A small paddy bird's call: two to four quick rising chirps. */
+function birdChirp(seed) {
+  const random = rng(seed);
+  const n = Math.round(0.8 * SAMPLE_RATE);
+  const out = new Float32Array(n);
+  const notes = 2 + Math.floor(random() * 3);
+  let start = 0.02;
+  for (let k = 0; k < notes; k++) {
+    const length = 0.05 + random() * 0.05;
+    const from = 3000 + random() * 1500;
+    const to = from + 800 + random() * 1800;
+    const s0 = Math.round(start * SAMPLE_RATE);
+    let phase = 0;
+    for (let i = 0; i < length * SAMPLE_RATE && s0 + i < n; i++) {
+      const t = i / SAMPLE_RATE;
+      const u = t / length;
+      phase += (2 * Math.PI * (from + (to - from) * u * u)) / SAMPLE_RATE;
+      out[s0 + i] +=
+        Math.sin(phase + 0.6 * Math.sin(2 * Math.PI * 70 * t)) * Math.sin(Math.PI * u) ** 1.5 * 0.5;
+    }
+    start += length + 0.03 + random() * 0.06;
+  }
+  return reverb(out, 0.15);
+}
+
 /** Registry of generators by name: (seed) => Float32Array. */
 export const GENERATORS = Object.freeze({
   nightInsects,
@@ -794,6 +879,9 @@ export const GENERATORS = Object.freeze({
   tigerRoar,
   tigerGrowl,
   kelamRise,
+  riceWind,
+  buffaloBell,
+  birdChirp,
 });
 
 /** Generators that produce seamless loops (exact length; the pipeline must not trim, fade or filter them). */
@@ -803,6 +891,7 @@ export const LOOP_GENERATORS = Object.freeze([
   'rainStorm',
   'windStorm',
   'glideWind',
+  'riceWind',
 ]);
 
 /**
