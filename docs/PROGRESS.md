@@ -8,10 +8,10 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
   fresh `gh auth login --web`). **Vercel is connected:** production is https://hikayat-kelip.vercel.app (every push to
   `main` deploys; GitHub shows the Vercel status per commit).
-- **PLAYTEST GATE (2026-10-18): Phase 3 is built and checked; waiting for Izaf's "GO".** He runs `docs/PLAYTEST.md`
-  on the iPhone 14 at https://hikayat-kelip.vercel.app and replies GO or sends `BUG:`/`FEEL:` lines. Do not start
-  Phase 4 before GO. On feedback: fix, re-run the checks, push, update this file. Still open: Izaf's BM read, a real
-  mid-range Android phone, dedicated langkah/tangkis clips (library clips stand in), the repo's visibility.
+- **Phase 4 in progress (GO received 2026-10-18, no findings reported).** Plan below (Phase 4 log). **Resume with
+  M1 (Sawah Emas, the region).** Still open from Phase 3: Izaf's BM read, a real mid-range Android phone, dedicated
+  langkah/tangkis clips (library clips stand in), the repo's visibility, fewer shader variants if the iPhone's Boot
+  line asks for it. Any `BUG:`/`FEEL:` from Izaf comes first.
 - **Visual tests:** run `npm run chrome:test` once, then `npx playwright test`: every test is a tab in that one window
   (D-035; Izaf asked for no window per run). Quick live checks go through the Chrome DevTools MCP.
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
@@ -101,7 +101,7 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   layers); every model loads through the game's AssetLoader on WebGPU and WebGL2. Cursed variants reuse these meshes.
 - **Not done:** Vercel preview (no push yet).
 
-### Phase 3 — Vertical slice (built 2026-10-18; at the PLAYTEST GATE)
+### Phase 3 — Vertical slice (done 2026-10-18; Izaf's GO the same day)
 Milestones: M1 animated Bayu · M2 world rendering + prologue layout · M3 traversal (mantle, wall-run, slide, wau glide)
 · M4 combat (strike, langkah, tangkis, kuncian, lock-on; wisp, cursed brawler, Cursed Adi) · M5 missions, story state,
 dialogue, cutscenes, KelipGuide, autosave · M6 prologue content (young Wan, wisps, tiger chase, standoff) · M7 Chapter 1
@@ -262,6 +262,36 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
     variants. Izaf's stopwatch in the checklist and the overlay's Boot line decide.
   - Live after the change (b0f0ed6, cold, clean context): this PC's connection ready 6.1 s (scripts 1.8 s, models
     parsed 2.5 s, shaders 5.6 s, warm frame 6.1 s); Fast 4G ready 8.5 s (baseline 10.4 s; models parsed 4.7 s).
+
+### Phase 4 — Full story (started 2026-10-18)
+
+BUILD_PROMPT Phase 4: Chapters 2–5, every mission in the GDD table, all bosses, both twists, both endings and the
+epilogue; per-region rendering (grading, light shafts, water, compute fireflies, Kelam's look), adaptive music and
+ambience. Built chapter by chapter, each the same way the slice was: region kit (bpy) → layout → lighting, grading,
+music and ambience → the chapter's new movement and combat → its missions, cutscenes and dialogue (BM/EN) → its boss →
+the Pelita and its page → browser tests on both backends → commit and push (Vercel deploys `main`).
+
+| M | Chapter | What |
+| --- | --- | --- |
+| 1 | 2 | Sawah Emas region: kit (terraced paddies, bunds, rice, pondok sawah, scarecrows, kites, rope posts, Pelita Bumi), layout, golden-hour light, per-region colour grading, music stems and ambience; the 1.4 → 2.1 hand-over |
+| 2 | 2 | Rope swing; 2.1 Pesta Wau (the kite festival race) |
+| 3 | 2 | Kuncian (lock after a stagger), the Cursed hunter; 2.2 Bendang Berbisik |
+| 4 | 2 | Buah combos (data, learned from pages); 2.3 Bayang Belang (Tok Belang chasing wisps through the scarecrows) |
+| 5 | 2 | 2.4 Pelita Bumi: Pak Mail (3 phases, flooding paddy, buffalo herd), page 2 |
+| 6 | 3 | Hutan Larangan region: kit (buttress roots, Bunian arches), light, grading, music, ambience; Embun |
+| 7 | 3 | Root run, Bunian shortcuts; 3.1 Pintu Bunian (Embun's first trial) |
+| 8 | 3 | Stealth, the rearranging forest; 3.2 Hutan Berubah; 3.3 Ingatan Rimba (the grove before it was cut) |
+| 9 | 3 | Standoff duels; 3.4 Pelita Rimba: Tok Belang (3 phases, Kelip intervenes), page 3 |
+| 10 | 4 | Kota Kayu region: kit (carved limas roofs, harbour, cranes, lighthouse, festival), light, grading, music, ambience; Pak Leman |
+| 11 | 4 | Rooftop flow (vault, roll, pole-swing), keris moveset; 4.1 Kota Kayu |
+| 12 | 4 | Sampan; 4.2 Rahsia Pak Leman (Twist 1); 4.3 Malam Pesta (the sampan chase) |
+| 13 | 4 | 4.4 Pelita Pelabuhan: the Kelam colossus (cranes, glide onto its arms, lanterns), page 4 |
+| 14 | 5 | Puncak Seri region; tiger ride; 5.1 Tunggangan Belang |
+| 15 | 5 | Thermal gliding; 5.2 Angin Puncak (Twist 2, the final page) |
+| 16 | 5 | 5.3 Wan: the mirror duel, Buah Wan mid-fight |
+| 17 | 5 | 5.4 Pilihan, both endings; E Hikayat Baru (Ending B's epilogue) |
+| 18 | all | Compute fireflies (WebGPU, WebGL2 fallback), light shafts, Kelam's look, journal and map for every page, regional ambience pass |
+| 19 | all | Full playthrough tests (both endings, BM and EN), phase checks, Vercel, report |
 
 ## Setup checklist status
 
