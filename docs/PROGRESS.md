@@ -260,6 +260,8 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
     is 3.05 s and the warm frame 0.45 s (122 pipelines: 108 vertex and 27 fragment programs from 30 materials); a
     second visit uses the browser's shader cache (ready ~1.5 s). **Next lever if the iPhone needs it:** fewer shader
     variants. Izaf's stopwatch in the checklist and the overlay's Boot line decide.
+  - Live after the change (b0f0ed6, cold, clean context): this PC's connection ready 6.1 s (scripts 1.8 s, models
+    parsed 2.5 s, shaders 5.6 s, warm frame 6.1 s); Fast 4G ready 8.5 s (baseline 10.4 s; models parsed 4.7 s).
 
 ## Setup checklist status
 
