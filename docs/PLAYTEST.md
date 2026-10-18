@@ -16,7 +16,7 @@ For Izaf on the iPhone 14 (iOS 26, Safari). About 10 minutes. Reply **GO** to st
 
 | # | Time | Do this | It should |
 | --- | --- | --- | --- |
-| 1 | 0:00 | Tap the link, start the stopwatch; tap the title as soon as it says ready, stop the watch when Wan first moves | Under 10 s from link to moving (pillar 1). Note the time. |
+| 1 | 0:00 | Tap the link, start the stopwatch; tap the title as soon as it says ready, stop the watch when Wan first moves | Under 10 s from link to moving (pillar 1). Note the time, and later the debug overlay's **Boot** line (seconds to each start-up stage) |
 | 2 | 0:00 | Listen as the game starts | Rain, wind and the storm music start with the tap, also with the silent switch on |
 | 3 | 0:10 | Left thumb anywhere on the left half: move along the roofs. Tap **Jump** | The stick appears under your thumb; footsteps crunch on the thatch; jumps land cleanly |
 | 4 | 0:40 | At the "Hold to glide" prompt: jump, then hold **Jump** in the air | The wau opens, wind rises with speed; it glides to the next roofs |

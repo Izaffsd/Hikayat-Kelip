@@ -1,0 +1,20 @@
+{
+  "comment": "Downloads the title script starts while the engine starts up (src/main.js, core/Prefetch.js; pillar 1): when the `scriptCount` engine scripts matching `scripts` (capture: chunk name) have arrived, or when the engine module resolves. `assets`: manifest keys nearly every start needs (both slice regions use the kampung kit; the wisp is in both). The player's model: `prologueAvatar` for a new save or ?mission=<prologueMission>, else `avatar`. `transcoder`: Basis files warmed into the HTTP cache. `saveKey` must match SaveManager's key. `dataFiles`: prefixes of the on-demand data files requested at once (missions, dialogue, region layouts).",
+  "scripts": "/assets/(rapier|three|Engine)-[^/]+.js$",
+  "scriptCount": 3,
+  "saveKey": "hk.save",
+  "prologueMission": "P",
+  "prologueAvatar": "wan_young",
+  "avatar": "bayu",
+  "assets": [
+    "anim/anim_core",
+    "anim/anim_villager",
+    "anim/anim_cursed",
+    "characters/kelip",
+    "props/props_slice",
+    "characters/wisp",
+    "kits/kampung_kit"
+  ],
+  "transcoder": ["basis_transcoder.js", "basis_transcoder.wasm"],
+  "dataFiles": ["missions/", "dialogue/", "regions/"]
+}

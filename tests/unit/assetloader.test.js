@@ -69,6 +69,31 @@ describe('AssetLoader', () => {
     loader.dispose();
   });
 
+  it('takes over a prefetched download (one request) and starts before the renderer exists', async () => {
+    const bin = new Uint8Array([9, 8, 7, 6, 5, 4, 3, 2]);
+    const fetchImpl = mockFetch({ '/p.bin': bin });
+    const loader = new AssetLoader({ basisPath: '/basis/', fetchImpl });
+    const entry = { url: '/p.bin', bytes: bin.length, type: 'binary' };
+    loader.prefetch([entry]);
+    loader.prefetch([entry]);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    loader.setRenderer(fakeRenderer);
+    const progress = [];
+    const results = await loader.loadAll([entry], (loaded, total) => progress.push([loaded, total]));
+    expect(new Uint8Array(results.get('/p.bin'))).toEqual(bin);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(progress.at(-1)).toEqual([bin.length, bin.length]);
+    loader.dispose();
+  });
+
+  it('a failed prefetch fails the load that takes it over', async () => {
+    const loader = new AssetLoader({ basisPath: '/basis/', fetchImpl: mockFetch({}) });
+    const entry = { url: '/gone.bin', bytes: 4, type: 'binary' };
+    loader.prefetch([entry]);
+    await expect(loader.loadAll([entry])).rejects.toThrow(/HTTP 404/);
+    loader.dispose();
+  });
+
   it('fails clearly on HTTP errors', async () => {
     const loader = new AssetLoader({
       renderer: fakeRenderer,

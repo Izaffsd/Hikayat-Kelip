@@ -3,7 +3,9 @@ import { decodeCode, encodeCode } from './codec.js';
 import { EV } from './events.js';
 import { CURRENT_SCHEMA, MIGRATIONS, createDefaultSave } from './saveSchema.js';
 
-const KEY = 'hk.save';
+/** Storage key of the save (data/boot.json names it too, to tell a new player before the engine loads). */
+export const SAVE_KEY = 'hk.save';
+const KEY = SAVE_KEY;
 const TMP_KEY = 'hk.save.tmp';
 const BACKUP_KEY = 'hk.save.bak';
 const CORRUPT_KEY = 'hk.save.corrupt';

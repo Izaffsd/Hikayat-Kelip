@@ -1,6 +1,7 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { download, isDownloading, streamBytes, takeDownload } from './Prefetch.js';
 
 /**
  * @typedef {object} AssetEntry
@@ -11,21 +12,29 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 /**
  * Loads assets listed in manifests, reporting real byte progress, and keeps reference counts so a
- * region can release what only it used.
+ * region can release what only it used. Downloads can start early (`prefetch` here, or core/Prefetch.js from the title
+ * script before the engine has loaded); a load takes them over. Parsing waits for `setRenderer` (KTX2 support depends
+ * on the GPU).
  */
 export class AssetLoader {
   /**
    * @param {object} options
-   * @param {import('three/webgpu').WebGPURenderer} options.renderer initialised renderer (for KTX2 support detection)
+   * @param {import('three/webgpu').WebGPURenderer|null} [options.renderer] initialised renderer (KTX2 support); or
+   *   later through setRenderer
    * @param {string} options.basisPath folder with basis_transcoder.js/.wasm
    * @param {typeof fetch} [options.fetchImpl]
    * @param {number} [options.concurrency=4]
    */
-  constructor({ renderer, basisPath, fetchImpl = globalThis.fetch.bind(globalThis), concurrency = 4 }) {
+  constructor({
+    renderer = null,
+    basisPath,
+    fetchImpl = globalThis.fetch.bind(globalThis),
+    concurrency = 4,
+  }) {
     this.fetchImpl = fetchImpl;
     this.concurrency = concurrency;
     this.ktx2 = new KTX2Loader().setTranscoderPath(basisPath);
-    this.ktx2.detectSupport(renderer);
+    if (renderer) this.ktx2.detectSupport(renderer);
     this.gltf = new GLTFLoader();
     this.gltf.setKTX2Loader(this.ktx2);
     this.gltf.setMeshoptDecoder(MeshoptDecoder);
@@ -33,6 +42,29 @@ export class AssetLoader {
     this._cache = new Map();
     /** @type {((bytes: ArrayBuffer) => Promise<AudioBuffer>)|null} decodes sound banks (set by the engine) */
     this.decodeAudio = null;
+  }
+
+  /**
+   * Sets the renderer whose compressed-texture support KTX2 textures are transcoded for (before any GLB parses).
+   * @param {import('three/webgpu').WebGPURenderer} renderer initialised renderer
+   */
+  setRenderer(renderer) {
+    this.ktx2.detectSupport(renderer);
+  }
+
+  /** Starts downloading the Basis transcoder now (otherwise it waits for the first KTX2 texture). */
+  prefetchTranscoder() {
+    this.ktx2.init().catch(() => {}); // a failure resurfaces when a texture needs it
+  }
+
+  /**
+   * Starts downloading entries now; a later `loadAll` of the same entries takes their bytes (and progress) over.
+   * @param {AssetEntry[]} entries
+   */
+  prefetch(entries) {
+    for (const entry of entries) {
+      if (!this._cache.has(entry.url) && !isDownloading(entry.url)) download(entry.url, this.fetchImpl);
+    }
   }
 
   /**
@@ -63,10 +95,19 @@ export class AssetLoader {
           report();
           continue;
         }
-        const buffer = await this.fetchBytes(entry.url, (bytes) => {
+        const onBytes = (bytes) => {
           loadedPer.set(entry.url, Math.min(bytes, entry.bytes));
           report();
-        });
+        };
+        const early = takeDownload(entry.url);
+        let buffer;
+        if (early) {
+          early.listener = onBytes;
+          onBytes(early.received);
+          buffer = await early.bytes;
+        } else {
+          buffer = await this.fetchBytes(entry.url, onBytes);
+        }
         const value = await this.parse(entry, buffer);
         this._cache.set(entry.url, { value, refs: 1 });
         results.set(entry.url, value);
@@ -84,31 +125,8 @@ export class AssetLoader {
    * @param {(receivedBytes: number) => void} [onBytes]
    * @returns {Promise<ArrayBuffer>}
    */
-  async fetchBytes(url, onBytes = () => {}) {
-    const response = await this.fetchImpl(url);
-    if (!response.ok) throw new Error(`Failed to load ${url}: HTTP ${response.status}`);
-    if (!response.body) {
-      const buffer = await response.arrayBuffer();
-      onBytes(buffer.byteLength);
-      return buffer;
-    }
-    const reader = response.body.getReader();
-    const chunks = [];
-    let received = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-      received += value.byteLength;
-      onBytes(received);
-    }
-    const bytes = new Uint8Array(received);
-    let offset = 0;
-    for (const chunk of chunks) {
-      bytes.set(chunk, offset);
-      offset += chunk.byteLength;
-    }
-    return bytes.buffer;
+  fetchBytes(url, onBytes = () => {}) {
+    return streamBytes(this.fetchImpl, url, onBytes);
   }
 
   /**

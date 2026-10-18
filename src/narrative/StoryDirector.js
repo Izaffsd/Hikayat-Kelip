@@ -28,14 +28,15 @@ export class StoryDirector {
    * @returns {Promise<{ missions: Record<string, object>, dialogue: object }>}
    */
   static async loadData() {
+    // All at once: on a phone each file is a round trip.
+    const [missionFiles, dialogueFiles] = await Promise.all([
+      Promise.all(lazyKeys('missions/').map((key) => loadData(key))),
+      Promise.all(lazyKeys('dialogue/').map((key) => loadData(key))),
+    ]);
     const missions = {};
-    for (const key of lazyKeys('missions/')) {
-      const mission = await loadData(key);
-      missions[mission.id] = mission;
-    }
+    for (const mission of missionFiles) missions[mission.id] = mission;
     const dialogue = { speakers: {}, lines: {} };
-    for (const key of lazyKeys('dialogue/')) {
-      const file = await loadData(key);
+    for (const file of dialogueFiles) {
       Object.assign(dialogue.speakers, file.speakers ?? {});
       Object.assign(dialogue.lines, file.lines ?? {});
     }

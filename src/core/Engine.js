@@ -168,15 +168,16 @@ export class Engine {
       (query.get('webgl') !== '0' && settings.get('graphics.forceWebGL') === true);
 
     onProgress(0.05);
-    this.renderer = await Renderer.create({ canvas, forceWebGL, bus });
-    onProgress(0.25);
-    this.physics = await PhysicsWorld.create();
-    onProgress(0.35);
-    this.assets = new AssetLoader({
-      renderer: this.renderer.three,
-      basisPath: `/vendor/three-${__THREE_VERSION__}/basis/`,
-    });
-    this.assets.decodeAudio = (bytes) => this.audio.decode(bytes);
+    /** Milliseconds since navigation at each boot stage (debug overlay, test hook; pillar 1 is judged on the phone). */
+    this.bootTimes = {};
+    const mark = (stage) => (this.bootTimes[stage] = Math.round(performance.now()));
+    mark('engine');
+    // The renderer and the physics engine need nothing below: they start now and are awaited once the downloads run.
+    const gpuReady = Promise.all([
+      Renderer.create({ canvas, forceWebGL, bus }).then((renderer) => (mark('renderer'), renderer)),
+      PhysicsWorld.create().then((physics) => (mark('physics'), physics)),
+    ]);
+    gpuReady.catch(() => {}); // handled where it is awaited (boot's error screen); no "uncaught" before that
     // Where play starts: `?mission=<id>` starts a mission; `?scene=<id>` loads a region with no story (tests, free
     // roam, `sandbox` = the Phase 1 movement course); otherwise the save resumes (a new save starts the prologue).
     this.saves = new SaveManager({ storage: this.storage, bus });
@@ -202,10 +203,25 @@ export class Engine {
       'props/props_slice',
       ...enemyKeys,
     ];
-    const assets = await this.assets.loadAll(
-      keys.map((key) => manifest[key]),
-      (done, total) => onProgress(0.35 + (0.25 * done) / total),
+    // Downloads start now (unless the title script already started them), while the renderer and the physics engine
+    // start up (pillar 1: every second between the link and control counts); the region's kits too.
+    this.assets = new AssetLoader({ basisPath: `/vendor/three-${__THREE_VERSION__}/basis/` });
+    this.assets.decodeAudio = (bytes) => this.audio.decode(bytes);
+    const coreEntries = keys.map((key) => manifest[key]);
+    this.assets.prefetch(coreEntries);
+    this.assets.prefetchTranscoder();
+    if (this.sceneId !== 'sandbox') {
+      loadData(`regions/${this.sceneId}`)
+        .then((region) => this.assets.prefetch(region.kits.map((key) => manifest[key])))
+        .catch(() => {}); // World.load reports a missing region
+    }
+    [this.renderer, this.physics] = await gpuReady;
+    this.assets.setRenderer(this.renderer.three);
+    onProgress(0.35);
+    const assets = await this.assets.loadAll(coreEntries, (done, total) =>
+      onProgress(0.35 + (0.25 * done) / total),
     );
+    mark('assets');
     const byKey = (key) => assets.get(manifest[key].url);
     this._enemyAssetUrls = [...enemyKeys].map((key) => manifest[key].url);
     this.clips = new Map();
@@ -358,6 +374,7 @@ export class Engine {
     this._loadAudio(this.sceneId);
     this.postfx = new PostFX(this.renderer);
     this.postfx.build(this.scene, this.camera, this.quality.preset);
+    mark('world');
     onProgress(0.75);
 
     // Warm up shaders behind the title so the first gameplay frame does not hitch.
@@ -366,12 +383,14 @@ export class Engine {
     this.avatar.update(0, this.camera, this._feet.y);
     this.cameraSystem.update(0, this._feet, facing, 0);
     await this.renderer.three.compileAsync(this.scene, this.camera);
+    mark('shaders');
     // compileAsync covers the plain scene render, not the variants the post-processing pass and shadows build on their
     // first use (~0.4 s of node building on this PC): one real frame here, hidden by the title, moves that cost before
     // the start tap instead of after it. Likewise a zero-length physics step builds Rapier's broad phase over the
     // region's static colliders (~60 ms on its first step).
     this.renderer.render(this.scene, this.camera);
     this.physics.step(0);
+    mark('warm');
     onProgress(0.95);
 
     this.telemetry = new Telemetry({
@@ -394,6 +413,7 @@ export class Engine {
     this._bindPlatformEvents();
     this._bindSettings();
     if (query.has('test')) this._exposeTestHook();
+    mark('ready');
     onProgress(1);
     bus.emit(EV.BOOT_READY, { backend: this.renderer.backend });
   }
@@ -1152,6 +1172,9 @@ export class Engine {
       Player: `${this.traversal.state} ${this.traversal.speed.toFixed(2)} m/s${this.traversal.sprinting ? ' sprint' : ''}`,
       Input: this.input.device,
       Audio: `${this.audio.state}, ${this.audioDirector.sfx.active} voices, music ${this.audioDirector.music.state ?? '-'}`,
+      Boot: Object.entries(this.bootTimes)
+        .map(([stage, ms]) => `${stage} ${(ms / 1000).toFixed(1)}`)
+        .join(' · '),
     };
   }
 
@@ -1313,6 +1336,10 @@ export class Engine {
           inCombat: engine.combat.inCombat,
           timeScale: engine.time.scale,
         }),
+        /** Milliseconds since navigation at each boot stage. */
+        get bootTimes() {
+          return { ...engine.bootTimes };
+        },
         /** Sound: context state, decoded banks, plays per sound, music state and stem levels, ambience beds. */
         audio: () => engine.audioDirector.stats(),
         /** Where the story stands (null in free roam). */

@@ -250,6 +250,16 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
     Decoded audio (~40 MB, outside the JS heap) is by design; decoding music at 32 kHz would cut it by a quarter if
     Safari ever runs short.
   - Playtest checklist and known issues: `docs/PLAYTEST.md`.
+  - **Time to ready, cold first visit** (pillar 1; D-047). The live site measured 10.2 s on this PC's own connection
+    and 10.4 s under Fast 4G emulation: every stage waited for the one before. Now the title script starts the
+    common downloads (`data/boot.json`, `core/Prefetch.js`) the moment the engine's scripts have arrived and asks for
+    the story's small data files at once (in parallel); the renderer and Rapier start before the story data is
+    awaited; the loader takes the downloads over (one request each). Boot stages are timed (`bootTimes` in the test
+    hook, a "Boot" line on the debug overlay). Fast 4G, cold: renderer and physics ready at 3.0 s (was 6.1 s with the
+    first attempt), models in by 6.3 s, ready 10.0 s; unthrottled, cold: ready 4.2 s, of which shader compilation
+    is 3.05 s and the warm frame 0.45 s (122 pipelines: 108 vertex and 27 fragment programs from 30 materials); a
+    second visit uses the browser's shader cache (ready ~1.5 s). **Next lever if the iPhone needs it:** fewer shader
+    variants. Izaf's stopwatch in the checklist and the overlay's Boot line decide.
 
 ## Setup checklist status
 
