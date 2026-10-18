@@ -6,14 +6,12 @@ Resume rule: when Izaf says "continue from PROGRESS.md", start at **Resume point
 Setup done except the items that need Izaf (2026-10-16). The project lives at `D:\dev\hikayat-kelip` (D-001).
 - **Push:** Izaf said "push and go ahead" (2026-10-17); `main` is on GitHub. The repo is still **public**; Izaf chose
   private, which needs him (github.com → Settings → General → Danger Zone → Change visibility, or say "login" for a
-  fresh `gh auth login --web`). Vercel previews start once he imports the repo on vercel.com (Vite preset).
-- **Phase 3 in progress** — see the Phase 3 log for the milestone plan. M1–M9 done; the whole slice plays from a new
-  save through P and 1.1–1.4 with sound and music, the pause menu, settings, journal, map, the 1.1 trial and
-  achievements. **Resume with milestone 10 (phase checks → PLAYTEST GATE):** DevTools console check, a performance
-  trace of one key scene (the 1.5–1.9 s first-frame stall, open item 1), a 10-minute memory check (decoded audio is
-  ~40 MB at 44.1 kHz: watch it), a 4× CPU-throttled run, the prologue download budget (< 10 MB; open item 4), the
-  playtest checklist for Izaf, a checkpoint commit and the Vercel preview (needs Izaf's import). Then stop at the
-  PLAYTEST GATE and wait for "GO". Still open from M4: dedicated langkah/tangkis clips (library clips stand in).
+  fresh `gh auth login --web`). **Vercel is connected:** production is https://hikayat-kelip.vercel.app (every push to
+  `main` deploys; GitHub shows the Vercel status per commit).
+- **PLAYTEST GATE (2026-10-18): Phase 3 is built and checked; waiting for Izaf's "GO".** He runs `docs/PLAYTEST.md`
+  on the iPhone 14 at https://hikayat-kelip.vercel.app and replies GO or sends `BUG:`/`FEEL:` lines. Do not start
+  Phase 4 before GO. On feedback: fix, re-run the checks, push, update this file. Still open: Izaf's BM read, a real
+  mid-range Android phone, dedicated langkah/tangkis clips (library clips stand in), the repo's visibility.
 - **Visual tests:** run `npm run chrome:test` once, then `npx playwright test`: every test is a tab in that one window
   (D-035; Izaf asked for no window per run). Quick live checks go through the Chrome DevTools MCP.
 - **Live tools working (2026-10-17).** `.mcp.json` starts both servers by absolute path (D-025); in the VS Code
@@ -26,8 +24,9 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   window, berembang crowns, grain along beams, stall roof, draped net, three kain colours), Tok Belang v4 (`1c3e298`,
   D-026), Kelip and the wisp (`e2e08ab`). Animation packs: poses checked on the rig; shipped vs raw clips differ by at most
   0.106° (gltfpack `-ar 14`), durations identical.
-- **Status (2026-10-17): Phases 0, 1 and 2 done** (see the log). Phase 1's DevTools MCP checks were run after the
-  restart. The only open phase-end item is the Vercel preview, which needs the first push (Izaf).
+- **Status (2026-10-18): Phases 0, 1 and 2 done; Phase 3 built and checked, at the PLAYTEST GATE** (see the log).
+  Vercel deploys every push to `main` (https://hikayat-kelip.vercel.app), which also covers the earlier phases'
+  preview item.
 
 ## Phase log
 
@@ -102,7 +101,7 @@ Setup done except the items that need Izaf (2026-10-16). The project lives at `D
   layers); every model loads through the game's AssetLoader on WebGPU and WebGL2. Cursed variants reuse these meshes.
 - **Not done:** Vercel preview (no push yet).
 
-### Phase 3 — Vertical slice (in progress since 2026-10-17)
+### Phase 3 — Vertical slice (built 2026-10-18; at the PLAYTEST GATE)
 Milestones: M1 animated Bayu · M2 world rendering + prologue layout · M3 traversal (mantle, wall-run, slide, wau glide)
 · M4 combat (strike, langkah, tangkis, kuncian, lock-on; wisp, cursed brawler, Cursed Adi) · M5 missions, story state,
 dialogue, cutscenes, KelipGuide, autosave · M6 prologue content (young Wan, wisps, tiger chase, standoff) · M7 Chapter 1
@@ -181,7 +180,8 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
   backends, story or not; the engine's own calls stay under 75 ms, so it is browser/GPU side (M10 performance trace;
   judge on the iPhone). (2) ~~The jetty fight camera under the pondok roof~~ — fixed in M7 (D-040). (3) Izaf's
   native-speaker read of the BM lines before the playtest gate (CULTURE §4). (4) The three chunk is 338 KB gzipped
-  (282 KB at Phase 1); check the prologue download budget in M10.
+  (282 KB at Phase 1); check the prologue download budget in M10. **M10:** (1) closed on this PC (warm frame, D-046);
+  (4) the prologue is 7.0 MB, under budget; (3) is in the playtest checklist.
 - **M7 done (2026-10-18)** (D-039, D-040): villagers as scripted actors (`ai/NpcActor.js` with Kelam's ink that creeps
   and drains, `ai/PathMover.js` shared with Tok Belang, `narrative/StoryActors.js` owning the cast per region); 1.1 —
   Mak Som at her stall, Adi's dare, a held "Ready… go!", the race clock on game time (`competitive/RaceTimer.js`,
@@ -231,6 +231,25 @@ missions 1.1–1.4 · M8 UI (pause, settings, HUD, assists, race trial with ghos
   bar in the chase, thunder, paws, growl and roar in the standoff) and the jetty fight (combat on the beat, hits,
   tells, dissolves, night beds, back to the mission's mix); no console warnings. Full browser suite green (45 passed,
   1 skipped by design), with the prologue → kampung bank swap.
+- **M10 done (2026-10-18): phase checks** (D-046), on the production build (`vite preview`) in the DevTools Chrome:
+  - Console: no errors or warnings (desktop, and the phone profile below).
+  - Prologue download: 7.0 MB transferred (10.8 MB uncompressed; budget 10 MB). Live on Vercel the code is Brotli:
+    Rapier 1.59 MB, three 341 KB, engine 78 KB; hashed files are `immutable`, wasm/glb/ogg have the right types.
+  - Trace of the start tap into the prologue: the first frame spent ~400 ms building node materials for the post pass
+    and shadows (not covered by `compileAsync`) and Rapier's first step 62 ms building its broad phase. A warm frame
+    and a zero-length physics step at the end of boot (and behind a region fade) move both behind the title:
+    interaction-to-next-paint 729 ms → 42 ms, no frame over 34 ms after the tap. Open item 1 is closed on this PC.
+  - Frame rate at High (this PC, 100 Hz display, vsync-bound): prologue 93 FPS, p95 11.1 ms, 74 draw calls, 153 k
+    triangles; kampung jetty fight 92 FPS, 84 draw calls, 401 k triangles, ~105 MB GPU estimate.
+  - 4× CPU throttle: unchanged (p95 11.1 ms, worst 21.9 ms in the fight): the main thread has headroom.
+  - Phone profile (915×412 at 2.6×, touch, Android UA, 4× CPU; the GPU is still this PC's): the game picks Low with
+    the 30 FPS cap and 0.8 render scale, 76 draw calls, ~10 MB GPU estimate; frames 40.0 ms flat (the cap lands on
+    25 FPS on a 100 Hz screen's 10 ms grid; 60/90/120 Hz phones land on 30).
+  - 10-minute memory run (bot roaming the night roofs, jumping, calling Kelip; 1,100 steps, 325 respawns): JS heap
+    trough 53 → 49 MB, GPU estimate flat at 104.8 MB, 78 geometries / 44 textures throughout, voices bounded.
+    Decoded audio (~40 MB, outside the JS heap) is by design; decoding music at 32 kHz would cut it by a quarter if
+    Safari ever runs short.
+  - Playtest checklist and known issues: `docs/PLAYTEST.md`.
 
 ## Setup checklist status
 

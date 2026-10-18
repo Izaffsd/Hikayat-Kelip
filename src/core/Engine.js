@@ -366,6 +366,12 @@ export class Engine {
     this.avatar.update(0, this.camera, this._feet.y);
     this.cameraSystem.update(0, this._feet, facing, 0);
     await this.renderer.three.compileAsync(this.scene, this.camera);
+    // compileAsync covers the plain scene render, not the variants the post-processing pass and shadows build on their
+    // first use (~0.4 s of node building on this PC): one real frame here, hidden by the title, moves that cost before
+    // the start tap instead of after it. Likewise a zero-length physics step builds Rapier's broad phase over the
+    // region's static colliders (~60 ms on its first step).
+    this.renderer.render(this.scene, this.camera);
+    this.physics.step(0);
     onProgress(0.95);
 
     this.telemetry = new Telemetry({
@@ -566,6 +572,9 @@ export class Engine {
     const marker = this.world.markers[markerName];
     this.placePlayer(marker.p, marker.yaw);
     await this.renderer.three.compileAsync(this.scene, this.camera);
+    // Warm frame and physics step behind the fade (see boot).
+    this.renderer.render(this.scene, this.camera);
+    this.physics.step(0);
     this._regionLoading = false;
     this._loadAudio(id);
     this.audioDirector.setRegion(id);
